@@ -29,7 +29,7 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: npx vite build --outDir dist
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

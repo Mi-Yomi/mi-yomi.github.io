@@ -1,16 +1,15 @@
 # Деплой на GitHub Pages
 
-## Проблема
-Сайт не работал, потому что GitHub Pages отдавал исходники (main.jsx) вместо собранного приложения. Браузер не понимает JSX и получал неправильный MIME type.
-
-## Решение
-Добавлен GitHub Actions workflow, который:
-1. Собирает проект (`npm run build`)
-2. Деплоит папку `dist` на GitHub Pages
-
-## Настройка
+## Настройка (один раз)
 1. Открой **Settings** → **Pages** в репозитории
-2. В разделе **Build and deployment** выбери **Source: GitHub Actions**
-3. Запушь изменения — workflow запустится автоматически
+2. **Build and deployment** → **Source**: Deploy from a branch
+3. **Branch**: main, **Folder**: /docs
+4. **Save**
 
-После первого успешного деплоя сайт будет доступен на https://mi-yomi.github.io
+## После изменений в коде
+```bash
+npm run build
+git add docs
+git commit -m "build: update"
+git push
+```
