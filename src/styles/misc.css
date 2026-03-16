@@ -1,0 +1,151 @@
+/* Toast Notification */
+.toast {
+    position: fixed; bottom: calc(var(--safe-bottom) + 80px); left: 50%; transform: translateX(-50%);
+    padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6); z-index: 999;
+    animation: toastIn 0.3s ease-out;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* Genre Chips Home */
+.genre-chips {
+    display: flex; gap: 10px; padding: 0 16px; margin-bottom: 28px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.genre-chips::-webkit-scrollbar { display: none; }
+.genre-chip {
+    flex-shrink: 0; padding: 10px 20px; border-radius: 25px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-secondary); transition: all 0.25s;
+    white-space: nowrap; font-family: inherit;
+}
+.genre-chip:active { transform: scale(0.95); }
+.genre-chip.active {
+    background: linear-gradient(135deg, var(--accent), #ff4444);
+    border-color: transparent; color: white;
+    box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+/* Anime Section Premium */
+.anime-header {
+    text-align: center; padding: 20px 16px 16px;
+}
+.anime-header-title {
+    font-size: 28px; font-weight: 900; letter-spacing: -1px;
+    background: linear-gradient(135deg, #ff6b9d, #c44dff, #6e5eff);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.anime-header-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
+.anime-genres {
+    display: flex; gap: 8px; padding: 0 16px; margin-bottom: 20px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.anime-genres::-webkit-scrollbar { display: none; }
+.anime-genre {
+    flex-shrink: 0; padding: 8px 16px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    border: 1px solid rgba(255,107,157,0.2); background: rgba(255,107,157,0.06);
+    color: #ff6b9d; transition: all 0.2s; font-family: inherit; white-space: nowrap;
+}
+.anime-genre:active { transform: scale(0.95); }
+.anime-genre.active { background: linear-gradient(135deg, #ff6b9d, #c44dff); color: white; border-color: transparent; box-shadow: 0 4px 15px rgba(255,107,157,0.3); }
+
+/* TV Section Premium */
+.tv-header {
+    text-align: center; padding: 20px 16px 16px;
+}
+.tv-header-title {
+    font-size: 28px; font-weight: 900; letter-spacing: -1px;
+    background: linear-gradient(135deg, #7c4dff, var(--purple), var(--pink));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.tv-header-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
+.tv-genres {
+    display: flex; gap: 8px; padding: 0 16px; margin-bottom: 20px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.tv-genres::-webkit-scrollbar { display: none; }
+.tv-genre {
+    flex-shrink: 0; padding: 8px 16px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    border: 1px solid rgba(124,77,255,0.2); background: rgba(124,77,255,0.06);
+    color: #7c4dff; transition: all 0.2s; font-family: inherit; white-space: nowrap;
+}
+.tv-genre:active { transform: scale(0.95); }
+.tv-genre.active { background: linear-gradient(135deg, #7c4dff, var(--purple)); color: white; border-color: transparent; box-shadow: 0 4px 15px rgba(124,77,255,0.3); }
+
+/* Curated List on Home */
+.curated-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 800;
+    background: linear-gradient(135deg, var(--gold), #ff6b6b); color: black;
+    margin-left: 8px; vertical-align: middle;
+}
+
+/* On Air Live Badge */
+.live-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 800; color: var(--green);
+}
+.live-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+    animation: livePulse 1.5s ease-in-out infinite;
+}
+@keyframes livePulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,200,83,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,200,83,0); }
+}
+
+/* Upcoming Section */
+.upcoming-card { flex-shrink: 0; width: 180px; scroll-snap-align: start; cursor: pointer; position: relative; transition: all 0.2s; }
+.upcoming-card:active { transform: scale(0.96); }
+.upcoming-poster { width: 100%; aspect-ratio: 2/3; border-radius: 14px; object-fit: cover; display: block; box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+.upcoming-info { padding: 8px 4px 0; }
+.upcoming-title { font-size: 12px; font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
+.upcoming-date { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+.upcoming-countdown { position: absolute; top: 8px; left: 8px; padding: 4px 10px; border-radius: 8px; background: rgba(10,10,10,0.8); backdrop-filter: blur(12px); font-size: 10px; font-weight: 800; color: var(--gold); border: 1px solid rgba(255,215,0,0.15); }
+.upcoming-remind { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; background: rgba(10,10,10,0.65); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
+.upcoming-remind.active { background: var(--gold); border-color: var(--gold); }
+
+/* Recommendations */
+.recs-section { margin-top: 28px; }
+.recs-title { font-size: 15px; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.recs-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.recs-scroll::-webkit-scrollbar { display: none; }
+
+/* Random Movie Button */
+.random-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; margin: 0 16px 20px; border-radius: 16px; background: linear-gradient(135deg, var(--purple), var(--pink)); border: none; color: white; font-size: 14px; font-weight: 800; cursor: pointer; font-family: inherit; transition: all 0.2s; box-shadow: 0 4px 20px rgba(156,39,176,0.3); }
+.random-btn:active { transform: scale(0.97); }
+.random-btn.spinning .random-icon { animation: spin 0.5s; }
+
+/* Library Sort */
+.library-sort { display: flex; gap: 6px; margin-bottom: 12px; }
+.library-sort-btn { padding: 6px 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.library-sort-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+/* Review Char Counter */
+.char-counter { font-size: 11px; color: var(--text-muted); text-align: right; margin-top: 4px; font-weight: 600; }
+.char-counter.warn { color: var(--gold); }
+.char-counter.over { color: var(--accent); }
+
+/* Trending Badge */
+.trending-badge { position: absolute; top: 8px; left: 8px; z-index: 3; padding: 3px 8px; border-radius: 6px; background: linear-gradient(135deg, var(--gold), #ff9800); font-size: 8px; font-weight: 900; color: black; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Blur-up Images */
+.img-blur { filter: blur(8px); transition: filter 0.4s, opacity 0.4s; }
+.img-loaded { filter: blur(0); }
+
+/* Skeleton Friend Profile */
+.skeleton-profile { padding: 16px; }
+.skeleton-profile-cover { height: 120px; background: var(--surface); border-radius: 16px; margin-bottom: 16px; animation: shimmer 1.5s infinite; }
+.skeleton-profile-row { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+.skeleton-profile-avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--surface); animation: shimmer 1.5s infinite; }
+.skeleton-profile-lines { flex: 1; }
+.skeleton-profile-line { height: 14px; background: var(--surface); border-radius: 6px; margin-bottom: 8px; animation: shimmer 1.5s infinite; }
+.skeleton-profile-line:last-child { width: 60%; }
+
+/* Swipe Indicator */
+.swipe-indicator { position: absolute; top: 50%; left: 0; width: 4px; height: 60px; transform: translateY(-50%); background: var(--text-muted); border-radius: 0 4px 4px 0; opacity: 0; transition: opacity 0.2s; }
+.overlay.open .swipe-indicator { opacity: 0.15; }

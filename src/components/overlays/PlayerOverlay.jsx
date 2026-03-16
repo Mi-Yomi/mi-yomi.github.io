@@ -1,0 +1,135 @@
+import { useApp } from '../../context/AppContext.jsx';
+
+export default function PlayerOverlay() {
+  const {
+    playerOpen,
+    I,
+    closePlayer,
+    media,
+    playerSource,
+    isRuSource,
+    currentSeason,
+    currentEpisode,
+    seasonsData,
+    tg,
+    updatePlayerEpisode,
+    playerLoaded,
+    playerError,
+    setPlayerError,
+    setPlayerLoaded,
+    playerUrl,
+    setPlayerUrl,
+    activeSkip,
+    performSkip,
+    setCurrentSeason,
+    setCurrentEpisode,
+    playerTimerRef,
+  } = useApp();
+
+  if (!playerOpen) {
+    return null;
+  }
+
+  return (
+    <div className="overlay open player-view">
+            <div className="player-header">
+                <button className="player-back" onClick={closePlayer}>{I.back}</button>
+                <div className="player-info">
+                    <div className="player-title">{media?.title || media?.name}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginTop:2}}>
+                        <span className="player-source-badge">{isRuSource(playerSource) ? `🇷🇺 ${playerSource}` : playerSource}</span>
+                        {media?.media_type === 'tv' && !isRuSource(playerSource) && <span className="player-source-name">S{currentSeason}:E{currentEpisode}</span>}
+                        {media?.media_type === 'tv' && isRuSource(playerSource) && <span className="player-source-name" style={{opacity:0.5,fontSize:10}}>серии внутри плеера</span>}
+                    </div>
+                </div>
+                {/* Quick next/prev buttons for TV — only for fallback sources */}
+                {media?.media_type === 'tv' && !isRuSource(playerSource) && (
+                    <div style={{display:'flex',gap:4,marginLeft:'auto'}}>
+                        <button style={{width:36,height:36,borderRadius:10,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.08)',color:'white',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit',backdropFilter:'blur(8px)'}} 
+                            onClick={() => { 
+                                const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
+                                if (currentEpisode > 1) { const ne = currentEpisode - 1; setCurrentEpisode(ne); updatePlayerEpisode(currentSeason, ne); }
+                                tg?.HapticFeedback?.impactOccurred?.('light');
+                            }}>⏮</button>
+                        <button style={{width:36,height:36,borderRadius:10,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.08)',color:'white',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit',backdropFilter:'blur(8px)'}} 
+                            onClick={() => { 
+                                const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
+                                if (currentEpisode < maxEp) { const ne = currentEpisode + 1; setCurrentEpisode(ne); updatePlayerEpisode(currentSeason, ne); }
+                                tg?.HapticFeedback?.impactOccurred?.('light');
+                            }}>⏭</button>
+                    </div>
+                )}
+            </div>
+            <div className="player-frame">
+                {!playerLoaded && !playerError && (
+                    <div className="player-loading-overlay">
+                        <div className="player-loading-spinner"></div>
+                        <div className="player-loading-text">Загрузка плеера...</div>
+                    </div>
+                )}
+                {playerError && (
+                    <div className="player-error-overlay">
+                        <div className="player-error-icon">⚠️</div>
+                        <div className="player-error-text">Источник не отвечает</div>
+                        <div className="player-error-hint">Попробуйте другой плеер или повторите попытку</div>
+                        <button className="player-error-btn" onClick={() => { setPlayerError(false); setPlayerLoaded(false); setPlayerUrl(playerUrl + (playerUrl.includes('?') ? '&' : '?') + '_r=' + Date.now()); }}>Повторить</button>
+                    </div>
+                )}
+                <iframe src={playerUrl} allowFullScreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerPolicy="no-referrer" onLoad={() => { setPlayerLoaded(true); setPlayerError(false); if (playerTimerRef.current) clearTimeout(playerTimerRef.current); }} />
+                {/* Кнопка пропуска заставки/титров */}
+                {activeSkip && (
+                    <div className="skip-btn-container">
+                        <button className={`skip-btn ${activeSkip.type === 'intro' ? 'intro' : 'outro'}`} onClick={() => { performSkip(activeSkip.end, activeSkip.type); tg?.HapticFeedback?.impactOccurred?.('medium'); }}>
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/></svg>
+                            <span className="skip-label">
+                                <span className="skip-type">{activeSkip.type === 'intro' ? 'Заставка' : 'Титры'}</span>
+                                Пропустить
+                            </span>
+                        </button>
+                    </div>
+                )}
+            </div>
+            {/* Next Episode Button */}
+            {media?.media_type === 'tv' && !isRuSource(playerSource) && (() => {
+                const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
+                if (currentEpisode < maxEp) return (
+                    <button className="player-next-ep" onClick={() => { const ne = currentEpisode + 1; setCurrentEpisode(ne); updatePlayerEpisode(currentSeason, ne); tg?.HapticFeedback?.impactOccurred?.('medium'); }}>
+                        ⏭ Следующая серия (E{currentEpisode + 1})
+                    </button>
+                );
+                return null;
+            })()}
+            {media?.media_type === 'tv' && (
+                isRuSource(playerSource) ? (
+                    <div className="episode-picker" style={{textAlign:'center',padding:'20px 16px'}}>
+                        <div style={{fontSize:13,fontWeight:700,color:'var(--text)',marginBottom:6}}>🇷🇺 Встроенный плеер {playerSource}</div>
+                        <div style={{fontSize:12,color:'var(--text-muted)',lineHeight:1.5}}>
+                            Используйте переключатель серий <b>внутри плеера</b>.<br/>
+                            Collaps / Alloha / Kodik сами управляют навигацией.
+                        </div>
+                    </div>
+                ) : (
+                    <div className="episode-picker">
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                            <div className="episode-picker-title">Сезон {currentSeason}</div>
+                            <div className="player-source-badge" style={{fontSize:9}}>{seasonsData.find(s => s.season_number === currentSeason)?.name || `Сезон ${currentSeason}`}</div>
+                        </div>
+                        <div className="episode-row">{Array.from({ length: media.number_of_seasons || 1 }, (_, i) => i + 1).map(s => (
+                            <button key={s} className={`episode-btn ${currentSeason === s ? 'active' : ''}`} onClick={() => { setCurrentSeason(s); setCurrentEpisode(1); updatePlayerEpisode(s, 1); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
+                                {s}
+                            </button>
+                        ))}</div>
+                        <div className="episode-picker-title" style={{ marginTop: 14 }}>
+                            Серия {currentEpisode} из {seasonsData.find(s => s.season_number === currentSeason)?.episode_count || '?'}
+                        </div>
+                        <div className="episode-row">{Array.from({ length: seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24 }, (_, i) => i + 1).map(e => (
+                            <button key={e} className={`episode-btn ${currentEpisode === e ? 'active' : ''}`} onClick={() => { setCurrentEpisode(e); updatePlayerEpisode(currentSeason, e); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
+                                {e}
+                            </button>
+                        ))}</div>
+                    </div>
+                )
+            )}
+        </div>
+  );
+}

@@ -1,0 +1,84 @@
+.header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: calc(var(--safe-top) + 12px) 16px 12px;
+    background: linear-gradient(to bottom, var(--bg) 50%, transparent);
+    display: flex; justify-content: space-between; align-items: center;
+    transition: all var(--transition-normal) var(--ease-out-expo),
+                background var(--transition-normal) ease,
+                backdrop-filter var(--transition-normal) ease;
+}
+.header.scrolled {
+    background: var(--glass);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+}
+.header.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+.logo-wrap { display: flex; flex-direction: column; }
+.logo-sub { font-size: 8px; font-weight: 700; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; }
+.logo-main { font-size: 24px; font-weight: 900; background: linear-gradient(135deg, #fff 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+.icon-btn {
+    width: 42px; height: 42px; border-radius: 50%; 
+    background: var(--glass); backdrop-filter: blur(20px);
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: all 0.2s;
+}
+.icon-btn:active { transform: scale(0.92); background: var(--surface-2); }
+.icon-btn svg { width: 20px; height: 20px; color: var(--text); }
+
+.content { flex: 1; padding-top: calc(var(--safe-top) + 68px); padding-bottom: calc(var(--safe-bottom) + 90px); overflow-y: auto; }
+
+/* Navigation - Glass Premium */
+.nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    height: calc(80px + var(--safe-bottom)); padding-bottom: var(--safe-bottom);
+    background: var(--glass); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px;
+    transition: transform 0.3s;
+}
+.nav.hidden { transform: translateY(100%); }
+.nav-item { 
+    display: flex; flex-direction: column; align-items: center; gap: 4px; 
+    color: var(--text-muted); cursor: pointer; background: none; border: none; 
+    font-family: inherit; padding: 10px 18px; min-width: 48px; min-height: 48px;
+    transition: color var(--transition-fast) ease; 
+    position: relative; border-radius: 14px;
+}
+.nav-item:active { transform: scale(0.9); transition: transform var(--transition-fast) var(--ease-spring); }
+.nav-item.active { color: var(--accent); }
+.nav-item.active::before {
+    content: ''; position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 3px; background: var(--accent); border-radius: 2px;
+    box-shadow: 0 0 10px var(--accent);
+}
+.nav-item svg { width: 24px; height: 24px; transition: transform var(--transition-fast) var(--ease-spring); }
+.nav-item.active svg { transform: scale(1.15); }
+.nav-item span { font-size: 10px; font-weight: 600; }
+.nav-badge {
+    position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px;
+    background: var(--accent); border-radius: 9px; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; padding: 0 5px;
+    box-shadow: 0 2px 10px var(--accent-glow);
+}
+
+/* Scroll To Top Button */
+.scroll-top-btn {
+    position: fixed; bottom: calc(90px + var(--safe-bottom)); right: 16px;
+    width: 48px; height: 48px; border-radius: 50%; z-index: 95;
+    background: linear-gradient(135deg, var(--accent), #ff4444);
+    color: white; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px var(--accent-glow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0; transform: scale(0.5) translateY(20px);
+    pointer-events: none;
+}
+.scroll-top-btn.visible {
+    opacity: 1; transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+.scroll-top-btn:active { transform: scale(0.9); }
+.scroll-top-btn svg { width: 22px; height: 22px; }

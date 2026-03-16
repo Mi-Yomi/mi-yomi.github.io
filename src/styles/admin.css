@@ -1,0 +1,81 @@
+/* Admin Panel */
+.admin-panel {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg); z-index: 300; overflow-y: auto;
+    padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 16px);
+}
+.admin-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+}
+.admin-header h2 {
+    font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--gold), #ff6b6b);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.admin-badge {
+    padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 800;
+    background: linear-gradient(135deg, var(--gold), #ff6b6b); color: black;
+    text-transform: uppercase; letter-spacing: 1px;
+}
+.admin-section { margin-bottom: 24px; }
+.admin-section-title { font-size: 14px; font-weight: 800; color: var(--text-secondary); margin-bottom: 12px; }
+.admin-input {
+    width: 100%; padding: 14px 16px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-size: 14px; font-weight: 600;
+    font-family: inherit; outline: none; box-sizing: border-box;
+}
+.admin-input:focus { border-color: var(--gold); }
+.admin-list-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 16px; margin-bottom: 12px;
+}
+.admin-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.admin-list-title { font-size: 15px; font-weight: 800; }
+.admin-list-count { font-size: 11px; color: var(--text-muted); }
+.admin-list-items { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; }
+.admin-list-items::-webkit-scrollbar { display: none; }
+.admin-list-item {
+    flex-shrink: 0; width: 60px; text-align: center;
+}
+.admin-list-item img { width: 60px; height: 90px; border-radius: 8px; object-fit: cover; }
+.admin-list-item-title { font-size: 9px; margin-top: 4px; font-weight: 600; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 800;
+    cursor: pointer; border: none; font-family: inherit; transition: all 0.15s;
+}
+.admin-btn.gold { background: linear-gradient(135deg, var(--gold), #ff6b6b); color: black; }
+.admin-btn.gold:active { transform: scale(0.97); }
+.admin-btn.danger { background: rgba(229,9,20,0.15); color: var(--accent); }
+.admin-btn.danger:active { transform: scale(0.97); }
+.admin-btn.secondary { background: var(--surface-2); color: var(--text-secondary); border: 1px solid var(--border); }
+.admin-search-results { margin-top: 8px; max-height: 200px; overflow-y: auto; }
+.admin-search-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px;
+    background: var(--surface-2); border-radius: 10px; margin-bottom: 6px;
+    cursor: pointer; transition: background 0.15s;
+}
+.admin-search-item:active { background: var(--surface-3); }
+.admin-search-item img { width: 36px; height: 54px; border-radius: 6px; object-fit: cover; }
+.admin-search-item-info { flex: 1; }
+.admin-search-item-title { font-size: 13px; font-weight: 700; }
+.admin-search-item-year { font-size: 11px; color: var(--text-muted); }
+
+/* Admin Approvals */
+.approval-card { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px; }
+.approval-avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; flex-shrink: 0; overflow: hidden; }
+.approval-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.approval-info { flex: 1; min-width: 0; }
+.approval-name { font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.approval-email { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.approval-date { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.approval-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.approval-btn { width: 38px; height: 38px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: all 0.15s; }
+.approval-btn:active { transform: scale(0.9); }
+.approval-btn.approve { background: rgba(0,200,83,0.15); color: var(--green); }
+.approval-btn.reject { background: rgba(229,9,20,0.15); color: var(--accent); }
+.approval-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.approval-tab { flex: 1; padding: 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; transition: all 0.15s; }
+.approval-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+.approval-count { display: inline-flex; min-width: 18px; height: 18px; padding: 0 5px; background: var(--accent); border-radius: 9px; font-size: 10px; font-weight: 700; color: white; align-items: center; justify-content: center; margin-left: 4px; }

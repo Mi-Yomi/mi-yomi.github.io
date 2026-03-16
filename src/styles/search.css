@@ -1,0 +1,52 @@
+/* Search Loading */
+.search-loading { display: flex; align-items: center; justify-content: center; padding: 40px; gap: 8px; color: var(--text-muted); font-size: 13px; }
+.search-loading-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+
+/* Search */
+.search-view { background: var(--bg); }
+.search-header {
+    padding: calc(var(--safe-top) + 14px) 16px 14px;
+    display: flex; gap: 12px; background: var(--surface);
+}
+.search-input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 18px; color: white; font-size: 15px; font-family: inherit; outline: none;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--text-muted); }
+.search-cancel { background: none; border: none; color: var(--accent); font-size: 14px; font-weight: 700; cursor: pointer; padding: 0 8px; }
+
+.search-results { padding: 16px; }
+.search-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.search-grid .card { width: 100%; }
+.search-empty { text-align: center; color: var(--text-muted); padding: 60px 20px; }
+
+/* Advanced Search Filters */
+.search-filters-toggle { display: flex; align-items: center; gap: 6px; padding: 8px 14px; margin: 8px 16px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text-secondary); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.search-filters-toggle.active { background: rgba(229,9,20,0.1); border-color: var(--accent); color: var(--accent); }
+.search-filters-panel { padding: 12px 16px; display: flex; flex-direction: column; gap: 14px; animation: fadeUp 0.3s; }
+.filter-row { display: flex; flex-direction: column; gap: 6px; }
+.filter-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-chip { padding: 6px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.filter-chip.active { background: var(--accent); border-color: var(--accent); color: white; }
+.filter-chip:active { transform: scale(0.95); }
+.filter-year-row { display: flex; align-items: center; gap: 10px; }
+.filter-year-input { width: 80px; padding: 8px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-size: 13px; font-family: inherit; text-align: center; }
+.filter-apply { padding: 12px; border-radius: 10px; background: var(--accent); color: white; font-weight: 800; font-size: 13px; border: none; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.filter-apply:active { transform: scale(0.97); }
+.filter-rating-row { display: flex; gap: 4px; align-items: center; }
+.filter-rating-btn { width: 32px; height: 32px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); font-weight: 800; font-size: 11px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.filter-rating-btn.active { background: var(--gold); border-color: var(--gold); color: black; }
+.filter-sort-row { display: flex; gap: 6px; }
+.filter-sort-btn { flex: 1; padding: 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; transition: all 0.2s; }
+.filter-sort-btn.active { background: var(--blue); border-color: var(--blue); color: white; }
+
+/* Search History */
+.search-history { padding: 16px; }
+.search-history-title { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.search-history-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; cursor: pointer; border-bottom: 1px solid var(--border); }
+.search-history-item:active { opacity: 0.7; }
+.search-history-icon { color: var(--text-muted); font-size: 14px; }
+.search-history-text { font-size: 14px; font-weight: 600; flex: 1; }
+.search-history-clear { font-size: 12px; color: var(--accent); font-weight: 700; cursor: pointer; background: none; border: none; font-family: inherit; }

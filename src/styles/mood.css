@@ -1,0 +1,32 @@
+/* Mood Quiz */
+.mood-widget {
+    margin: 0 16px 24px; padding: 20px; border-radius: 20px; cursor: pointer;
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, rgba(229,9,20,0.1), rgba(156,39,176,0.1), rgba(33,150,243,0.08));
+    background-size: 200% 200%;
+    animation: moodGradientShift 6s ease-in-out infinite;
+    border: 1px solid rgba(229,9,20,0.15);
+    transition: transform var(--transition-fast) var(--ease-spring);
+}
+.mood-widget:active { transform: scale(0.98); }
+@keyframes moodGradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+.mood-widget-title { font-size: 16px; font-weight: 900; margin-bottom: 4px; }
+.mood-widget-sub { font-size: 12px; color: var(--text-secondary); }
+.mood-overlay { position: fixed; inset: 0; z-index: 300; background: var(--bg); overflow-y: auto; animation: fadeUp 0.35s; }
+.mood-header { padding: calc(var(--safe-top) + 16px) 16px 16px; display: flex; align-items: center; gap: 12px; }
+.mood-close { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; font-size: 16px; }
+.mood-step-title { font-size: 22px; font-weight: 900; padding: 0 16px; margin-bottom: 8px; }
+.mood-step-sub { font-size: 13px; color: var(--text-secondary); padding: 0 16px; margin-bottom: 24px; }
+.mood-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px; }
+.mood-card { padding: 24px 16px; border-radius: 18px; background: var(--surface); border: 2px solid var(--border); text-align: center; cursor: pointer; transition: all 0.2s; }
+.mood-card:active { transform: scale(0.95); }
+.mood-card.selected { border-color: var(--accent); background: rgba(229,9,20,0.1); }
+.mood-card-emoji { font-size: 36px; margin-bottom: 8px; }
+.mood-card-label { font-size: 14px; font-weight: 800; }
+.mood-results { padding: 24px 16px; }
+.mood-results-title { font-size: 18px; font-weight: 900; margin-bottom: 16px; text-align: center; }
+.mood-results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.mood-back { display: flex; align-items: center; gap: 8px; padding: 14px 20px; margin: 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }

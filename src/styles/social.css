@@ -1,0 +1,122 @@
+/* Activity Feed */
+.activity-feed { padding: 0 16px; margin-bottom: 24px; }
+.activity-title { font-size: 14px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.activity-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.activity-scroll::-webkit-scrollbar { display: none; }
+.activity-card {
+    flex-shrink: 0; width: 200px; display: flex; gap: 10px; align-items: center;
+    padding: 10px 12px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s;
+}
+.activity-card:active { transform: scale(0.97); background: var(--surface-2); }
+.activity-avatar {
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; color: white;
+}
+.activity-avatar img { width: 100%; height: 100%; border-radius: 10px; object-fit: cover; }
+.activity-info { flex: 1; min-width: 0; }
+.activity-user { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-what { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-poster { width: 28px; height: 42px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+.activity-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: livePulse 1.5s ease-in-out infinite; }
+
+/* Watchlist Tab Badge */
+.watchlist-badge { 
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 16px; height: 16px; border-radius: 8px;
+    background: var(--gold); color: black; font-size: 9px; font-weight: 800;
+    margin-left: 4px; padding: 0 4px;
+}
+
+/* Friends Section */
+.friends-search { display: flex; gap: 12px; margin-bottom: 20px; }
+.friends-search input { flex: 1; }
+.friends-search button { flex-shrink: 0; padding: 14px 24px; border-radius: 14px; background: var(--accent); color: white; font-weight: 700; border: none; cursor: pointer; }
+
+.friend-card {
+    background: var(--surface); border-radius: 18px; padding: 16px;
+    margin-bottom: 12px; border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: all 0.2s;
+}
+.friend-card:active { background: var(--surface-2); }
+.friend-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 800; color: white; flex-shrink: 0;
+}
+.friend-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.friend-info { flex: 1; min-width: 0; }
+.friend-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.friend-meta { font-size: 11px; color: var(--text-muted); }
+.friend-actions { display: flex; gap: 8px; }
+.friend-btn {
+    padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 700;
+    border: none; cursor: pointer; transition: all 0.2s;
+}
+.friend-btn.accept { background: var(--green); color: white; }
+.friend-btn.decline { background: var(--surface-2); color: var(--text-muted); }
+.friend-btn:active { transform: scale(0.95); }
+
+.request-badge {
+    background: var(--accent); color: white; font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 12px; margin-left: 8px;
+}
+
+/* Friend Error Banner */
+.friend-error {
+    background: rgba(229,9,20,0.08); border: 1px solid rgba(229,9,20,0.2);
+    border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;
+    font-size: 12px; color: #ff6b6b; line-height: 1.5;
+}
+
+/* Collections */
+.collection-create-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; margin-bottom: 14px; border-radius: 14px; background: var(--surface); border: 2px dashed var(--border); color: var(--text-secondary); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.collection-create-btn:active { transform: scale(0.98); border-color: var(--accent); }
+.collection-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.collection-card:active { transform: scale(0.98); }
+.collection-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.collection-card-title { font-size: 15px; font-weight: 800; }
+.collection-card-count { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.collection-card-posters { display: flex; gap: 6px; overflow: hidden; }
+.collection-card-poster { width: 50px; height: 75px; border-radius: 8px; object-fit: cover; }
+.collection-card-poster-ph { width: 50px; height: 75px; border-radius: 8px; background: var(--surface-2); }
+.collection-modal { position: fixed; inset: 0; z-index: 310; background: var(--bg); overflow-y: auto; animation: fadeUp 0.3s; }
+.collection-modal-header { padding: calc(var(--safe-top) + 16px) 16px 16px; display: flex; align-items: center; gap: 12px; }
+.collection-add-menu { position: fixed; bottom: 0; left: 0; right: 0; z-index: 320; background: var(--surface); border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 20px 16px calc(var(--safe-bottom) + 20px); animation: slideUp 0.3s; border: 1px solid var(--border); }
+.collection-add-item { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; cursor: pointer; transition: all 0.15s; }
+.collection-add-item:active { background: var(--surface-2); }
+.collection-add-item-icon { font-size: 20px; }
+.collection-add-item-name { font-size: 14px; font-weight: 700; flex: 1; }
+.collection-add-item-check { color: var(--green); font-size: 18px; }
+
+/* Notifications */
+.notif-bell { position: relative; }
+.notif-dot { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; background: var(--accent); border-radius: 50%; border: 2px solid var(--bg); }
+.notif-panel { position: fixed; inset: 0; z-index: 250; background: var(--bg); overflow-y: auto; animation: fadeUp 0.3s; }
+.notif-header { padding: calc(var(--safe-top) + 16px) 16px 16px; display: flex; justify-content: space-between; align-items: center; }
+.notif-header-title { font-size: 20px; font-weight: 900; }
+.notif-mark-all { font-size: 12px; color: var(--accent); font-weight: 700; cursor: pointer; background: none; border: none; font-family: inherit; }
+.notif-list { padding: 0 16px; }
+.notif-item { display: flex; gap: 12px; padding: 14px; border-radius: 14px; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+.notif-item.unread { background: rgba(229,9,20,0.06); border-color: rgba(229,9,20,0.15); }
+.notif-item:active { transform: scale(0.98); }
+.notif-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.notif-body { flex: 1; min-width: 0; }
+.notif-text { font-size: 13px; font-weight: 600; line-height: 1.4; }
+.notif-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.notif-empty { text-align: center; padding: 60px 20px; }
+.notif-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.3; }
+.notif-empty-text { font-weight: 700; margin-bottom: 4px; }
+.notif-empty-hint { font-size: 13px; color: var(--text-muted); }
+
+/* Reaction Buttons */
+.reaction-row { display: flex; gap: 8px; padding: 0 16px 12px; }
+.reaction-btn { display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.reaction-btn:active { transform: scale(0.95); }
+.reaction-btn.liked { background: rgba(0,200,83,0.12); border-color: rgba(0,200,83,0.2); color: var(--green); }
+.reaction-btn.disliked { background: rgba(229,9,20,0.12); border-color: rgba(229,9,20,0.2); color: var(--accent); }

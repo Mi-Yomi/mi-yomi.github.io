@@ -1,0 +1,18 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+#root { min-height: 100dvh; display: flex; flex-direction: column; }
+::-webkit-scrollbar { width: 0; height: 0; }
+
+.loader { display: flex; align-items: center; justify-content: center; height: 100dvh; flex-direction: column; gap: 16px; }
+.loader-spin { width: 48px; height: 48px; border: 3px solid var(--surface); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
