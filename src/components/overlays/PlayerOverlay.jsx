@@ -36,23 +36,21 @@ export default function PlayerOverlay() {
                 <button className="player-back" onClick={closePlayer}>{I.back}</button>
                 <div className="player-info">
                     <div className="player-title">{media?.title || media?.name}</div>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginTop:2}}>
+                    <div className="player-header-meta">
                         <span className="player-source-badge">{isRuSource(playerSource) ? `🇷🇺 ${playerSource}` : playerSource}</span>
                         {media?.media_type === 'tv' && !isRuSource(playerSource) && <span className="player-source-name">S{currentSeason}:E{currentEpisode}</span>}
-                        {media?.media_type === 'tv' && isRuSource(playerSource) && <span className="player-source-name" style={{opacity:0.5,fontSize:10}}>серии внутри плеера</span>}
+                        {media?.media_type === 'tv' && isRuSource(playerSource) && <span className="player-source-name player-source-hint">серии внутри плеера</span>}
                     </div>
                 </div>
-                {/* Quick next/prev buttons for TV — only for fallback sources */}
                 {media?.media_type === 'tv' && !isRuSource(playerSource) && (
-                    <div style={{display:'flex',gap:4,marginLeft:'auto'}}>
-                        <button style={{width:36,height:36,borderRadius:10,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.08)',color:'white',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit',backdropFilter:'blur(8px)'}} 
-                            onClick={() => { 
-                                const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
+                    <div className="player-ep-nav">
+                        <button className="player-ep-btn"
+                            onClick={() => {
                                 if (currentEpisode > 1) { const ne = currentEpisode - 1; setCurrentEpisode(ne); updatePlayerEpisode(currentSeason, ne); }
                                 tg?.HapticFeedback?.impactOccurred?.('light');
                             }}>⏮</button>
-                        <button style={{width:36,height:36,borderRadius:10,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.08)',color:'white',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit',backdropFilter:'blur(8px)'}} 
-                            onClick={() => { 
+                        <button className="player-ep-btn"
+                            onClick={() => {
                                 const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
                                 if (currentEpisode < maxEp) { const ne = currentEpisode + 1; setCurrentEpisode(ne); updatePlayerEpisode(currentSeason, ne); }
                                 tg?.HapticFeedback?.impactOccurred?.('light');
@@ -101,25 +99,25 @@ export default function PlayerOverlay() {
             })()}
             {media?.media_type === 'tv' && (
                 isRuSource(playerSource) ? (
-                    <div className="episode-picker" style={{textAlign:'center',padding:'20px 16px'}}>
-                        <div style={{fontSize:13,fontWeight:700,color:'var(--text)',marginBottom:6}}>🇷🇺 Встроенный плеер {playerSource}</div>
-                        <div style={{fontSize:12,color:'var(--text-muted)',lineHeight:1.5}}>
+                    <div className="episode-picker episode-picker-ru">
+                        <div className="episode-picker-ru-title">🇷🇺 Встроенный плеер {playerSource}</div>
+                        <div className="episode-picker-ru-hint">
                             Используйте переключатель серий <b>внутри плеера</b>.<br/>
                             Collaps / Alloha / Kodik сами управляют навигацией.
                         </div>
                     </div>
                 ) : (
                     <div className="episode-picker">
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <div className="episode-picker-header">
                             <div className="episode-picker-title">Сезон {currentSeason}</div>
-                            <div className="player-source-badge" style={{fontSize:9}}>{seasonsData.find(s => s.season_number === currentSeason)?.name || `Сезон ${currentSeason}`}</div>
+                            <div className="player-source-badge">{seasonsData.find(s => s.season_number === currentSeason)?.name || `Сезон ${currentSeason}`}</div>
                         </div>
                         <div className="episode-row">{Array.from({ length: media.number_of_seasons || 1 }, (_, i) => i + 1).map(s => (
                             <button key={s} className={`episode-btn ${currentSeason === s ? 'active' : ''}`} onClick={() => { setCurrentSeason(s); setCurrentEpisode(1); updatePlayerEpisode(s, 1); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
                                 {s}
                             </button>
                         ))}</div>
-                        <div className="episode-picker-title" style={{ marginTop: 14 }}>
+                        <div className="episode-picker-title episode-picker-subtitle">
                             Серия {currentEpisode} из {seasonsData.find(s => s.season_number === currentSeason)?.episode_count || '?'}
                         </div>
                         <div className="episode-row">{Array.from({ length: seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24 }, (_, i) => i + 1).map(e => (

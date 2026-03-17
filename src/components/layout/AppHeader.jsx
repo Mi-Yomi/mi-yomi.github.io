@@ -1,14 +1,11 @@
 import { memo, useEffect, useRef } from 'react';
-import { useUIContext } from '../../context/UIContext.jsx';
 import { useContentContext } from '../../context/ContentContext.jsx';
 import { usePlayerContext } from '../../context/PlayerContext.jsx';
 import { I } from '../../lib/icons.jsx';
 
 const AppHeader = memo(function AppHeader() {
-    const { setSearchOpen } = useContentContext();
-    const { detailsOpen } = useContentContext();
+    const { setSearchOpen, detailsOpen, viewingFriend, setNotifOpen, unreadNotifCount } = useContentContext();
     const { playerOpen } = usePlayerContext();
-    const { viewingFriend, setNotifOpen, unreadNotifCount } = useContentContext();
     const headerRef = useRef(null);
     const tg = window.Telegram?.WebApp;
 

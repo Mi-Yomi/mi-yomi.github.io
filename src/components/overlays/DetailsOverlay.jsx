@@ -65,16 +65,16 @@ export default function DetailsOverlay() {
                 <div className="details-body">
                     <h1 className="details-title">{media.title || media.name}</h1>
                     {media.original_title && media.original_title !== (media.title || media.name) && (
-                        <div style={{fontSize:12,color:'var(--text-muted)',marginTop:-4,marginBottom:8,fontWeight:500,fontStyle:'italic'}}>{media.original_title || media.original_name}</div>
+                        <div className="details-original-title">{media.original_title || media.original_name}</div>
                     )}
                     <div className="details-meta">
                         <span className={`rating ${ratingColor(media.vote_average)}`}>{I.star} {media.vote_average?.toFixed(1)}</span>
-                        {media.vote_count > 0 && <span style={{fontSize:10,opacity:0.6}}>{media.vote_count > 999 ? `${(media.vote_count/1000).toFixed(1)}K` : media.vote_count} оценок</span>}
+                        {media.vote_count > 0 && <span className="details-vote-count">{media.vote_count > 999 ? `${(media.vote_count/1000).toFixed(1)}K` : media.vote_count} оценок</span>}
                         <span>{(media.release_date || media.first_air_date || '').split('-')[0]}</span>
                         {media.runtime && <span>{Math.floor(media.runtime/60)}ч {media.runtime%60}м</span>}
                         {media.number_of_seasons && <span>{media.number_of_seasons} {pluralize(media.number_of_seasons, 'сезон', 'сезона', 'сезонов')}</span>}
                         {media.number_of_episodes && <span>{media.number_of_episodes} {pluralize(media.number_of_episodes, 'серия', 'серии', 'серий')}</span>}
-                        {media.status && <span style={{color: media.status === 'Returning Series' ? 'var(--green)' : 'var(--text-muted)'}}>{media.status === 'Returning Series' ? '● В эфире' : media.status === 'Ended' ? 'Завершён' : media.status}</span>}
+                        {media.status && <span className={media.status === 'Returning Series' ? 'details-status-on-air' : ''}>{media.status === 'Returning Series' ? '● В эфире' : media.status === 'Ended' ? 'Завершён' : media.status}</span>}
                     </div>
                     
                     {/* Genre Tags */}
@@ -112,16 +112,16 @@ export default function DetailsOverlay() {
                         };
                         
                         return (
-                            <button className="play-main-btn" style={{ background: 'linear-gradient(135deg, var(--green), var(--cyan))' }} onClick={() => { 
-                                setCurrentSeason(s); 
+                            <button className="play-main-btn continue" onClick={() => {
+                                setCurrentSeason(s);
                                 setCurrentEpisode(ep);
                                 const { url, name } = getContinueUrl();
                                 if (url) playSource(url, name, s, ep);
                                 else alert('Источник пока загружается, подождите пару секунд и нажмите снова');
                             }}>
                                 ▶️ Продолжить {histEntry?.last_season ? `S${s}:E${ep}` : 'просмотр'}
-                                {savedTimeStr && <span style={{opacity:0.9,fontSize:11,marginLeft:6,background:'rgba(0,0,0,0.3)',padding:'2px 8px',borderRadius:6}}>⏱ {savedTimeStr}</span>}
-                                {!savedTimeStr && lastSrc && <span style={{opacity:0.7,fontSize:11,marginLeft:6}}>• {lastSrc}</span>}
+                                {savedTimeStr && <span className="continue-time-badge">⏱ {savedTimeStr}</span>}
+                                {!savedTimeStr && lastSrc && <span className="continue-source-hint">• {lastSrc}</span>}
                             </button>
                         );
                     })()}
@@ -139,17 +139,17 @@ export default function DetailsOverlay() {
                         </>
                     )}
                     
-                    <div style={{display:'flex',gap:8}}>
-                        <button className="play-main-btn secondary" style={{flex:1}} onClick={() => setReviewOpen(true)}>📝 Отзыв {movieComments.length > 0 && `(${movieComments.length})`}</button>
-                        <button className="play-main-btn secondary" style={{flex:1}} onClick={() => setStatusPickerItem({ id: media.id, title: media.title || media.name, name: media.name, poster_path: media.poster_path, media_type: media.media_type, vote_average: media.vote_average, backdrop_path: media.backdrop_path, release_date: media.release_date || media.first_air_date })}>
+                    <div className="details-action-row">
+                        <button className="play-main-btn secondary" onClick={() => setReviewOpen(true)}>📝 Отзыв {movieComments.length > 0 && `(${movieComments.length})`}</button>
+                        <button className="play-main-btn secondary" onClick={() => setStatusPickerItem({ id: media.id, title: media.title || media.name, name: media.name, poster_path: media.poster_path, media_type: media.media_type, vote_average: media.vote_average, backdrop_path: media.backdrop_path, release_date: media.release_date || media.first_air_date })}>
                             {(() => { const st = getItemStatus(media.id); return st ? { watching: '▶️ Смотрю', planned: '🔖 Буду', completed: '✅ Просм.', on_hold: '⏸️ Отложено', dropped: '🚫 Брошено' }[st] : '📋 Статус'; })()}
                         </button>
                     </div>
-                    <div style={{display:'flex',gap:8}}>
-                        <button className="play-main-btn secondary" style={{flex:1,background: watchlist.some(w => w.item_id === String(media.id)) ? 'rgba(255,215,0,0.15)' : undefined, color: watchlist.some(w => w.item_id === String(media.id)) ? 'var(--gold)' : undefined}} onClick={() => toggleWatchlist(media, media.media_type)}>
+                    <div className="details-action-row">
+                        <button className={`play-main-btn secondary ${watchlist.some(w => w.item_id === String(media.id)) ? 'watchlist-active' : ''}`} onClick={() => toggleWatchlist(media, media.media_type)}>
                             🔖 {watchlist.some(w => w.item_id === String(media.id)) ? 'В списке' : 'Буду смотреть'}
                         </button>
-                        <button className="play-main-btn secondary" style={{flex:1,fontSize:13}} onClick={() => setAddToCollectionItem({ id: media.id, title: media.title || media.name, poster_path: media.poster_path, media_type: media.media_type, vote_average: media.vote_average })}>
+                        <button className="play-main-btn secondary font-sm" onClick={() => setAddToCollectionItem({ id: media.id, title: media.title || media.name, poster_path: media.poster_path, media_type: media.media_type, vote_average: media.vote_average })}>
                             📁 В коллекцию
                         </button>
                     </div>
@@ -157,7 +157,7 @@ export default function DetailsOverlay() {
                     <div className="fallback-section">
                         <div className="fallback-title">🌍 Другие плееры (англ. озвучка)</div>
                         <div className="fallback-grid">{FALLBACK_SOURCES.map(src => <div key={src.id} className="fallback-btn" onClick={() => playSource(src.getUrl(media.id, media.media_type, currentSeason, currentEpisode), src.name)}><div className="fallback-btn-icon">{src.icon}</div><div className="fallback-btn-name">{src.name}</div></div>)}</div>
-                        <div style={{fontSize:10,color:'var(--text-muted)',marginTop:8,opacity:0.6}}>
+                        <div className="fallback-hint">
                             💡 Для русской озвучки используйте Collaps / Alloha / Kodik выше
                         </div>
                     </div>
@@ -179,9 +179,9 @@ export default function DetailsOverlay() {
                             <div className="detail-cast-scroll">
                                 {(media.credits?.cast || []).slice(0, 12).map(c => (
                                     <div key={c.id} className="detail-cast-card">
-                                        {c.profile_path 
+                                        {c.profile_path
                                             ? <img className="detail-cast-img" src={`${IMG}${c.profile_path}`} alt={c.name} loading="lazy" />
-                                            : <div className="detail-cast-img" style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{c.name?.[0]}</div>
+                                            : <div className="detail-cast-placeholder">{c.name?.[0]}</div>
                                         }
                                         <div className="detail-cast-name">{c.name}</div>
                                         <div className="detail-cast-role">{c.character}</div>
@@ -213,7 +213,7 @@ export default function DetailsOverlay() {
                                     <div className="comment-header">
                                         <div className="comment-avatar">{c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} /> : c.profiles?.username?.[0]?.toUpperCase() || '?'}</div>
                                         <div>
-                                            <div className="comment-author">{c.profiles?.username || 'Аноним'} <span style={{opacity:0.35,fontWeight:500,fontSize:11}}>#{c.profiles?.tag}</span></div>
+                                            <div className="comment-author">{c.profiles?.username || 'Аноним'} <span className="comment-tag">#{c.profiles?.tag}</span></div>
                                             <div className="comment-date">{c.created_at ? new Date(c.created_at).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'}) : ''}</div>
                                         </div>
                                         <div className={`comment-rating-badge ${rCls}`}>{I.star} {c.rating}</div>

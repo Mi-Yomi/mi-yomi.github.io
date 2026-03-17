@@ -14,3 +14,11 @@ export const BACKDROP = window.innerWidth <= 768
 
 export const ADMIN_USERNAME = 'Vian_u';
 export const ADMIN_TAG = '1787';
+/** Admin by email (optional): set VITE_ADMIN_EMAIL in .env */
+export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || null;
+
+/**
+ * Whitelist mode: 'on' = require admin approval, 'off' = everyone auto-approved.
+ * Set VITE_WHITELIST=off in .env to disable whitelist completely.
+ */
+export const WHITELIST_ENABLED = (import.meta.env.VITE_WHITELIST || 'on') !== 'off';

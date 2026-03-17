@@ -8,7 +8,9 @@ export default function PendingScreen() {
     handleLogout,
   } = useApp();
 
-  const isPending = userProfile?.status === 'pending';
+  const status = userProfile?.status || 'pending';
+  const isPending = status === 'pending' || !status;
+  const isRejected = status === 'rejected';
 
   return (
     <div className="pending-screen fade-in">
@@ -19,11 +21,14 @@ export default function PendingScreen() {
       </div>
       <p className="pending-text">
         {isPending
-          ? 'Ваша заявка отправлена администратору. После подтверждения вы получите полный доступ к Cinema HADES. Обычно это занимает до 24 часов.'
-          : 'К сожалению, ваша заявка была отклонена администратором. Если вы считаете это ошибкой, свяжитесь с администрацией.'}
+          ? 'Ваша заявка отправлена администратору. После подтверждения вы получите полный доступ к Cinema HADES.'
+          : 'К сожалению, ваша заявка была отклонена. Если вы считаете это ошибкой, свяжитесь с администрацией.'}
       </p>
+      {userProfile?.email && (
+        <div className="pending-email">{userProfile.email}</div>
+      )}
       <button className="pending-refresh" onClick={refreshApprovalStatus} disabled={refreshingStatus}>
-        {refreshingStatus ? 'Проверяю...' : '🔄 Обновить статус заявки'}
+        {refreshingStatus ? 'Проверяю...' : '🔄 Обновить статус'}
       </button>
       <button className="pending-logout" onClick={handleLogout}>
         Выйти из аккаунта

@@ -4,6 +4,8 @@ export default function AdminPanel() {
   const {
     adminOpen,
     isAdmin,
+    user,
+    userProfile,
     I,
     setAdminOpen,
     setAdminEditingId,
@@ -149,9 +151,9 @@ export default function AdminPanel() {
             
             {/* === User Approval Management === */}
             <div className="admin-section">
-                <div className="admin-section-title" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <div className="admin-section-title admin-section-title-row">
                     <span>👥 Заявки пользователей</span>
-                    <button className="admin-btn secondary" style={{padding:'6px 12px',fontSize:11}} onClick={loadPendingUsers}>
+                    <button className="admin-btn secondary admin-btn-sm" onClick={loadPendingUsers}>
                         {approvalLoading ? '⏳' : '🔄'} Обновить
                     </button>
                 </div>

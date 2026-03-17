@@ -81,3 +81,28 @@
 .player-error-btn { padding: 12px 24px; border-radius: 10px; background: var(--accent); color: white; font-size: 13px; font-weight: 800; border: none; cursor: pointer; font-family: inherit; }
 .player-next-ep { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 16px; margin: 0 16px 8px; background: linear-gradient(135deg, var(--green), var(--cyan)); border-radius: 12px; border: none; color: white; font-size: 13px; font-weight: 800; cursor: pointer; font-family: inherit; transition: all 0.2s; }
 .player-next-ep:active { transform: scale(0.97); }
+
+/* Player Header Meta */
+.player-header-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.player-source-hint { opacity: 0.5; font-size: 10px; }
+
+/* Player Episode Nav Buttons */
+.player-ep-nav { display: flex; gap: 4px; margin-left: auto; }
+.player-ep-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08);
+    color: white; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: inherit; backdrop-filter: blur(8px);
+    transition: background 0.2s;
+}
+.player-ep-btn:active { background: rgba(255,255,255,0.15); transform: scale(0.93); }
+
+/* RU Source Episode Info */
+.episode-picker-ru { text-align: center; padding: 20px 16px; }
+.episode-picker-ru-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.episode-picker-ru-hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+/* Episode Picker Header */
+.episode-picker-header { display: flex; justify-content: space-between; align-items: center; }
+.episode-picker-subtitle { margin-top: 14px; }

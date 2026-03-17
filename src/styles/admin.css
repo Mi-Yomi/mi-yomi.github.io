@@ -79,3 +79,7 @@
 .approval-tab { flex: 1; padding: 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; transition: all 0.15s; }
 .approval-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
 .approval-count { display: inline-flex; min-width: 18px; height: 18px; padding: 0 5px; background: var(--accent); border-radius: 9px; font-size: 10px; font-weight: 700; color: white; align-items: center; justify-content: center; margin-left: 4px; }
+
+/* Admin section title row */
+.admin-section-title-row { display: flex; align-items: center; justify-content: space-between; }
+.admin-btn-sm { padding: 6px 12px; font-size: 11px; }

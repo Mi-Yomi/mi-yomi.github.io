@@ -93,7 +93,7 @@ export default function useAppController() {
                     const res = await fetch(`https://api.themoviedb.org/3/${type}/${r.movie_id}?api_key=${TMDB_KEY}`);
                     const d = await res.json();
                     if (d.poster_path) newPosters[r.movie_id] = d.poster_path;
-                } catch {}
+                } catch (e) { console.warn('Failed to fetch poster:', e.message); }
             }));
             content.setReviewPosters(newPosters);
         };
@@ -142,6 +142,20 @@ export default function useAppController() {
         animeRef.current({ targets: '.hero-slide.active .hero-content', opacity: [0, 1], translateX: [-30, 0], easing: 'easeOutExpo', duration: 700 });
     }, [ui.heroIndex]);
 
+    // ESC key closes topmost overlay (best practice: keyboard accessibility)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key !== 'Escape') return;
+            if (player.playerOpen) { player.closePlayer(); return; }
+            if (search.searchOpen) { search.setSearchOpen(false); return; }
+            if (ui.moodOpen) { ui.setMoodOpen(false); return; }
+            if (social.notifOpen) { social.setNotifOpen(false); return; }
+            if (details.detailsOpen) { details.closeDetails(); return; }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [player.playerOpen, search.searchOpen, ui.moodOpen, social.notifOpen, details.detailsOpen]);
+
     // Swipe-to-go-back for details
     useEffect(() => {
         let touchStartX = 0;
@@ -167,7 +181,7 @@ export default function useAppController() {
                         const pending = JSON.parse(localStorage.getItem('hades_pending_sync') || '[]');
                         pending.push({ item_id: String(details.media.id), media_type: details.media.media_type || 'movie', title: details.media.title || details.media.name, poster_path: details.media.poster_path || null, backdrop_path: details.media.backdrop_path || null, watched_at: new Date().toISOString() });
                         localStorage.setItem('hades_pending_sync', JSON.stringify(pending));
-                    } catch {}
+                    } catch (e) { console.warn('Failed to save pending sync:', e.message); }
                 }
             }
         };
@@ -185,11 +199,11 @@ export default function useAppController() {
                     try {
                         await supabase.from('history').delete().eq('user_id', auth.user.id).eq('item_id', p.item_id);
                         await supabase.from('history').insert({ user_id: auth.user.id, ...p });
-                    } catch {}
+                    } catch (e) { console.warn('Failed to sync history item:', e.message); }
                 });
                 localStorage.removeItem('hades_pending_sync');
             }
-        } catch {}
+        } catch (e) { console.warn('Failed to process pending sync:', e.message); }
     }, [auth.user]);
 
     // Random movie

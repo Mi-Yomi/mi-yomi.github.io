@@ -1,12 +1,17 @@
 import { useApp } from '../../context/AppContext.jsx';
 
 export default function SettingsSection() {
-    const { userProfile, user, setNameEditOpen, history, supabase, setHistory, tg, pluralize, toggleAutoSkip, autoSkip, isAdmin, setAdminOpen, loadPendingUsers, handleLogout } = useApp();
+    const { userProfile, user, setNameEditOpen, history, supabase, setHistory, tg, pluralize, toggleAutoSkip, autoSkip, isAdmin, setAdminOpen, loadPendingUsers, handleLogout, loadUserProfile } = useApp();
 
     return (
         <div className="settings-section">
             <div className="settings-group">
                 <div className="settings-group-title">Аккаунт</div>
+                <div className="settings-item" onClick={() => loadUserProfile(user.id, user.email)}>
+                    <span className="settings-item-icon">🔄</span>
+                    <div className="settings-item-text"><div className="settings-item-title">Обновить профиль</div><div className="settings-item-desc">Перезагрузить данные из базы</div></div>
+                    <span className="settings-item-arrow">›</span>
+                </div>
                 <div className="settings-item" onClick={() => setNameEditOpen(true)}>
                     <span className="settings-item-icon">✏️</span>
                     <div className="settings-item-text"><div className="settings-item-title">Сменить имя</div><div className="settings-item-desc">{userProfile?.username}#{userProfile?.tag}</div></div>

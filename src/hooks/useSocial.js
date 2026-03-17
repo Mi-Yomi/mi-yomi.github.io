@@ -106,7 +106,7 @@ export default function useSocial(user, showToast) {
         try {
             const { data } = await supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50);
             if (data) setNotifications(data);
-        } catch {}
+        } catch (e) { console.warn('Failed to load notifications:', e.message); }
     }, [user]);
 
     const markAllNotificationsRead = useCallback(async () => {
@@ -114,7 +114,7 @@ export default function useSocial(user, showToast) {
         try {
             await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false);
             setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-        } catch {}
+        } catch (e) { console.warn('Failed to mark notifications read:', e.message); }
     }, [user]);
 
     // Collections
@@ -123,7 +123,7 @@ export default function useSocial(user, showToast) {
         try {
             const { data } = await supabase.from('user_collections').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
             if (data) setCollections(data);
-        } catch {}
+        } catch (e) { console.warn('Failed to load collections:', e.message); }
     }, [user]);
 
     const saveCollection = useCallback(async (title, items, id = null) => {
@@ -136,13 +136,13 @@ export default function useSocial(user, showToast) {
             }
             loadCollections();
             showToast('📁 Коллекция сохранена');
-        } catch { showToast('Ошибка сохранения'); }
+        } catch (_e) { showToast('Ошибка сохранения'); }
     }, [user, loadCollections, showToast]);
 
     const deleteCollection = useCallback(async (id) => {
         if (!confirm('Удалить коллекцию?')) return;
-        try { await supabase.from('user_collections').delete().eq('id', id); loadCollections(); } catch {}
-    }, [loadCollections]);
+        try { await supabase.from('user_collections').delete().eq('id', id); loadCollections(); } catch (e) { showToast('Ошибка удаления коллекции'); }
+    }, [loadCollections, showToast]);
 
     const addItemToCollection = useCallback(async (collectionId, item) => {
         const col = collections.find(c => c.id === collectionId);
@@ -155,7 +155,7 @@ export default function useSocial(user, showToast) {
             loadCollections();
             showToast('Добавлено в коллекцию');
             tg?.HapticFeedback?.notificationOccurred?.('success');
-        } catch {}
+        } catch (e) { showToast('Ошибка добавления в коллекцию'); }
         setAddToCollectionItem(null);
     }, [collections, loadCollections, showToast, tg]);
 
@@ -169,7 +169,7 @@ export default function useSocial(user, showToast) {
                 data.forEach(r => { map[r.review_id] = r.type; });
                 setMyReactions(map);
             }
-        } catch {}
+        } catch (e) { console.warn('Failed to load reactions:', e.message); }
     }, [user]);
 
     const toggleReaction = useCallback(async (reviewId, type) => {
@@ -184,7 +184,7 @@ export default function useSocial(user, showToast) {
                 setMyReactions(prev => ({ ...prev, [reviewId]: type }));
             }
             tg?.HapticFeedback?.impactOccurred?.('light');
-        } catch {}
+        } catch (e) { console.warn('Failed to toggle reaction:', e.message); }
     }, [user, myReactions, tg]);
 
     // Supabase Realtime for notifications

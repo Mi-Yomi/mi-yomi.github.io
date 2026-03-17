@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { ADMIN_USERNAME, ADMIN_TAG } from '../lib/config';
+import { ADMIN_USERNAME, ADMIN_TAG, ADMIN_EMAIL } from '../lib/config';
 
 const AuthContext = createContext(null);
 
@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
     const [userProfile, setUserProfile] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const isAdmin = userProfile?.is_admin === true || (userProfile?.username === ADMIN_USERNAME && userProfile?.tag === ADMIN_TAG);
+    const isAdmin = userProfile?.is_admin === true || (userProfile?.username === ADMIN_USERNAME && userProfile?.tag === ADMIN_TAG) || (ADMIN_EMAIL && user?.email === ADMIN_EMAIL);
     const userApproved = useMemo(() => {
         if (!userProfile) return false;
         if (isAdmin) return true;

@@ -12,3 +12,5 @@ export const BACKDROP = 'https://image.tmdb.org/t/p/w780';
 
 export const ADMIN_USERNAME = 'Vian_u';
 export const ADMIN_TAG = '1787';
+/** Admin by email (optional): set EXPO_PUBLIC_ADMIN_EMAIL in .env to bypass approval */
+export const ADMIN_EMAIL = process.env.EXPO_PUBLIC_ADMIN_EMAIL || null;
