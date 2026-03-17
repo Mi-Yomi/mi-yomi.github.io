@@ -63,18 +63,40 @@ export default function DetailsOverlay() {
                     <button className={`details-fav ${favorites.some(f => f.item_id === String(media.id)) ? 'active' : ''}`} onClick={() => toggleFavorite(media, media.media_type)}>{favorites.some(f => f.item_id === String(media.id)) ? I.heartFilled : I.heart}</button>
                 </div>
                 <div className="details-body">
-                    <h1 className="details-title">{media.title || media.name}</h1>
-                    {media.original_title && media.original_title !== (media.title || media.name) && (
-                        <div className="details-original-title">{media.original_title || media.original_name}</div>
-                    )}
-                    <div className="details-meta">
-                        <span className={`rating ${ratingColor(media.vote_average)}`}>{I.star} {media.vote_average?.toFixed(1)}</span>
-                        {media.vote_count > 0 && <span className="details-vote-count">{media.vote_count > 999 ? `${(media.vote_count/1000).toFixed(1)}K` : media.vote_count} оценок</span>}
-                        <span>{(media.release_date || media.first_air_date || '').split('-')[0]}</span>
-                        {media.runtime && <span>{Math.floor(media.runtime/60)}ч {media.runtime%60}м</span>}
-                        {media.number_of_seasons && <span>{media.number_of_seasons} {pluralize(media.number_of_seasons, 'сезон', 'сезона', 'сезонов')}</span>}
-                        {media.number_of_episodes && <span>{media.number_of_episodes} {pluralize(media.number_of_episodes, 'серия', 'серии', 'серий')}</span>}
-                        {media.status && <span className={media.status === 'Returning Series' ? 'details-status-on-air' : ''}>{media.status === 'Returning Series' ? '● В эфире' : media.status === 'Ended' ? 'Завершён' : media.status}</span>}
+                    <div className="details-top-row">
+                        <div className="details-top-info">
+                            <h1 className="details-title">{media.title || media.name}</h1>
+                            {media.original_title && media.original_title !== (media.title || media.name) && (
+                                <div className="details-original-title">{media.original_title || media.original_name}</div>
+                            )}
+                        </div>
+                        {media.vote_average > 0 && (() => {
+                            const pct = media.vote_average / 10;
+                            const r = 22, c = 2 * Math.PI * r;
+                            return (
+                                <div className="details-score-ring">
+                                    <svg width="52" height="52" viewBox="0 0 52 52">
+                                        <circle className="details-score-ring-bg" cx="26" cy="26" r={r} />
+                                        <circle className="details-score-ring-fill" cx="26" cy="26" r={r}
+                                            stroke={media.vote_average >= 7 ? 'var(--green)' : media.vote_average >= 5 ? 'var(--gold)' : 'var(--accent)'}
+                                            strokeDasharray={c} strokeDashoffset={c * (1 - pct)} />
+                                    </svg>
+                                    <div className={`details-score-value ${ratingColor(media.vote_average)}`}>{media.vote_average.toFixed(1)}</div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+
+                    {/* Info Chips */}
+                    <div className="details-info-chips">
+                        {(media.release_date || media.first_air_date) && <div className="details-info-chip">{I.calendar} {(media.release_date || media.first_air_date || '').split('-')[0]}</div>}
+                        {media.runtime > 0 && <div className="details-info-chip">{I.clock} {Math.floor(media.runtime/60)}ч {media.runtime%60}м</div>}
+                        {media.number_of_seasons > 0 && <div className="details-info-chip">{I.tv} {media.number_of_seasons} {pluralize(media.number_of_seasons, 'сезон', 'сезона', 'сезонов')}</div>}
+                        {media.number_of_episodes > 0 && <div className="details-info-chip">{I.film} {media.number_of_episodes} {pluralize(media.number_of_episodes, 'серия', 'серии', 'серий')}</div>}
+                        {media.vote_count > 0 && <div className="details-info-chip">{I.users} {media.vote_count > 999 ? `${(media.vote_count/1000).toFixed(1)}K` : media.vote_count} оценок</div>}
+                        {media.status === 'Returning Series' && <div className="details-info-chip highlight">{I.zap} В эфире</div>}
+                        {media.status === 'Ended' && <div className="details-info-chip">{I.checkCircle} Завершён</div>}
+                        {media.spoken_languages?.length > 0 && <div className="details-info-chip">{I.globe} {media.spoken_languages.map(l => l.iso_639_1?.toUpperCase()).filter(Boolean).slice(0, 3).join(', ')}</div>}
                     </div>
 
                     {/* Genre Tags */}
@@ -161,9 +183,10 @@ export default function DetailsOverlay() {
                     {media.overview && (() => {
                         const isLong = media.overview.length > 150;
                         return (
-                            <div>
+                            <div className="details-overview-section">
+                                <div className="details-section-label">{I.info} Описание</div>
                                 <p className={`details-overview ${!overviewExpanded && isLong ? 'details-overview-short' : ''}`}>{media.overview}</p>
-                                {isLong && <div className="details-overview-toggle" onClick={() => setOverviewExpanded(!overviewExpanded)}>{overviewExpanded ? 'Свернуть ↑' : 'Читать далее ↓'}</div>}
+                                {isLong && <div className="details-overview-toggle" onClick={() => setOverviewExpanded(!overviewExpanded)}>{overviewExpanded ? 'Свернуть' : 'Читать далее'}</div>}
                             </div>
                         );
                     })()}

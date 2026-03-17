@@ -34,14 +34,21 @@ export default function useAppController() {
 
     const syncWithDB = useCallback(async (userId, email) => {
         auth.setLoading(true);
-        await auth.loadUserProfile(userId, email);
-        await Promise.all([
-            content.loadData(),
-            content.loadFavorites(userId),
-            content.loadHistory(userId),
-            social.loadFriends(userId),
-            lib.loadLibrary(userId),
-        ]);
+        try {
+            await auth.loadUserProfile(userId, email);
+            await Promise.race([
+                Promise.all([
+                    content.loadData(),
+                    content.loadFavorites(userId),
+                    content.loadHistory(userId),
+                    social.loadFriends(userId),
+                    lib.loadLibrary(userId),
+                ]),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 12000)),
+            ]);
+        } catch (e) {
+            console.warn('[HADES] Sync timeout or error:', e.message);
+        }
         auth.setLoading(false);
 
         Promise.all([
@@ -206,6 +213,20 @@ export default function useAppController() {
         } catch (e) { console.warn('Failed to process pending sync:', e.message); }
     }, [auth.user]);
 
+    // Review wrapper — bridges ReviewModal (no-args) with content.addReview (needs params)
+    const addReview = useCallback(async () => {
+        if (!details.media || !details.reviewText.trim()) return;
+        const ok = await content.addReview(
+            details.media, details.reviewText, details.reviewRating,
+            auth.userProfile, details.movieComments, details.setMovieComments
+        );
+        if (ok) {
+            details.setReviewOpen(false);
+            details.setReviewText('');
+            details.setReviewRating(7);
+        }
+    }, [details, content, auth.userProfile]);
+
     // Random movie
     const openRandomMovie = useCallback(() => {
         const pool = [...content.popular, ...content.topRated, ...content.trending].filter(m => m.poster_path);
@@ -261,6 +282,7 @@ export default function useAppController() {
         ...admin,
         ...lib,
         statusPickerItem, setStatusPickerItem,
+        addReview,
         syncWithDB,
         openRandomMovie,
         profileCompletion,

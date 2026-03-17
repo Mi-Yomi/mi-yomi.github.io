@@ -103,12 +103,19 @@
 }
 .library-sub-btn:active { transform: scale(0.96); }
 
-/* Status badge on library cards */
+/* Status badge on library cards — flag/ribbon style */
 .library-status-badge {
-    position: absolute; bottom: 48px; right: 6px; padding: 4px 10px; border-radius: 10px;
-    background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
-    border: 1px solid; font-size: 12px; font-weight: 700;
-    cursor: pointer; font-family: inherit;
+    position: absolute; top: 0; left: 8px; z-index: 3;
+    padding: 6px 8px 10px; cursor: pointer; font-family: inherit;
+    border: none; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 50% 100%, 0 calc(100% - 8px));
+    transition: transform 0.2s, filter 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.library-status-badge:active { transform: scale(1.1); }
+.library-status-badge .status-flag-label {
+    font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px;
+    color: white; opacity: 0.9; line-height: 1;
 }
 
 /* Settings - Modern */

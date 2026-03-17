@@ -15,6 +15,11 @@ export default function useDetails() {
     const [overviewExpanded, setOverviewExpanded] = useState(false);
     const [recommendations, setRecommendations] = useState([]);
 
+    // Review modal state
+    const [reviewOpen, setReviewOpen] = useState(false);
+    const [reviewRating, setReviewRating] = useState(7);
+    const [reviewText, setReviewText] = useState('');
+
     const loadMovieComments = useCallback(async (movieId) => {
         const { data, error } = await supabase.from('reviews').select('*, profiles(username, tag, avatar_url)').eq('movie_id', String(movieId)).order('created_at', { ascending: false });
         if (error) console.error('Comments load error (RLS?):', error);
@@ -98,6 +103,9 @@ export default function useDetails() {
         seasonsData, setSeasonsData,
         overviewExpanded, setOverviewExpanded,
         recommendations, setRecommendations,
+        reviewOpen, setReviewOpen,
+        reviewRating, setReviewRating,
+        reviewText, setReviewText,
         loadMovieComments, loadRecommendations, loadSources,
         openDetails, closeDetails,
     };

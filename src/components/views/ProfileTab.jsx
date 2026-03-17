@@ -106,10 +106,11 @@ export default function ProfileTab() {
                                     <Card item={{ ...item, id: item.item_id }} onSelect={openDetails} type={item.media_type} />
                                     <button
                                         className="library-status-badge"
-                                        style={{ borderColor: `${item._status.color}33`, color: item._status.color }}
+                                        style={{ background: item._status.color }}
                                         onClick={(e) => { e.stopPropagation(); setStatusPickerItem({ ...item, id: item.item_id }); }}
                                     >
-                                        <span className="tab-icon">{I[item._status.icon]}</span>
+                                        <span className="tab-icon" style={{ color: 'white' }}>{I[item._status.icon]}</span>
+                                        <span className="status-flag-label">{item._status.shortLabel || item._status.label.slice(0, 5)}</span>
                                     </button>
                                 </div>
                             ))}

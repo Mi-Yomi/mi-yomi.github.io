@@ -24,19 +24,22 @@ export default function StatusPicker() {
                     return (
                         <button
                             key={s.id}
-                            className="collection-add-item"
+                            className="status-picker-item"
                             style={{
-                                background: isActive ? 'rgba(255,255,255,0.06)' : undefined,
-                                borderRadius: 12,
+                                background: isActive ? `color-mix(in srgb, ${s.color} 12%, transparent)` : undefined,
+                                borderColor: isActive ? s.color : 'var(--border)',
                             }}
                             onClick={() => {
                                 setItemStatus(statusPickerItem, type, s.id);
                                 setStatusPickerItem(null);
                             }}
                         >
-                            <div className="collection-add-item-icon">{I[s.icon]}</div>
-                            <div className="collection-add-item-name" style={{ color: isActive ? s.color : undefined }}>
-                                {s.label}
+                            <div className="status-picker-flag" style={{ background: s.color }}>
+                                <span className="tab-icon" style={{ color: 'white' }}>{I[s.icon]}</span>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div className="status-picker-label" style={{ color: isActive ? s.color : 'var(--text)' }}>{s.label}</div>
+                                <div className="status-picker-short">{s.shortLabel}</div>
                             </div>
                             {isActive && <div className="collection-add-item-check" style={{ color: s.color }}>{I.check}</div>}
                         </button>

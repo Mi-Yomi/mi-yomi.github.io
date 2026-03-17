@@ -40,15 +40,18 @@ export default function useAuth() {
 
     // --- Auth session ---
     useEffect(() => {
+        // Timeout: if session check takes too long, stop loading spinner
+        const timeout = setTimeout(() => setLoading(false), 8000);
         supabase.auth.getSession().then(({ data: { session } }) => {
+            clearTimeout(timeout);
             if (session?.user) setUser(session.user);
             else setLoading(false);
-        });
+        }).catch(() => { clearTimeout(timeout); setLoading(false); });
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) setUser(session.user);
             else { setUser(null); setUserProfile(null); setLoading(false); }
         });
-        return () => subscription.unsubscribe();
+        return () => { subscription.unsubscribe(); clearTimeout(timeout); };
     }, []);
 
     /** Check if this email belongs to admin (env var or hardcoded) */
