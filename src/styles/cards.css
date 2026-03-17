@@ -52,7 +52,12 @@
     transition-delay: calc(var(--card-index, 0) * 40ms);
 }
 .card:active { transform: scale(0.96); transition: transform var(--transition-fast) var(--ease-spring); }
-.card-poster-wrap { 
+@media (hover: hover) {
+    .card:hover { transform: translateY(-6px); }
+    .card:hover .card-poster-wrap { box-shadow: 0 12px 36px rgba(0,0,0,0.5); }
+    .card:hover .card-poster.loaded { transform: scale(1.06); }
+}
+.card-poster-wrap {
     position: relative; margin-bottom: 10px; border-radius: var(--radius-card); overflow: hidden;
     box-shadow: 0 6px 20px rgba(0,0,0,0.35);
     transition: box-shadow var(--transition-normal), transform var(--transition-normal);

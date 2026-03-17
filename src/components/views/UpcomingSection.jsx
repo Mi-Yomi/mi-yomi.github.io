@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 
 const UpcomingSection = memo(function UpcomingSection() {
     const { upcoming, IMG, watchlist, toggleWatchlist, openDetails } = useApp();
@@ -8,7 +9,7 @@ const UpcomingSection = memo(function UpcomingSection() {
 
     return (
         <div className="section">
-            <div className="section-head"><h2 className="section-title">🗓️ Скоро в кино</h2></div>
+            <div className="section-head"><h2 className="section-title">{I.calendar} Скоро в кино</h2></div>
             <div className="scroll-row">
                 {upcoming.map(m => {
                     const daysUntil = Math.ceil((new Date(m.release_date) - new Date()) / (1000 * 60 * 60 * 24));
@@ -18,7 +19,7 @@ const UpcomingSection = memo(function UpcomingSection() {
                             {m.poster_path && <img className="upcoming-poster" src={`${IMG}${m.poster_path}`} alt="" loading="lazy" />}
                             <div className="upcoming-countdown">{daysUntil <= 0 ? 'Уже вышел' : `${daysUntil} дн.`}</div>
                             <button className={`upcoming-remind ${inWatchlist ? 'active' : ''}`} onClick={e => { e.stopPropagation(); toggleWatchlist(m, 'movie'); }}>
-                                {inWatchlist ? '✓' : '🔔'}
+                                {inWatchlist ? I.check : I.bell}
                             </button>
                             <div className="upcoming-info">
                                 <div className="upcoming-title">{m.title}</div>

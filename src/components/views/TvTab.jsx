@@ -1,4 +1,5 @@
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 import Section from '../common/Section.jsx';
 import HeroCarousel from './HeroCarousel.jsx';
 
@@ -23,7 +24,7 @@ export default function TvTab() {
                 activeIndex={tvHeroIndex}
                 setActiveIndex={setTvHeroIndex}
                 badgePrefix="Популярный"
-                badgeIcon="📺"
+                badgeIcon={I.tv}
                 badgeStyle="linear-gradient(135deg, var(--purple), var(--pink))"
                 defaultType="tv"
             />
@@ -37,9 +38,9 @@ export default function TvTab() {
                 ))}
             </div>
 
-            <Section title={<>Сейчас в эфире <span className="live-badge"><span className="live-dot"></span> LIVE</span></>} icon="🔴" items={filteredTvOnAir} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="tv" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
-            <Section title="Популярные" icon="📺" items={filteredTvPopular} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="tv" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
-            <Section title="Лучшие всех времён" icon="🏆" items={filteredTvTop} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="tv" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
+            <Section title={<>Сейчас в эфире <span className="live-badge"><span className="live-dot"></span> LIVE</span></>} icon={I.circle} items={filteredTvOnAir} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="tv" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
+            <Section title="Популярные" icon={I.tv} items={filteredTvPopular} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="tv" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
+            <Section title="Лучшие всех времён" icon={I.trophy} items={filteredTvTop} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="tv" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
         </div>
     );
 }

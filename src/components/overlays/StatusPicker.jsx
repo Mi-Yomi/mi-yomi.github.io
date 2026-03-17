@@ -1,4 +1,5 @@
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 import { LIBRARY_STATUSES } from '../../lib/libraryStatuses.js';
 
 export default function StatusPicker() {
@@ -33,11 +34,11 @@ export default function StatusPicker() {
                                 setStatusPickerItem(null);
                             }}
                         >
-                            <div className="collection-add-item-icon">{s.icon}</div>
+                            <div className="collection-add-item-icon">{I[s.icon]}</div>
                             <div className="collection-add-item-name" style={{ color: isActive ? s.color : undefined }}>
                                 {s.label}
                             </div>
-                            {isActive && <div className="collection-add-item-check" style={{ color: s.color }}>✓</div>}
+                            {isActive && <div className="collection-add-item-check" style={{ color: s.color }}>{I.check}</div>}
                         </button>
                     );
                 })}

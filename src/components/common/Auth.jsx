@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import { supabase } from '../../lib/appConstants.jsx';
+import { I } from '../../lib/icons.jsx';
 
 export default function Auth() {
     const { setUser } = useApp();
@@ -30,7 +31,7 @@ export default function Auth() {
 
     return (
         <div className="auth-container fade-in">
-            <div className="auth-logo">🎬</div>
+            <div className="auth-logo">{I.film}</div>
             <h1 className="auth-title">HADES</h1>
             <p className="auth-subtitle">Твой личный кинотеатр</p>
             <form className="auth-form" onSubmit={handleAuth}>

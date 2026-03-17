@@ -162,3 +162,65 @@
 /* Swipe Indicator */
 .swipe-indicator { position: absolute; top: 50%; left: 0; width: 4px; height: 60px; transform: translateY(-50%); background: var(--text-muted); border-radius: 0 4px 4px 0; opacity: 0; transition: opacity 0.2s; }
 .overlay.open .swipe-indicator { opacity: 0.15; }
+
+/* Icon System */
+.tab-icon { display: inline-flex; align-items: center; flex-shrink: 0; }
+.tab-icon svg { width: 16px; height: 16px; }
+.library-tab .tab-icon svg { width: 14px; height: 14px; }
+.library-sub-btn .tab-icon svg { width: 12px; height: 12px; }
+.library-status-badge .tab-icon svg { width: 12px; height: 12px; }
+.settings-item-icon svg { width: 16px; height: 16px; }
+.collection-add-item-icon svg { width: 20px; height: 20px; }
+.collection-add-item-check svg { width: 16px; height: 16px; }
+.notif-icon svg { width: 18px; height: 18px; }
+.search-history-icon svg { width: 14px; height: 14px; }
+.search-empty-icon svg { width: 48px; height: 48px; opacity: 0.4; }
+.library-empty-icon svg { width: 48px; height: 48px; opacity: 0.4; }
+.comments-empty-icon svg { width: 48px; height: 48px; opacity: 0.4; }
+.notif-empty-icon svg { width: 48px; height: 48px; opacity: 0.4; }
+.pending-icon svg { width: 64px; height: 64px; color: var(--gold); }
+.pending-status svg { width: 14px; height: 14px; }
+.player-error-icon svg { width: 48px; height: 48px; color: var(--gold); }
+.auth-logo svg { width: 48px; height: 48px; color: var(--accent); }
+.fallback-title svg { width: 16px; height: 16px; }
+.fallback-hint svg { width: 14px; height: 14px; flex-shrink: 0; }
+.fallback-btn-icon svg { width: 22px; height: 22px; }
+.detail-cast-title svg { width: 16px; height: 16px; }
+.recs-title svg { width: 16px; height: 16px; }
+.comments-title svg { width: 16px; height: 16px; }
+.section-title svg { width: 20px; height: 20px; }
+.hero-badge svg { width: 14px; height: 14px; }
+.hero-meta svg { width: 14px; height: 14px; }
+.mood-widget-title svg { width: 18px; height: 18px; }
+.mood-card-icon svg { width: 32px; height: 32px; }
+.mood-header svg { width: 16px; height: 16px; }
+.mood-back svg { width: 14px; height: 14px; }
+.random-btn svg { width: 18px; height: 18px; }
+.admin-section-title svg { width: 16px; height: 16px; }
+.admin-search-icon svg { width: 16px; height: 16px; }
+.admin-search-wrap { position: relative; }
+.admin-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); display: flex; pointer-events: none; }
+.admin-input-search { padding-left: 36px !important; }
+.approval-tab svg { width: 14px; height: 14px; }
+.approval-btn svg { width: 16px; height: 16px; }
+.play-main-btn svg { width: 16px; height: 16px; }
+.continue-time-badge svg { width: 12px; height: 12px; }
+.player-ep-btn svg { width: 18px; height: 18px; }
+.player-next-ep svg { width: 16px; height: 16px; }
+.friend-review-poster-ph svg { width: 28px; height: 28px; color: var(--text-muted); }
+.friend-error svg { width: 16px; height: 16px; }
+.friend-btn svg { width: 14px; height: 14px; }
+.reaction-btn svg { width: 16px; height: 16px; }
+.details-action-row .tab-icon svg { width: 14px; height: 14px; }
+
+/* Status Dot */
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+
+/* RU/JP Language Badge */
+.ru-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 900;
+    background: rgba(255,255,255,0.15); color: white; letter-spacing: 0.5px;
+    vertical-align: middle; margin: 0 2px;
+}
+.ru-badge.jp { background: rgba(255,107,157,0.3); }

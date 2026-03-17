@@ -1,11 +1,11 @@
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 import Card from '../common/Card.jsx';
 
 export default function FriendProfileView() {
   const {
     viewingFriend,
     friendData,
-    I,
     setViewingFriend,
     setFriendLoadError,
     friendLoadError,
@@ -22,8 +22,8 @@ export default function FriendProfileView() {
             <div className="profile-cover" style={{ backgroundImage: friendData.profile?.cover_url ? `url(${friendData.profile.cover_url})` : '' }}></div>
             <div className="profile-user">
                 <div className="profile-avatar-wrap">
-                    {viewingFriend.avatar_url || friendData.profile?.avatar_url ? 
-                        <img src={viewingFriend.avatar_url || friendData.profile?.avatar_url} className="profile-avatar" /> : 
+                    {viewingFriend.avatar_url || friendData.profile?.avatar_url ?
+                        <img src={viewingFriend.avatar_url || friendData.profile?.avatar_url} className="profile-avatar" /> :
                         <div className="profile-avatar-placeholder">{viewingFriend.username?.[0]?.toUpperCase()}</div>
                     }
                 </div>
@@ -33,17 +33,17 @@ export default function FriendProfileView() {
                 </div>
             </div>
         </div>
-        
+
         <div style={{ padding: '0 16px', marginBottom: 16 }}>
             <button className="play-main-btn secondary" onClick={() => { setViewingFriend(null); setFriendLoadError(null); }}>{I.back} Назад к друзьям</button>
         </div>
-        
+
         {friendLoadError && (
             <div className="friend-error" style={{margin:'0 16px 16px'}}>
-                ⚠️ {friendLoadError}
+                {I.alertTriangle} {friendLoadError}
             </div>
         )}
-        
+
         {/* Friend Stats */}
         <div className="profile-stats">
             <div className="profile-stat">
@@ -59,13 +59,14 @@ export default function FriendProfileView() {
                 <div className="profile-stat-label">Отзывы</div>
             </div>
         </div>
-        
+
         <div className="profile-tabs" style={{ justifyContent: 'center' }}>
             {['favorites', 'history', 'reviews'].map(t => (
                 <button key={t} className={`library-tab ${profileTab === t ? 'active' : ''}`} onClick={() => setProfileTab(t)}>
-                    {t === 'favorites' && `❤️ Избранное (${friendData.favorites.length})`}
-                    {t === 'history' && `🕐 История (${friendData.history.length})`}
-                    {t === 'reviews' && `📝 Отзывы (${friendData.reviews.length})`}
+                    <span className="tab-icon">{t === 'favorites' ? I.heartFilled : t === 'history' ? I.clock : I.penTool}</span>
+                    {t === 'favorites' && ` Избранное (${friendData.favorites.length})`}
+                    {t === 'history' && ` История (${friendData.history.length})`}
+                    {t === 'reviews' && ` Отзывы (${friendData.reviews.length})`}
                 </button>
             ))}
         </div>
@@ -74,7 +75,7 @@ export default function FriendProfileView() {
                 friendData.favorites.length > 0 ? (
                     <div className="library-grid">{friendData.favorites.map(f => <Card key={f.item_id} item={{...f, id: f.item_id}} onSelect={openDetails} type={f.media_type} />)}</div>
                 ) : (
-                    <div className="library-empty"><div className="library-empty-icon">❤️</div><div className="library-empty-text">У {viewingFriend.username} пока нет избранного</div></div>
+                    <div className="library-empty"><div className="library-empty-icon">{I.heart}</div><div className="library-empty-text">У {viewingFriend.username} пока нет избранного</div></div>
                 )
             )}
             {profileTab === 'history' && (
@@ -86,7 +87,7 @@ export default function FriendProfileView() {
                         </div>
                     ))}</div>
                 ) : (
-                    <div className="library-empty"><div className="library-empty-icon">🕐</div><div className="library-empty-text">У {viewingFriend.username} пока нет истории</div></div>
+                    <div className="library-empty"><div className="library-empty-icon">{I.clock}</div><div className="library-empty-text">У {viewingFriend.username} пока нет истории</div></div>
                 )
             )}
             {profileTab === 'reviews' && (
@@ -96,9 +97,9 @@ export default function FriendProfileView() {
                         return (
                             <div key={r.id || r.created_at} className="friend-review-card">
                                 <div className="friend-review-top" onClick={() => openDetails({ id: r.movie_id || r.item_id }, r.media_type || 'movie')}>
-                                    {r.poster_path 
-                                        ? <img className="friend-review-poster" src={`${IMG}${r.poster_path}`} alt="" /> 
-                                        : <div className="friend-review-poster-ph">🎬</div>
+                                    {r.poster_path
+                                        ? <img className="friend-review-poster" src={`${IMG}${r.poster_path}`} alt="" />
+                                        : <div className="friend-review-poster-ph">{I.film}</div>
                                     }
                                     <div className="friend-review-info">
                                         <div className="friend-review-title">{r.title}</div>
@@ -116,7 +117,7 @@ export default function FriendProfileView() {
                         );
                     })
                 ) : (
-                    <div className="library-empty"><div className="library-empty-icon">📝</div><div className="library-empty-text">У {viewingFriend.username} пока нет отзывов</div></div>
+                    <div className="library-empty"><div className="library-empty-icon">{I.penTool}</div><div className="library-empty-text">У {viewingFriend.username} пока нет отзывов</div></div>
                 )
             )}
         </div>

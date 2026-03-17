@@ -1,4 +1,5 @@
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 
 export default function NotificationsPanel() {
   const {
@@ -16,10 +17,17 @@ export default function NotificationsPanel() {
     return null;
   }
 
+  const NOTIF_ICONS = {
+    friend_request: I.userPlus,
+    friend_accepted: I.userCheck,
+    review_like: I.thumbsUp,
+    friend_watched: I.eye,
+  };
+
   return (
     <div className="notif-panel">
             <div className="notif-header">
-                <button className="mood-close" onClick={() => setNotifOpen(false)}>✕</button>
+                <button className="mood-close" onClick={() => setNotifOpen(false)}>{I.x}</button>
                 <div className="notif-header-title">Уведомления</div>
                 {unreadNotifCount > 0 && <button className="notif-mark-all" onClick={markAllNotificationsRead}>Прочитать все</button>}
             </div>
@@ -31,7 +39,7 @@ export default function NotificationsPanel() {
                         setNotifOpen(false);
                     }}>
                         <div className="notif-icon">
-                            {n.type === 'friend_request' ? '👥' : n.type === 'friend_accepted' ? '🤝' : n.type === 'review_like' ? '👍' : n.type === 'friend_watched' ? '👀' : '🔔'}
+                            {NOTIF_ICONS[n.type] || I.bell}
                         </div>
                         <div className="notif-body">
                             <div className="notif-text">{n.title}</div>
@@ -41,7 +49,7 @@ export default function NotificationsPanel() {
                     </div>
                 )) : (
                     <div className="notif-empty">
-                        <div className="notif-empty-icon">🔔</div>
+                        <div className="notif-empty-icon">{I.bell}</div>
                         <div className="notif-empty-text">Пока нет уведомлений</div>
                         <div className="notif-empty-hint">Они появятся когда друзья будут активны</div>
                     </div>

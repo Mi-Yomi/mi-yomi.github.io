@@ -1,4 +1,5 @@
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 import Card from '../common/Card.jsx';
 
 export default function SearchOverlay() {
@@ -46,13 +47,13 @@ export default function SearchOverlay() {
                     onClick={() => setSearchFilterType(t.id)}>{t.label}</button>
             ))}
         </div>
-        
+
         {/* Filter Toggle */}
         <button className={`search-filters-toggle ${searchFiltersOpen ? 'active' : ''}`} onClick={() => setSearchFiltersOpen(!searchFiltersOpen)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
             {searchFiltersOpen ? 'Скрыть фильтры' : 'Фильтры'}
         </button>
-        
+
         {searchFiltersOpen && (
             <div className="search-filters-panel">
                 <div className="filter-row">
@@ -95,10 +96,10 @@ export default function SearchOverlay() {
                         ))}
                     </div>
                 </div>
-                <button className="filter-apply" onClick={runDiscover}>🔍 Применить фильтры</button>
+                <button className="filter-apply" onClick={runDiscover}>{I.search} Применить фильтры</button>
             </div>
         )}
-        
+
         <div className="search-results">
             {searchLoading ? (
                 <div className="search-loading">
@@ -111,7 +112,7 @@ export default function SearchOverlay() {
                 <div className="search-grid">{results.map(r => <Card key={r.id} item={r} onSelect={(item, type) => { setSearchOpen(false); openDetails(item, type); }} type={r.media_type} />)}</div>
             ) : query ? (
                 <div className="search-empty search-empty-padded">
-                    <div className="search-empty-icon">🔍</div>
+                    <div className="search-empty-icon">{I.search}</div>
                     <div className="search-empty-title">Ничего не найдено</div>
                     <div className="search-empty-hint">Попробуйте другой запрос или фильтры</div>
                 </div>
@@ -125,7 +126,7 @@ export default function SearchOverlay() {
                             </div>
                             {searchHistory.map((h, i) => (
                                 <div key={i} className="search-history-item" onClick={() => setQuery(h)}>
-                                    <span className="search-history-icon">🕐</span>
+                                    <span className="search-history-icon">{I.clock}</span>
                                     <span className="search-history-text">{h}</span>
                                 </div>
                             ))}
@@ -133,7 +134,7 @@ export default function SearchOverlay() {
                     )}
                     {searchHistory.length === 0 && !searchFiltersOpen && (
                         <div className="search-empty search-empty-padded">
-                            <div className="search-empty-icon">🎬</div>
+                            <div className="search-empty-icon">{I.film}</div>
                             <div className="search-empty-title">Поиск фильмов</div>
                             <div className="search-empty-hint">Введите название или используйте фильтры</div>
                         </div>

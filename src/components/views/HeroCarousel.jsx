@@ -4,22 +4,12 @@ import { BACKDROP } from '../../lib/config.js';
 import { I } from '../../lib/icons.jsx';
 import { ratingColor } from '../../lib/utils.js';
 
-/**
- * Reusable hero carousel.
- * @param {Object[]} [items] - Override items (default: trending from context)
- * @param {number} [activeIndex] - Override active index (default: heroIndex from context)
- * @param {Function} [setActiveIndex] - Override setter (default: setHeroIndex from context)
- * @param {string} [badgePrefix] - Badge text prefix (default: "В тренде")
- * @param {string} [badgeStyle] - Badge gradient CSS
- * @param {string} [btnStyle] - Primary button gradient CSS
- * @param {string} [defaultType] - Default media type for items without media_type
- */
 const HeroCarousel = memo(function HeroCarousel({
     items: externalItems,
     activeIndex: externalIndex,
     setActiveIndex: externalSetIndex,
     badgePrefix = 'В тренде',
-    badgeIcon = '🔥',
+    badgeIcon = I.flame,
     badgeStyle,
     btnStyle,
     defaultType,
@@ -67,7 +57,7 @@ const HeroCarousel = memo(function HeroCarousel({
                             <div className="hero-meta">
                                 <span className={`rating ${ratingColor(item.vote_average)}`}>{I.star} {item.vote_average?.toFixed(1)}</span>
                                 <span>{(item.release_date || item.first_air_date || '').split('-')[0]}</span>
-                                <span>{type === 'tv' ? '📺 Сериал' : '🎬 Фильм'}</span>
+                                <span>{type === 'tv' ? <>{I.tv} Сериал</> : <>{I.film} Фильм</>}</span>
                             </div>
                             {item.overview && <div className="hero-overview">{item.overview}</div>}
                             <div className="hero-btns">

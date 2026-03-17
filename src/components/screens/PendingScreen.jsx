@@ -1,4 +1,5 @@
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 
 export default function PendingScreen() {
   const {
@@ -14,10 +15,10 @@ export default function PendingScreen() {
 
   return (
     <div className="pending-screen fade-in">
-      <div className="pending-icon">{isPending ? '⏳' : '🚫'}</div>
+      <div className="pending-icon">{isPending ? I.hourglass : I.ban}</div>
       <h1 className="pending-title">{isPending ? 'Заявка на рассмотрении' : 'Доступ запрещён'}</h1>
       <div className={`pending-status ${isPending ? 'waiting' : 'rejected'}`}>
-        {isPending ? '🔄 Ожидание проверки' : '❌ Заявка отклонена'}
+        {isPending ? <>{I.refresh} Ожидание проверки</> : <>{I.x} Заявка отклонена</>}
       </div>
       <p className="pending-text">
         {isPending
@@ -28,7 +29,7 @@ export default function PendingScreen() {
         <div className="pending-email">{userProfile.email}</div>
       )}
       <button className="pending-refresh" onClick={refreshApprovalStatus} disabled={refreshingStatus}>
-        {refreshingStatus ? 'Проверяю...' : '🔄 Обновить статус'}
+        {refreshingStatus ? 'Проверяю...' : <>{I.refresh} Обновить статус</>}
       </button>
       <button className="pending-logout" onClick={handleLogout}>
         Выйти из аккаунта

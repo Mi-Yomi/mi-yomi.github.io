@@ -1,4 +1,5 @@
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 import Card from '../common/Card.jsx';
 import ContinueSection from '../common/ContinueSection.jsx';
 import Section from '../common/Section.jsx';
@@ -31,24 +32,24 @@ export default function HomeTab() {
         </div>
 
         <div className="mood-widget" onClick={() => { setMoodOpen(true); setMoodStep(0); setMoodMood(null); setMoodType(null); setMoodDuration(null); setMoodResults([]); }}>
-            <div className="mood-widget-title">🎯 Что посмотреть?</div>
+            <div className="mood-widget-title">{I.target} Что посмотреть?</div>
             <div className="mood-widget-sub">Подберём фильм под настроение за 3 клика</div>
         </div>
 
-        {history.length > 0 && <ContinueSection title="Продолжить" icon="▶️" items={history} onSelect={openDetails} getProgress={getStoredProgress} />}
+        {history.length > 0 && <ContinueSection title="Продолжить" icon={I.play} items={history} onSelect={openDetails} getProgress={getStoredProgress} />}
 
         <button className={`random-btn ${randomSpinning ? 'spinning' : ''}`} onClick={openRandomMovie}>
-            <span className="random-icon">🎲</span> Случайный фильм
+            {I.shuffle} Случайный фильм
         </button>
 
         <FriendsActivity />
 
-        {watchlist.length > 0 && <Section title={<>🔖 Буду смотреть <span className="watchlist-badge">{watchlist.length}</span></>} icon="" items={watchlist.map(w => ({...w, id: w.item_id}))} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} />}
+        {watchlist.length > 0 && <Section title={<>{I.bookmark} Буду смотреть <span className="watchlist-badge">{watchlist.length}</span></>} icon="" items={watchlist.map(w => ({...w, id: w.item_id}))} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} />}
 
         {curatedLists.filter(cl => cl.is_active).map(cl => (
             <div key={cl.id} className="section">
                 <div className="section-head">
-                    <h2 className="section-title">🏆 {cl.title} <span className="curated-badge">ПОДБОРКА</span></h2>
+                    <h2 className="section-title">{I.trophy} {cl.title} <span className="curated-badge">ПОДБОРКА</span></h2>
                 </div>
                 <div className="scroll-row">
                     {(cl.items || []).map(item => (
@@ -60,10 +61,10 @@ export default function HomeTab() {
 
         <UpcomingSection />
 
-        {forYou.length > 0 && <Section title="Подобрано для вас" icon="✨" items={forYou} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} onBookmark={toggleWatchlist} watchlist={watchlist} />}
+        {forYou.length > 0 && <Section title="Подобрано для вас" icon={I.sparkles} items={forYou} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} onBookmark={toggleWatchlist} watchlist={watchlist} />}
 
-        <Section title="Популярные" icon="🔥" items={filteredPopular} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
-        <Section title="Топ рейтинга" icon="⭐" items={filteredTopRated} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
+        <Section title="Популярные" icon={I.flame} items={filteredPopular} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
+        <Section title="Топ рейтинга" icon={I.star} items={filteredTopRated} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
     </div>
   );
 }

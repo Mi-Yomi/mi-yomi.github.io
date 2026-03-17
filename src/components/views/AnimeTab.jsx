@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 import Section from '../common/Section.jsx';
 import HeroCarousel from './HeroCarousel.jsx';
 
@@ -29,7 +30,7 @@ export default function AnimeTab() {
                 activeIndex={animeHeroIndex}
                 setActiveIndex={setAnimeHeroIndex}
                 badgePrefix="Аниме"
-                badgeIcon="🎌"
+                badgeIcon={I.flag}
                 badgeStyle="linear-gradient(135deg, #ff6b9d, #c44dff)"
                 btnStyle="linear-gradient(135deg, #ff6b9d, #c44dff)"
             />
@@ -43,8 +44,8 @@ export default function AnimeTab() {
                 ))}
             </div>
 
-            <Section title="Аниме-сериалы" icon="📺" items={filteredAnimeSeries} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="tv" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
-            <Section title="Аниме-фильмы" icon="🎬" items={filteredAnimeMovies} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="movie" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
+            <Section title="Аниме-сериалы" icon={I.tv} items={filteredAnimeSeries} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="tv" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
+            <Section title="Аниме-фильмы" icon={I.film} items={filteredAnimeMovies} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="movie" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
         </div>
     );
 }

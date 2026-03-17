@@ -1,9 +1,9 @@
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 
 export default function PlayerOverlay() {
   const {
     playerOpen,
-    I,
     closePlayer,
     media,
     playerSource,
@@ -37,7 +37,7 @@ export default function PlayerOverlay() {
                 <div className="player-info">
                     <div className="player-title">{media?.title || media?.name}</div>
                     <div className="player-header-meta">
-                        <span className="player-source-badge">{isRuSource(playerSource) ? `🇷🇺 ${playerSource}` : playerSource}</span>
+                        <span className="player-source-badge">{isRuSource(playerSource) ? <><span className="ru-badge">RU</span> {playerSource}</> : playerSource}</span>
                         {media?.media_type === 'tv' && !isRuSource(playerSource) && <span className="player-source-name">S{currentSeason}:E{currentEpisode}</span>}
                         {media?.media_type === 'tv' && isRuSource(playerSource) && <span className="player-source-name player-source-hint">серии внутри плеера</span>}
                     </div>
@@ -48,13 +48,13 @@ export default function PlayerOverlay() {
                             onClick={() => {
                                 if (currentEpisode > 1) { const ne = currentEpisode - 1; setCurrentEpisode(ne); updatePlayerEpisode(currentSeason, ne); }
                                 tg?.HapticFeedback?.impactOccurred?.('light');
-                            }}>⏮</button>
+                            }}>{I.skipBack}</button>
                         <button className="player-ep-btn"
                             onClick={() => {
                                 const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
                                 if (currentEpisode < maxEp) { const ne = currentEpisode + 1; setCurrentEpisode(ne); updatePlayerEpisode(currentSeason, ne); }
                                 tg?.HapticFeedback?.impactOccurred?.('light');
-                            }}>⏭</button>
+                            }}>{I.skipForward}</button>
                     </div>
                 )}
             </div>
@@ -67,18 +67,17 @@ export default function PlayerOverlay() {
                 )}
                 {playerError && (
                     <div className="player-error-overlay">
-                        <div className="player-error-icon">⚠️</div>
+                        <div className="player-error-icon">{I.alertTriangle}</div>
                         <div className="player-error-text">Источник не отвечает</div>
                         <div className="player-error-hint">Попробуйте другой плеер или повторите попытку</div>
                         <button className="player-error-btn" onClick={() => { setPlayerError(false); setPlayerLoaded(false); setPlayerUrl(playerUrl + (playerUrl.includes('?') ? '&' : '?') + '_r=' + Date.now()); }}>Повторить</button>
                     </div>
                 )}
                 <iframe src={playerUrl} allowFullScreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerPolicy="no-referrer" onLoad={() => { setPlayerLoaded(true); setPlayerError(false); if (playerTimerRef.current) clearTimeout(playerTimerRef.current); }} />
-                {/* Кнопка пропуска заставки/титров */}
                 {activeSkip && (
                     <div className="skip-btn-container">
                         <button className={`skip-btn ${activeSkip.type === 'intro' ? 'intro' : 'outro'}`} onClick={() => { performSkip(activeSkip.end, activeSkip.type); tg?.HapticFeedback?.impactOccurred?.('medium'); }}>
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/></svg>
+                            {I.skipForward}
                             <span className="skip-label">
                                 <span className="skip-type">{activeSkip.type === 'intro' ? 'Заставка' : 'Титры'}</span>
                                 Пропустить
@@ -87,12 +86,11 @@ export default function PlayerOverlay() {
                     </div>
                 )}
             </div>
-            {/* Next Episode Button */}
             {media?.media_type === 'tv' && !isRuSource(playerSource) && (() => {
                 const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
                 if (currentEpisode < maxEp) return (
                     <button className="player-next-ep" onClick={() => { const ne = currentEpisode + 1; setCurrentEpisode(ne); updatePlayerEpisode(currentSeason, ne); tg?.HapticFeedback?.impactOccurred?.('medium'); }}>
-                        ⏭ Следующая серия (E{currentEpisode + 1})
+                        {I.skipForward} Следующая серия (E{currentEpisode + 1})
                     </button>
                 );
                 return null;
@@ -100,7 +98,7 @@ export default function PlayerOverlay() {
             {media?.media_type === 'tv' && (
                 isRuSource(playerSource) ? (
                     <div className="episode-picker episode-picker-ru">
-                        <div className="episode-picker-ru-title">🇷🇺 Встроенный плеер {playerSource}</div>
+                        <div className="episode-picker-ru-title"><span className="ru-badge">RU</span> Встроенный плеер {playerSource}</div>
                         <div className="episode-picker-ru-hint">
                             Используйте переключатель серий <b>внутри плеера</b>.<br/>
                             Collaps / Alloha / Kodik сами управляют навигацией.

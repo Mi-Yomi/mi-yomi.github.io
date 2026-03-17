@@ -1,4 +1,5 @@
 import { useApp } from '../../context/AppContext.jsx';
+import { I } from '../../lib/icons.jsx';
 
 export default function AdminPanel() {
   const {
@@ -6,7 +7,6 @@ export default function AdminPanel() {
     isAdmin,
     user,
     userProfile,
-    I,
     setAdminOpen,
     setAdminEditingId,
     setAdminListTitle,
@@ -45,24 +45,27 @@ export default function AdminPanel() {
                 <h2>Админ-панель</h2>
                 <span className="admin-badge">ADMIN</span>
             </div>
-            
+
             <div className="admin-section">
-                <div className="admin-section-title">{adminEditingId ? '✏️ Редактирование подборки' : '➕ Новая подборка'}</div>
-                <input 
-                    className="admin-input" 
-                    value={adminListTitle} 
-                    onChange={e => setAdminListTitle(e.target.value)} 
-                    placeholder="Название (напр. Рекомендации года)" 
+                <div className="admin-section-title">{adminEditingId ? <>{I.edit} Редактирование подборки</> : <>{I.plus} Новая подборка</>}</div>
+                <input
+                    className="admin-input"
+                    value={adminListTitle}
+                    onChange={e => setAdminListTitle(e.target.value)}
+                    placeholder="Название (напр. Рекомендации года)"
                     style={{marginBottom:12}}
                 />
-                
-                <input 
-                    className="admin-input" 
-                    value={adminSearchQuery} 
-                    onChange={e => { setAdminSearchQuery(e.target.value); adminSearch(e.target.value); }}
-                    placeholder="🔍 Поиск фильмов и сериалов..." 
-                />
-                
+
+                <div className="admin-search-wrap">
+                    <span className="admin-search-icon">{I.search}</span>
+                    <input
+                        className="admin-input admin-input-search"
+                        value={adminSearchQuery}
+                        onChange={e => { setAdminSearchQuery(e.target.value); adminSearch(e.target.value); }}
+                        placeholder="Поиск фильмов и сериалов..."
+                    />
+                </div>
+
                 {adminSearchResults.length > 0 && (
                     <div className="admin-search-results">
                         {adminSearchResults.map(item => (
@@ -72,12 +75,12 @@ export default function AdminPanel() {
                                     <div className="admin-search-item-title">{item.title || item.name}</div>
                                     <div className="admin-search-item-year">{(item.release_date || item.first_air_date || '').split('-')[0]} • {item.media_type === 'tv' ? 'Сериал' : 'Фильм'}</div>
                                 </div>
-                                <span style={{color:'var(--green)',fontSize:18}}>+</span>
+                                <span style={{color:'var(--green)',fontSize:18}}>{I.plus}</span>
                             </div>
                         ))}
                     </div>
                 )}
-                
+
                 {adminListItems.length > 0 && (
                     <div style={{marginTop:16}}>
                         <div style={{fontSize:12,fontWeight:700,color:'var(--text-muted)',marginBottom:8}}>
@@ -92,16 +95,16 @@ export default function AdminPanel() {
                                         position:'absolute',top:-4,right:-4,width:18,height:18,borderRadius:'50%',
                                         background:'var(--accent)',color:'white',border:'none',fontSize:10,
                                         display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'
-                                    }}>✕</button>
+                                    }}>{I.x}</button>
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
-                
+
                 <div style={{display:'flex',gap:8,marginTop:16}}>
                     <button className="admin-btn gold" style={{flex:1}} onClick={saveCuratedList} disabled={!adminListTitle.trim() || adminListItems.length === 0}>
-                        {adminEditingId ? '💾 Сохранить' : '✨ Создать подборку'}
+                        {adminEditingId ? <>{I.save} Сохранить</> : <>{I.sparkles} Создать подборку</>}
                     </button>
                     {adminEditingId && (
                         <button className="admin-btn secondary" onClick={() => { setAdminEditingId(null); setAdminListTitle(''); setAdminListItems([]); }}>
@@ -110,19 +113,19 @@ export default function AdminPanel() {
                     )}
                 </div>
             </div>
-            
+
             <div className="admin-section">
-                <div className="admin-section-title">📋 Мои подборки ({curatedLists.length})</div>
+                <div className="admin-section-title">{I.list} Мои подборки ({curatedLists.length})</div>
                 {curatedLists.length === 0 ? (
                     <div style={{textAlign:'center',padding:'32px 16px',color:'var(--text-muted)'}}>
-                        <div style={{fontSize:32,marginBottom:8}}>📝</div>
+                        <div style={{fontSize:32,marginBottom:8}}>{I.fileText}</div>
                         <div style={{fontSize:13,fontWeight:600}}>Пока нет подборок</div>
                     </div>
                 ) : curatedLists.map(list => (
                     <div key={list.id} className="admin-list-card" style={{opacity: list.is_active ? 1 : 0.5}}>
                         <div className="admin-list-header">
                             <div className="admin-list-title">
-                                {list.is_active ? '🟢' : '🔴'} {list.title}
+                                <span className="status-dot" style={{background: list.is_active ? 'var(--green)' : 'var(--accent)'}}></span> {list.title}
                             </div>
                             <div className="admin-list-count">{(list.items || []).length} элементов</div>
                         </div>
@@ -136,43 +139,43 @@ export default function AdminPanel() {
                         </div>
                         <div style={{display:'flex',gap:6,marginTop:8}}>
                             <button className="admin-btn secondary" style={{flex:1,padding:'8px 0',fontSize:11}} onClick={() => toggleCuratedListActive(list.id, list.is_active)}>
-                                {list.is_active ? '🔴 Скрыть' : '🟢 Показать'}
+                                <span className="status-dot" style={{background: list.is_active ? 'var(--accent)' : 'var(--green)'}}></span> {list.is_active ? 'Скрыть' : 'Показать'}
                             </button>
                             <button className="admin-btn secondary" style={{flex:1,padding:'8px 0',fontSize:11}} onClick={() => editCuratedList(list)}>
-                                ✏️ Изменить
+                                {I.edit} Изменить
                             </button>
                             <button className="admin-btn danger" style={{padding:'8px 12px',fontSize:11}} onClick={() => deleteCuratedList(list.id)}>
-                                🗑
+                                {I.trash}
                             </button>
                         </div>
                     </div>
                 ))}
             </div>
-            
+
             {/* === User Approval Management === */}
             <div className="admin-section">
                 <div className="admin-section-title admin-section-title-row">
-                    <span>👥 Заявки пользователей</span>
+                    <span>{I.users} Заявки пользователей</span>
                     <button className="admin-btn secondary admin-btn-sm" onClick={loadPendingUsers}>
-                        {approvalLoading ? '⏳' : '🔄'} Обновить
+                        {approvalLoading ? <>{I.hourglass}</> : <>{I.refresh}</>} Обновить
                     </button>
                 </div>
-                
+
                 <div className="approval-tabs">
                     <button className={`approval-tab ${approvalTab === 'pending' ? 'active' : ''}`} onClick={() => setApprovalTab('pending')}>
-                        ⏳ Ожидают
+                        {I.hourglass} Ожидают
                         {pendingUsers.filter(u => u.status === 'pending' || !u.status).length > 0 && (
                             <span className="approval-count">{pendingUsers.filter(u => u.status === 'pending' || !u.status).length}</span>
                         )}
                     </button>
                     <button className={`approval-tab ${approvalTab === 'approved' ? 'active' : ''}`} onClick={() => setApprovalTab('approved')}>
-                        ✅ Одобрены
+                        {I.checkCircle} Одобрены
                     </button>
                     <button className={`approval-tab ${approvalTab === 'rejected' ? 'active' : ''}`} onClick={() => setApprovalTab('rejected')}>
-                        🚫 Отклонены
+                        {I.ban} Отклонены
                     </button>
                 </div>
-                
+
                 {(() => {
                     const filtered = pendingUsers.filter(u => {
                         if (approvalTab === 'pending') return u.status === 'pending' || !u.status;
@@ -181,7 +184,7 @@ export default function AdminPanel() {
                     if (filtered.length === 0) return (
                         <div style={{textAlign:'center',padding:'32px 16px',color:'var(--text-muted)'}}>
                             <div style={{fontSize:32,marginBottom:8}}>
-                                {approvalTab === 'pending' ? '🎉' : approvalTab === 'approved' ? '👤' : '🚫'}
+                                {approvalTab === 'pending' ? I.checkCircle : approvalTab === 'approved' ? I.user : I.ban}
                             </div>
                             <div style={{fontSize:13,fontWeight:600}}>
                                 {approvalTab === 'pending' ? 'Нет заявок на рассмотрении' : approvalTab === 'approved' ? 'Нет одобренных пользователей' : 'Нет отклонённых пользователей'}
@@ -203,10 +206,10 @@ export default function AdminPanel() {
                             </div>
                             <div className="approval-actions">
                                 {(u.status === 'pending' || !u.status || u.status === 'rejected') && (
-                                    <button className="approval-btn approve" onClick={() => approveUser(u.id)} title="Одобрить">✓</button>
+                                    <button className="approval-btn approve" onClick={() => approveUser(u.id)} title="Одобрить">{I.check}</button>
                                 )}
                                 {(u.status === 'pending' || !u.status || u.status === 'approved') && (
-                                    <button className="approval-btn reject" onClick={() => rejectUser(u.id)} title="Отклонить">✕</button>
+                                    <button className="approval-btn reject" onClick={() => rejectUser(u.id)} title="Отклонить">{I.x}</button>
                                 )}
                             </div>
                         </div>

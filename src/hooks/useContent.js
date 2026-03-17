@@ -114,13 +114,13 @@ export default function useContent(user, showToast) {
             tg?.HapticFeedback?.impactOccurred?.('light');
             await supabase.from('favorites').delete().eq('user_id', user.id).eq('item_id', String(item.id));
             setFavorites(prev => prev.filter(f => f.item_id !== String(item.id)));
-            showToast('💔 Убрано из избранного');
+            showToast('Убрано из избранного');
         } else {
             tg?.HapticFeedback?.notificationOccurred?.('success');
             const favItem = { user_id: user.id, item_id: String(item.id), media_type: type, title: item.title || item.name, poster_path: item.poster_path, backdrop_path: item.backdrop_path, vote_average: item.vote_average, release_date: item.release_date || item.first_air_date };
             await supabase.from('favorites').insert(favItem);
             setFavorites([favItem, ...favorites]);
-            showToast('❤️ Добавлено в избранное');
+            showToast('Добавлено в избранное');
         }
     }, [user, favorites, showToast, tg]);
 
@@ -131,14 +131,14 @@ export default function useContent(user, showToast) {
             tg?.HapticFeedback?.impactOccurred?.('light');
             await supabase.from('watchlist').delete().eq('user_id', user.id).eq('item_id', String(item.id));
             setWatchlist(prev => prev.filter(w => w.item_id !== String(item.id)));
-            showToast('🔖 Убрано из "Буду смотреть"');
+            showToast('Убрано из «Буду смотреть»');
         } else {
             tg?.HapticFeedback?.notificationOccurred?.('success');
             const wItem = { user_id: user.id, item_id: String(item.id), media_type: type, title: item.title || item.name, poster_path: item.poster_path, backdrop_path: item.backdrop_path, vote_average: item.vote_average, release_date: item.release_date || item.first_air_date };
             const { error } = await supabase.from('watchlist').insert(wItem);
             if (error) { console.error('Watchlist error:', error); return; }
             setWatchlist([wItem, ...watchlist]);
-            showToast('🔖 Буду смотреть!');
+            showToast('Буду смотреть!');
         }
     }, [user, watchlist, showToast, tg]);
 
@@ -190,7 +190,7 @@ export default function useContent(user, showToast) {
         setReviews(prev => [savedReview, ...prev]);
         if (setMovieComments) setMovieComments(prev => [{ ...savedReview, profiles: userProfile }, ...prev]);
         tg?.HapticFeedback?.notificationOccurred?.('success');
-        showToast('✅ Отзыв опубликован!');
+        showToast('Отзыв опубликован!');
         return true;
     }, [user, showToast, tg]);
 

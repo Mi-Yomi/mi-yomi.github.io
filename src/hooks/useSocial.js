@@ -135,7 +135,7 @@ export default function useSocial(user, showToast) {
                 await supabase.from('user_collections').insert({ user_id: user.id, title, items: items || [], is_public: true });
             }
             loadCollections();
-            showToast('📁 Коллекция сохранена');
+            showToast('Коллекция сохранена');
         } catch (_e) { showToast('Ошибка сохранения'); }
     }, [user, loadCollections, showToast]);
 

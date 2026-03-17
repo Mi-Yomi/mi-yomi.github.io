@@ -107,9 +107,9 @@ export default function useAdmin(user, isAdmin, showToast) {
             }
             if (result.error) {
                 console.error('[HADES] Users load error:', result.error);
-                showToast('⚠️ Ошибка загрузки: ' + result.error.message);
+                showToast('Ошибка загрузки: ' + result.error.message);
             }
-        } catch (e) { console.error(e); showToast('⚠️ Ошибка: ' + e.message); }
+        } catch (e) { console.error(e); showToast('Ошибка: ' + e.message); }
         setApprovalLoading(false);
     }, [showToast]);
 
@@ -117,7 +117,7 @@ export default function useAdmin(user, isAdmin, showToast) {
         const { error } = await supabase.from('profiles').update({ status: 'approved' }).eq('id', userId);
         if (error) { showToast('Ошибка: ' + error.message); return; }
         tg?.HapticFeedback?.notificationOccurred?.('success');
-        showToast('✅ Пользователь одобрен');
+        showToast('Пользователь одобрен');
         loadPendingUsers();
     }, [showToast, tg, loadPendingUsers]);
 
@@ -125,7 +125,7 @@ export default function useAdmin(user, isAdmin, showToast) {
         const { error } = await supabase.from('profiles').update({ status: 'rejected' }).eq('id', userId);
         if (error) { showToast('Ошибка: ' + error.message); return; }
         tg?.HapticFeedback?.notificationOccurred?.('warning');
-        showToast('🚫 Пользователь отклонён');
+        showToast('Пользователь отклонён');
         loadPendingUsers();
     }, [showToast, tg, loadPendingUsers]);
 
