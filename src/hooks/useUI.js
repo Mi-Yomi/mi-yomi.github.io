@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export default function useUI() {
     const tg = window.Telegram?.WebApp;
     const [tab, setTab] = useState('home');
-    const [profileTab, setProfileTab] = useState('favorites');
+    const [profileTab, setProfileTab] = useState('library');
     const [heroIndex, setHeroIndex] = useState(0);
     const [tvHeroIndex, setTvHeroIndex] = useState(0);
     const [animeHeroIndex, setAnimeHeroIndex] = useState(0);

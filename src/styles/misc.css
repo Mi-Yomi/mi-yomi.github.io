@@ -1,4 +1,17 @@
-/* Toast Notification */
+/* Toast Notification Stack */
+.toast-stack {
+    position: fixed; bottom: calc(var(--safe-bottom) + 90px); left: 50%; transform: translateX(-50%);
+    z-index: 999; display: flex; flex-direction: column; gap: 8px; align-items: center;
+    pointer-events: none;
+}
+.toast-item {
+    padding: 12px 24px; border-radius: 14px; font-size: 13px; font-weight: 700;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    animation: toastIn 0.3s var(--ease-out-expo) forwards;
+    white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
+}
 .toast {
     position: fixed; bottom: calc(var(--safe-bottom) + 80px); left: 50%; transform: translateX(-50%);
     padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700;
@@ -6,17 +19,17 @@
     box-shadow: 0 8px 30px rgba(0,0,0,0.6); z-index: 999;
     animation: toastIn 0.3s ease-out;
 }
-@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 /* Genre Chips Home */
 .genre-chips {
-    display: flex; gap: 10px; padding: 0 16px; margin-bottom: 28px;
+    display: flex; gap: 10px; padding: 0 20px; margin-bottom: 28px;
     overflow-x: auto; -webkit-overflow-scrolling: touch;
 }
 .genre-chips::-webkit-scrollbar { display: none; }
 .genre-chip {
-    flex-shrink: 0; padding: 10px 20px; border-radius: 25px;
-    font-size: 13px; font-weight: 700; cursor: pointer;
+    flex-shrink: 0; padding: 12px 24px; border-radius: 25px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
     border: 1px solid var(--border); background: var(--surface);
     color: var(--text-secondary); transition: all 0.25s;
     white-space: nowrap; font-family: inherit;
@@ -121,8 +134,8 @@
 .random-btn.spinning .random-icon { animation: spin 0.5s; }
 
 /* Library Sort */
-.library-sort { display: flex; gap: 6px; margin-bottom: 12px; }
-.library-sort-btn { padding: 6px 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.library-sort { display: flex; gap: 8px; margin-bottom: 16px; }
+.library-sort-btn { padding: 8px 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
 .library-sort-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
 
 /* Review Char Counter */

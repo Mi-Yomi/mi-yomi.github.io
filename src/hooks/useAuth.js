@@ -1,26 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/api/supabase.js';
-import { ADMIN_USERNAME, ADMIN_TAG } from '../lib/config.js';
+import { ADMIN_USERNAME, ADMIN_TAG, ADMIN_EMAIL, WHITELIST_ENABLED } from '../lib/config.js';
 import { toBase64 } from '../lib/utils.js';
 
 /**
- * @typedef {Object} AuthState
- * @property {import('@supabase/supabase-js').User|null} user
- * @property {Object|null} userProfile - Supabase profiles row
- * @property {boolean} loading
- * @property {boolean} isAdmin
- * @property {boolean} userApproved
- * @property {boolean} nameEditOpen
- * @property {string} newUsername
- * @property {boolean} refreshingStatus
- * @property {Function} loadUserProfile
- * @property {Function} updateUsername
- * @property {Function} handleLogout
- * @property {Function} handleProfileImage
- * @property {Function} refreshApprovalStatus
+ * Admin detection priority:
+ * 1. profiles.is_admin === true  (database flag — most reliable)
+ * 2. email === VITE_ADMIN_EMAIL  (env var — works before profile loads)
+ * 3. username#tag match          (hardcoded fallback)
+ *
+ * Admin is auto-approved inline during profile load (no chicken-and-egg).
  */
 
-/** @returns {AuthState} */
 export default function useAuth() {
     const tg = window.Telegram?.WebApp;
     const [user, setUser] = useState(null);
@@ -30,16 +21,24 @@ export default function useAuth() {
     const [newUsername, setNewUsername] = useState('');
     const [refreshingStatus, setRefreshingStatus] = useState(false);
 
-    const isAdmin = userProfile?.is_admin === true ||
-        (userProfile?.username === ADMIN_USERNAME && userProfile?.tag === ADMIN_TAG);
+    // --- Admin detection (multiple fallbacks) ---
+    const isAdmin = useMemo(() => {
+        if (userProfile?.is_admin === true) return true;
+        if (ADMIN_EMAIL && user?.email === ADMIN_EMAIL) return true;
+        if (userProfile?.username === ADMIN_USERNAME && userProfile?.tag === ADMIN_TAG) return true;
+        return false;
+    }, [userProfile, user]);
 
+    // --- Approval logic ---
     const userApproved = useMemo(() => {
         if (!userProfile) return false;
         if (isAdmin) return true;
+        if (!WHITELIST_ENABLED) return true;
         if (!userProfile.status) return true;
         return userProfile.status === 'approved';
     }, [userProfile, isAdmin]);
 
+    // --- Auth session ---
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) setUser(session.user);
@@ -47,20 +46,116 @@ export default function useAuth() {
         });
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) setUser(session.user);
-            else { setUser(null); setLoading(false); }
+            else { setUser(null); setUserProfile(null); setLoading(false); }
         });
         return () => subscription.unsubscribe();
     }, []);
 
-    const loadUserProfile = useCallback(async (userId, userEmail) => {
-        let { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-        if (!data) {
-            const username = userEmail ? userEmail.split('@')[0] : 'User';
-            const tag = Math.floor(1000 + Math.random() * 9000).toString();
-            const { data: newProfile } = await supabase.from('profiles').insert({ id: userId, email: userEmail, username, tag, status: 'pending' }).select().single();
-            data = newProfile;
+    /** Check if this email belongs to admin (env var or hardcoded) */
+    const _isAdminEmail = (email) => !!(ADMIN_EMAIL && email === ADMIN_EMAIL);
+
+    /** Check if this profile matches hardcoded admin credentials */
+    const _isAdminProfile = (profile) =>
+        profile && profile.username === ADMIN_USERNAME && profile.tag === ADMIN_TAG;
+
+    /**
+     * Auto-fix admin flags in DB if needed.
+     * Called inline during profile load — no separate useEffect, no chicken-and-egg.
+     */
+    const _ensureAdminFlags = async (profile, userId, emailIsAdmin) => {
+        const shouldBeAdmin = emailIsAdmin || _isAdminProfile(profile);
+        if (!shouldBeAdmin) return profile;
+
+        const needsFix = profile.is_admin !== true || profile.status !== 'approved';
+        if (!needsFix) return profile;
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({ is_admin: true, status: 'approved' })
+            .eq('id', userId);
+
+        if (error) {
+            console.warn('[HADES] Admin auto-fix DB update failed:', error.message);
+            // Still return fixed profile locally so admin isn't blocked
         }
-        if (data) { setUserProfile(data); setNewUsername(data.username); }
+        return { ...profile, is_admin: true, status: 'approved' };
+    };
+
+    const loadUserProfile = useCallback(async (userId, userEmail) => {
+        const emailIsAdmin = _isAdminEmail(userEmail);
+
+        // Step 1: Try to load existing profile (.maybeSingle avoids error on 0 rows)
+        const { data: existing, error: selectErr } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (existing) {
+            const profile = await _ensureAdminFlags(existing, userId, emailIsAdmin);
+            setUserProfile(profile);
+            setNewUsername(profile.username || '');
+            return;
+        }
+
+        // Log RLS / network issues (code PGRST116 = 0 rows, not an error)
+        if (selectErr) {
+            console.warn('[HADES] Profile SELECT failed:', selectErr.code, selectErr.message);
+        }
+
+        // Step 2: Profile doesn't exist → create new one
+        const username = userEmail ? userEmail.split('@')[0] : 'User';
+        const tag = Math.floor(1000 + Math.random() * 9000).toString();
+
+        const { data: created, error: insertErr } = await supabase
+            .from('profiles')
+            .insert({
+                id: userId,
+                email: userEmail,
+                username,
+                tag,
+                status: (emailIsAdmin || !WHITELIST_ENABLED) ? 'approved' : 'pending',
+                is_admin: emailIsAdmin,
+            })
+            .select()
+            .single();
+
+        if (created) {
+            setUserProfile(created);
+            setNewUsername(created.username || '');
+            return;
+        }
+
+        // Step 3: Insert failed — profile likely exists but RLS blocked the read
+        if (insertErr) {
+            console.warn('[HADES] Profile INSERT failed (RLS or duplicate):', insertErr.message);
+            // Retry read — RLS might allow now or was a transient issue
+            const { data: retry } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+
+            if (retry) {
+                const profile = await _ensureAdminFlags(retry, userId, emailIsAdmin);
+                setUserProfile(profile);
+                setNewUsername(profile.username || '');
+                return;
+            }
+        }
+
+        // Step 4: All DB operations failed — create minimal local profile
+        // so the app doesn't render with null profile (prevents blank username/avatar)
+        console.error('[HADES] All profile load attempts failed. Using local fallback.');
+        const fallback = {
+            id: userId,
+            email: userEmail,
+            username: userEmail ? userEmail.split('@')[0] : 'User',
+            status: emailIsAdmin ? 'approved' : 'pending',
+            is_admin: emailIsAdmin,
+        };
+        setUserProfile(fallback);
+        setNewUsername(fallback.username);
     }, []);
 
     const updateUsername = useCallback(async () => {
@@ -94,7 +189,7 @@ export default function useAuth() {
             } catch {}
         }
         const path = `${user.id}/${type}_${Date.now()}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
             .from('avatars')
             .upload(path, uploadFile, { upsert: true, contentType: uploadFile.type });
         if (uploadError) {
@@ -115,16 +210,28 @@ export default function useAuth() {
         if (!user) return;
         setRefreshingStatus(true);
         try {
-            const { data } = await supabase.from('profiles').select('status').eq('id', user.id).single();
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            if (error) {
+                console.warn('[HADES] Status refresh failed:', error.message);
+            }
+
             if (data) {
-                setUserProfile(prev => ({ ...prev, status: data.status }));
-                if (data.status === 'approved') {
+                // Inline admin fix on refresh too
+                const emailIsAdmin = _isAdminEmail(user.email);
+                const profile = await _ensureAdminFlags(data, user.id, emailIsAdmin);
+                setUserProfile(profile);
+                if (profile.status === 'approved' || profile.is_admin) {
                     tg?.HapticFeedback?.notificationOccurred?.('success');
-                } else if (data.status === 'rejected') {
+                } else if (profile.status === 'rejected') {
                     tg?.HapticFeedback?.notificationOccurred?.('error');
                 }
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error('[HADES] Status refresh error:', e); }
         setRefreshingStatus(false);
     }, [user, tg]);
 

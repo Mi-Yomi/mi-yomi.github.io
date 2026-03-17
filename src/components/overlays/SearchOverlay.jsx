@@ -38,6 +38,14 @@ export default function SearchOverlay() {
             <input className="search-input" placeholder="Поиск фильмов и сериалов..." value={query} onChange={e => setQuery(e.target.value)} autoFocus />
             <button className="search-cancel" onClick={() => { setSearchOpen(false); setQuery(''); setResults([]); setSearchFiltersOpen(false); setDiscoverResults([]); }}>Отмена</button>
         </div>
+
+        {/* Quick type filter (always visible) */}
+        <div className="search-quick-filter">
+            {[{id:'all',label:'Все'},{id:'movie',label:'Фильмы'},{id:'tv',label:'Сериалы'}].map(t => (
+                <button key={t.id} className={`search-quick-btn ${searchFilterType === t.id ? 'active' : ''}`}
+                    onClick={() => setSearchFilterType(t.id)}>{t.label}</button>
+            ))}
+        </div>
         
         {/* Filter Toggle */}
         <button className={`search-filters-toggle ${searchFiltersOpen ? 'active' : ''}`} onClick={() => setSearchFiltersOpen(!searchFiltersOpen)}>
@@ -102,17 +110,16 @@ export default function SearchOverlay() {
             ) : results.length > 0 ? (
                 <div className="search-grid">{results.map(r => <Card key={r.id} item={r} onSelect={(item, type) => { setSearchOpen(false); openDetails(item, type); }} type={r.media_type} />)}</div>
             ) : query ? (
-                <div className="search-empty" style={{padding:'60px 20px'}}>
-                    <div style={{fontSize:48,marginBottom:16,opacity:0.3}}>🔍</div>
-                    <div style={{fontWeight:700,marginBottom:6}}>Ничего не найдено</div>
-                    <div style={{fontSize:13}}>Попробуйте другой запрос или фильтры</div>
+                <div className="search-empty search-empty-padded">
+                    <div className="search-empty-icon">🔍</div>
+                    <div className="search-empty-title">Ничего не найдено</div>
+                    <div className="search-empty-hint">Попробуйте другой запрос или фильтры</div>
                 </div>
             ) : (
                 <div>
-                    {/* Search History */}
                     {searchHistory.length > 0 && !searchFiltersOpen && (
                         <div className="search-history">
-                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                            <div className="search-history-header">
                                 <div className="search-history-title">Недавние запросы</div>
                                 <button className="search-history-clear" onClick={clearSearchHistory}>Очистить</button>
                             </div>
@@ -125,10 +132,10 @@ export default function SearchOverlay() {
                         </div>
                     )}
                     {searchHistory.length === 0 && !searchFiltersOpen && (
-                        <div className="search-empty" style={{padding:'60px 20px'}}>
-                            <div style={{fontSize:48,marginBottom:16,opacity:0.3}}>🎬</div>
-                            <div style={{fontWeight:700,marginBottom:6}}>Поиск фильмов</div>
-                            <div style={{fontSize:13}}>Введите название или используйте фильтры</div>
+                        <div className="search-empty search-empty-padded">
+                            <div className="search-empty-icon">🎬</div>
+                            <div className="search-empty-title">Поиск фильмов</div>
+                            <div className="search-empty-hint">Введите название или используйте фильтры</div>
                         </div>
                     )}
                 </div>

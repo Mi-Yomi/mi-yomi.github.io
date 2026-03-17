@@ -28,17 +28,21 @@ function OverlayFallback() {
 }
 
 export default function App() {
-    const { loading, user, userProfile, isAdmin, tab, viewingFriend, contentRef, handleContentScroll } = useApp();
+    const { loading, user, userProfile, isAdmin, userApproved, tab, viewingFriend, contentRef, handleContentScroll } = useApp();
 
     if (loading && !user) {
-        return <div className="loader"><div className="loader-spin"></div></div>;
+        return <div className="loader"><div className="loader-spin"></div><div className="loader-brand">HADES</div></div>;
     }
 
     if (!user) {
         return <Auth />;
     }
 
-    if (userProfile && !isAdmin && userProfile.status && userProfile.status !== 'approved') {
+    if (user && !userProfile) {
+        return <div className="loader"><div className="loader-spin"></div><div className="loader-brand">HADES</div></div>;
+    }
+
+    if (userProfile && !isAdmin && !userApproved) {
         return <PendingScreen />;
     }
 

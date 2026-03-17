@@ -13,8 +13,8 @@
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
 }
-.mood-widget-title { font-size: 16px; font-weight: 900; margin-bottom: 4px; }
-.mood-widget-sub { font-size: 12px; color: var(--text-secondary); }
+.mood-widget-title { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
+.mood-widget-sub { font-size: 14px; color: var(--text-secondary); }
 .mood-overlay { position: fixed; inset: 0; z-index: 300; background: var(--bg); overflow-y: auto; animation: fadeUp 0.35s; }
 .mood-header { padding: calc(var(--safe-top) + 16px) 16px 16px; display: flex; align-items: center; gap: 12px; }
 .mood-close { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; font-size: 16px; }

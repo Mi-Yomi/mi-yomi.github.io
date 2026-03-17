@@ -90,14 +90,23 @@ export default function useAdmin(user, isAdmin, showToast) {
     const loadPendingUsers = useCallback(async () => {
         setApprovalLoading(true);
         try {
-            let result = await supabase.from('profiles').select('id, username, tag, email, avatar_url, status, created_at').order('created_at', { ascending: false });
-            if (result.error) result = await supabase.from('profiles').select('id, username, tag, email, avatar_url, status');
+            let result = await supabase
+                .from('profiles')
+                .select('id, username, tag, email, avatar_url, status, is_admin, created_at')
+                .order('created_at', { ascending: false });
+            if (result.error) {
+                // Fallback without ordering if created_at column issues
+                result = await supabase
+                    .from('profiles')
+                    .select('id, username, tag, email, avatar_url, status, is_admin');
+            }
             if (result.data) {
-                const filtered = result.data.filter(u => !(u.username === ADMIN_USERNAME && u.tag === ADMIN_TAG));
+                // Filter out admins by DB flag (not hardcoded username)
+                const filtered = result.data.filter(u => !u.is_admin);
                 setPendingUsers(filtered);
             }
             if (result.error) {
-                console.error('Pending users load error:', result.error);
+                console.error('[HADES] Users load error:', result.error);
                 showToast('⚠️ Ошибка загрузки: ' + result.error.message);
             }
         } catch (e) { console.error(e); showToast('⚠️ Ошибка: ' + e.message); }

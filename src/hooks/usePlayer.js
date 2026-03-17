@@ -132,11 +132,6 @@ export default function usePlayer(user, media, showToast, userApproved, isAnimeC
     }, []);
 
     const playSource = useCallback(async (url, sourceName, season = null, episode = null) => {
-        if (!userApproved) {
-            showToast('⏳ Ваша заявка ещё не одобрена администратором');
-            tg?.HapticFeedback?.notificationOccurred?.('error');
-            return;
-        }
         const s = season ?? currentSeason;
         const e = episode ?? currentEpisode;
         setPlayerUrl(url);

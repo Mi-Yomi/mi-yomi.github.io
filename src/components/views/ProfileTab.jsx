@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import Card from '../common/Card.jsx';
 import ProfileHeader from './ProfileHeader.jsx';
@@ -11,6 +11,7 @@ export default function ProfileTab() {
   const [colModalOpen, setColModalOpen] = useState(false);
   const [colModalTitle, setColModalTitle] = useState('');
   const [colModalEditId, setColModalEditId] = useState(null);
+  const [libFilter, setLibFilter] = useState('all');
   const {
     favorites, history, reviews, watchlist, collections, friendRequests,
     profileTab, setProfileTab, tg, profileCompletion, userProfile,
@@ -21,6 +22,30 @@ export default function ProfileTab() {
     sendFriendRequest, loadFriendProfile, acceptFriend, declineFriend, friends,
     libraryByStatus, libraryCounts, setStatusPickerItem,
   } = useApp();
+
+  const totalLibCount = useMemo(() =>
+    Object.values(libraryCounts).reduce((a, b) => a + b, 0),
+  [libraryCounts]);
+
+  const libraryItems = useMemo(() => {
+    if (libFilter === 'all') {
+      return LIBRARY_STATUSES.flatMap(s => (libraryByStatus[s.id] || []).map(item => ({ ...item, _status: s })));
+    }
+    const status = LIBRARY_STATUSES.find(s => s.id === libFilter);
+    return (libraryByStatus[libFilter] || []).map(item => ({ ...item, _status: status }));
+  }, [libFilter, libraryByStatus]);
+
+  const TABS = [
+    { id: 'library', label: '📚 Библиотека', count: totalLibCount },
+    { id: 'favorites', label: '❤️ Избранное' },
+    { id: 'history', label: '🕐 История' },
+    { id: 'reviews', label: '✍️ Отзывы' },
+    { id: 'collections', label: '📁 Коллекции', count: collections.length },
+    { id: 'stats', label: '📊 Стата' },
+    { id: 'friends', label: '👥 Друзья' },
+    { id: 'requests', label: '📩 Заявки', count: friendRequests.length },
+    { id: 'settings', label: '⚙️' },
+  ];
 
   return (
     <div className="tab-content">
@@ -40,17 +65,7 @@ export default function ProfileTab() {
         )}
 
         <div className="profile-tabs">
-            {[
-                ...LIBRARY_STATUSES.map(s => ({ id: `lib_${s.id}`, label: `${s.icon} ${s.label}`, count: libraryCounts[s.id] })),
-                { id: 'favorites', label: '❤️ Избранное' },
-                { id: 'history', label: '🕐 История' },
-                { id: 'reviews', label: '✍️ Отзывы' },
-                { id: 'collections', label: '📁 Коллекции', count: collections.length },
-                { id: 'stats', label: '📊 Стата' },
-                { id: 'friends', label: '👥 Друзья' },
-                { id: 'requests', label: '📩 Заявки', count: friendRequests.length },
-                { id: 'settings', label: '⚙️' },
-            ].map(t => (
+            {TABS.map(t => (
                 <button key={t.id} className={`library-tab ${profileTab === t.id ? 'active' : ''}`} onClick={() => { setProfileTab(t.id); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
                     {t.label}
                     {t.count > 0 && <span className="watchlist-badge">{t.count}</span>}
@@ -59,45 +74,62 @@ export default function ProfileTab() {
         </div>
 
         <div style={{ padding: '0 16px' }}>
-            {(profileTab.startsWith('lib_') || ['favorites', 'history'].includes(profileTab)) && (
+            {/* Library tab with sub-filters */}
+            {profileTab === 'library' && (
+                <div>
+                    <div className="library-sub-filter">
+                        <button className={`library-sub-btn ${libFilter === 'all' ? 'active' : ''}`} onClick={() => setLibFilter('all')}>
+                            Все {totalLibCount > 0 && <span className="watchlist-badge">{totalLibCount}</span>}
+                        </button>
+                        {LIBRARY_STATUSES.map(s => (
+                            <button key={s.id} className={`library-sub-btn ${libFilter === s.id ? 'active' : ''}`}
+                                style={libFilter === s.id ? { borderColor: s.color, color: s.color } : undefined}
+                                onClick={() => setLibFilter(s.id)}>
+                                {s.icon} {s.label}
+                                {libraryCounts[s.id] > 0 && <span className="watchlist-badge">{libraryCounts[s.id]}</span>}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="library-sort">
+                        {[{id:'date',label:'По дате'},{id:'rating',label:'По рейтингу'},{id:'title',label:'По имени'}].map(s => (
+                            <button key={s.id} className={`library-sort-btn ${librarySort === s.id ? 'active' : ''}`} onClick={() => setLibrarySort(s.id)}>{s.label}</button>
+                        ))}
+                    </div>
+
+                    {libraryItems.length > 0 ? (
+                        <div className="library-grid">
+                            {sortItems(libraryItems, librarySort).map(item => (
+                                <div key={item.item_id} style={{ position: 'relative' }}>
+                                    <Card item={{ ...item, id: item.item_id }} onSelect={openDetails} type={item.media_type} />
+                                    <button
+                                        className="library-status-badge"
+                                        style={{ borderColor: `${item._status.color}33`, color: item._status.color }}
+                                        onClick={(e) => { e.stopPropagation(); setStatusPickerItem({ ...item, id: item.item_id }); }}
+                                    >
+                                        {item._status.icon}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="library-empty">
+                            <div className="library-empty-icon">📚</div>
+                            <div className="library-empty-text">Список пуст</div>
+                            <div className="library-empty-hint">Откройте фильм и выберите статус</div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Favorites & History with sorting */}
+            {['favorites', 'history'].includes(profileTab) && (
                 <div className="library-sort">
                     {[{id:'date',label:'По дате'},{id:'rating',label:'По рейтингу'},{id:'title',label:'По имени'}].map(s => (
                         <button key={s.id} className={`library-sort-btn ${librarySort === s.id ? 'active' : ''}`} onClick={() => setLibrarySort(s.id)}>{s.label}</button>
                     ))}
                 </div>
             )}
-
-            {/* Library status categories */}
-            {LIBRARY_STATUSES.map(s => {
-                if (profileTab !== `lib_${s.id}`) return null;
-                const items = libraryByStatus[s.id] || [];
-                return items.length > 0 ? (
-                    <div key={s.id} className="library-grid">
-                        {sortItems(items, librarySort).map(item => (
-                            <div key={item.item_id} style={{ position: 'relative' }}>
-                                <Card item={{ ...item, id: item.item_id }} onSelect={openDetails} type={item.media_type} />
-                                <button
-                                    style={{
-                                        position: 'absolute', bottom: 44, right: 4, padding: '3px 8px', borderRadius: 8,
-                                        background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
-                                        border: `1px solid ${s.color}33`, color: s.color,
-                                        fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                                    }}
-                                    onClick={(e) => { e.stopPropagation(); setStatusPickerItem({ ...item, id: item.item_id }); }}
-                                >
-                                    {s.icon}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div key={s.id} className="library-empty">
-                        <div className="library-empty-icon">{s.icon}</div>
-                        <div className="library-empty-text">Список пуст</div>
-                        <div className="library-empty-hint">Откройте фильм и выберите статус</div>
-                    </div>
-                );
-            })}
 
             {profileTab === 'favorites' && (favorites.length > 0 ? <div className="library-grid">{sortItems(favorites, librarySort).map(f => <Card key={f.item_id} item={{...f, id: f.item_id}} onSelect={openDetails} onFav={toggleFavorite} isFav={true} type={f.media_type} />)}</div> : <div className="library-empty"><div className="library-empty-icon">❤️</div><div className="library-empty-text">Пока ничего не добавлено</div><div className="library-empty-hint">Нажмите ♥ на любом фильме</div></div>)}
             {profileTab === 'history' && (history.length > 0 ? <div className="library-grid">{sortItems(history, librarySort).map(h => <Card key={h.item_id} item={{...h, id: h.item_id}} onSelect={openDetails} onFav={toggleFavorite} isFav={favorites.some(fav => fav.item_id === h.item_id)} type={h.media_type} />)}</div> : <div className="library-empty"><div className="library-empty-icon">🕐</div><div className="library-empty-text">История пуста</div><div className="library-empty-hint">Начните смотреть — всё появится здесь</div></div>)}
