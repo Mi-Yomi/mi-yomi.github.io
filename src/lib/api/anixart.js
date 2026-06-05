@@ -53,6 +53,28 @@ export async function anixartFindRelease(media) {
     return null;
 }
 
+/** Full release object — has grade (rating), description, screenshots, related_releases (seasons/parts). */
+export async function anixartRelease(id) {
+    const data = await aniFetch(`/release/${id}`);
+    return data?.release || null;
+}
+
+/** Top / popular releases. sort: 1=last update, 2=popular, 3=rating, 4=newest, 5=year. */
+export async function anixartTop(page = 0, sort = 2) {
+    const data = await aniFetch(`/filter/${page}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sort }),
+    });
+    return data?.content || [];
+}
+
+/** Comments for a release. sort: 1=newest, 2=top. */
+export async function anixartComments(releaseId, page = 0, sort = 2) {
+    const data = await aniFetch(`/release/comment/all/${releaseId}/${page}?sort=${sort}`);
+    return data?.content || [];
+}
+
 export async function anixartTypes(releaseId) {
     const data = await aniFetch(`/episode/${releaseId}`);
     return data?.types || [];

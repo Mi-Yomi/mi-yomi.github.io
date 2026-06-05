@@ -4,6 +4,10 @@ export const TMDB_KEY = import.meta.env.VITE_TMDB_KEY;
 export const COLLAPS_TOKEN = import.meta.env.VITE_COLLAPS_TOKEN;
 export const COLLAPS_API = import.meta.env.VITE_COLLAPS_API;
 export const ALLOHA_TOKEN = import.meta.env.VITE_ALLOHA_TOKEN;
+/** URL of the deployed HDRezka Supabase Edge Function (see supabase/functions/hdrezka).
+ *  e.g. https://iofadiwrrbzrdnxajgrm.supabase.co/functions/v1/hdrezka
+ *  Leave unset to hide the HDRezka player tab. */
+export const HDREZKA_FN = import.meta.env.VITE_HDREZKA_FN || '';
 
 export const BASE = 'https://api.themoviedb.org/3';
 export const IMG = 'https://image.tmdb.org/t/p/w342';

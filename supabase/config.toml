@@ -1,0 +1,4 @@
+# Supabase project config (only what the HDRezka function needs).
+# The function is public (no JWT) so the app's <iframe> can load its player page.
+[functions.hdrezka]
+verify_jwt = false

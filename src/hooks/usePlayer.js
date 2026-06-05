@@ -241,21 +241,6 @@ export default function usePlayer(user, media, showToast, userApproved, isAnimeC
         return () => { window.removeEventListener('message', handlePlayerMessage); clearInterval(fallbackTimer); };
     }, [playerUrl, media, saveProgress, checkSkipSegment]);
 
-    // Swipe-to-go-back
-    useEffect(() => {
-        let touchStartX = 0;
-        const handleTouchStart = (e) => { touchStartX = e.touches[0].clientX; };
-        const handleTouchEnd = (e) => {
-            const diff = e.changedTouches[0].clientX - touchStartX;
-            if (diff > 100 && touchStartX < 40) {
-                if (playerOpen) closePlayer();
-            }
-        };
-        document.addEventListener('touchstart', handleTouchStart, { passive: true });
-        document.addEventListener('touchend', handleTouchEnd, { passive: true });
-        return () => { document.removeEventListener('touchstart', handleTouchStart); document.removeEventListener('touchend', handleTouchEnd); };
-    }, [playerOpen, closePlayer]);
-
     return {
         playerOpen, setPlayerOpen,
         playerUrl, setPlayerUrl,

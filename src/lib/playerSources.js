@@ -1,3 +1,5 @@
+import { HDREZKA_FN } from './config.js';
+
 // English / international iframe balancers (work by TMDB id, need a season/episode in the URL)
 export const FALLBACK_SOURCES = [
     { id: 'vidlink', name: 'VidLink', icon: 'link', getUrl: (id, type, s, e) => type === 'tv' ? `https://vidlink.pro/tv/${id}/${s}/${e}` : `https://vidlink.pro/movie/${id}` },
@@ -9,17 +11,20 @@ export const FALLBACK_SOURCES = [
 ];
 
 /** Russian balancers that handle their own season/episode navigation inside the iframe. */
-export const isRuSource = (name) => ['Collaps', 'Alloha', 'Kodik', 'Anixart'].includes(name);
+export const isRuSource = (name) => ['Collaps', 'Alloha', 'Anixart', 'Yohoho', 'HDRezka'].includes(name);
 
-/**
- * Kodik iframe by Kinopoisk id (works for films, series and anime). Kodik runs its
- * own episode/voiceover selector inside the player, so no external picker is needed.
- * NOTE: yohoho.cc was intentionally NOT embedded — it injects ad-redirects that hang
- * the page. Collaps / Alloha / Kodik are the balancers yohoho aggregates anyway.
- */
-export const kodikByKpUrl = (kpId) => `https://kodik.info/find-player?kinopoiskID=${kpId}`;
-export const kodikByImdbUrl = (imdbId) => `https://kodik.info/find-player?imdbID=tt${imdbId}`;
-export const kodikByMalUrl = (malId) => `https://kodik.info/find-player?mal_id=${malId}`;
+/** HDRezka resolve endpoint of our Edge Function — returns { ok, embed } JSON.
+ *  We resolve the balancer URL via fetch and point the iframe straight at it
+ *  (a 302 from the function loses the Referer cinemar.cc requires). */
+export const hdrezkaResolveUrl = (media) => {
+    const title = media.title || media.name || '';
+    const year = (media.release_date || media.first_air_date || '').slice(0, 4);
+    const type = media.media_type || (media.first_air_date ? 'tv' : 'movie');
+    return `${HDREZKA_FN}?action=resolve&title=${encodeURIComponent(title)}&year=${encodeURIComponent(year)}&type=${type}`;
+};
+
+/** Yohoho aggregator iframe by Kinopoisk id (extra fallback; injects ads — opt-in only). */
+export const yohohoUrl = (kpId) => `https://yohoho.cc/yo.php?kinopoisk=${kpId}`;
 
 /**
  * Build the ordered list of available players for the current title.
@@ -28,7 +33,7 @@ export const kodikByMalUrl = (malId) => `https://kodik.info/find-player?mal_id=$
  *   builtinEpisodes = the balancer has its own episode/season switcher inside the iframe,
  *   so we should NOT show our external episode picker for it.
  */
-export function buildPlayerSources({ media, collapsData, allohaData, isAnimeContent, animeData }) {
+export function buildPlayerSources({ media, collapsData, allohaData, isAnimeContent }) {
     if (!media) return [];
     const id = media.id;
     const type = media.media_type || (media.first_air_date ? 'tv' : 'movie');
@@ -41,20 +46,26 @@ export function buildPlayerSources({ media, collapsData, allohaData, isAnimeCont
     if (allohaData?.iframe) {
         sources.push({ id: 'alloha', name: 'Alloha', lang: 'ru', url: allohaData.iframe, builtinEpisodes: true });
     }
-    // Anixart — proper anime experience (voiceover + episode picker), anime only
-    if (isAnimeContent) {
-        sources.push({ id: 'anixart', name: 'Anixart', lang: 'ru', special: 'anixart', builtinEpisodes: true });
+    // HDRezka — only if its Edge Function is configured. Special: resolved via fetch
+    // (the function returns the cinemar.cc embed URL), then the iframe points straight
+    // at cinemar. Sandboxed + unsafe-url referrer (cinemar 404s without a Referer).
+    if (HDREZKA_FN) {
+        sources.push({ id: 'hdrezka', name: 'HDRezka', lang: 'ru', special: 'hdrezka', resolveUrl: hdrezkaResolveUrl(media), builtinEpisodes: true, ads: true });
     }
-    // Kodik — by MAL for anime, by Kinopoisk for everything else
-    if (isAnimeContent && animeData?.myAnimeListId) {
-        sources.push({ id: 'kodik', name: 'Kodik', lang: 'ru', url: kodikByMalUrl(animeData.myAnimeListId), builtinEpisodes: true });
-    } else if (kpId) {
-        sources.push({ id: 'kodik', name: 'Kodik', lang: 'ru', url: kodikByKpUrl(kpId), builtinEpisodes: true });
+    // Anixart — proper anime experience (voiceover + episode picker), anime only.
+    // Plays via kodikplayer, which is ad-prone -> mark `ads` so the iframe is sandboxed
+    // (otherwise its ad scripts call top.history.back() and close the page).
+    if (isAnimeContent) {
+        sources.push({ id: 'anixart', name: 'Anixart', lang: 'ru', special: 'anixart', builtinEpisodes: true, ads: true });
+    }
+    // Yohoho aggregator — opt-in extra (ads); only when we have a Kinopoisk id
+    if (kpId) {
+        sources.push({ id: 'yohoho', name: 'Yohoho', lang: 'ru', url: yohohoUrl(kpId), builtinEpisodes: true, ads: true });
     }
 
-    // International balancers (need explicit season/episode)
+    // International balancers (need explicit season/episode) — also ad-prone, sandbox them
     for (const fb of FALLBACK_SOURCES) {
-        sources.push({ id: fb.id, name: fb.name, lang: 'en', getUrl: fb.getUrl, builtinEpisodes: false, icon: fb.icon, _fb: fb });
+        sources.push({ id: fb.id, name: fb.name, lang: 'en', getUrl: fb.getUrl, builtinEpisodes: false, icon: fb.icon, _fb: fb, ads: true });
     }
 
     return sources.map(s => ({ ...s, url: s.url || (s.getUrl ? s.getUrl(id, type, 1, 1) : null) }));

@@ -52,8 +52,14 @@ export default function useDetails() {
         setSourceLoading(false);
     }, []);
 
-    const openDetails = useCallback(async (item, type = 'movie') => {
-        window.location.hash = `${type}/${item.id}`;
+    const openDetails = useCallback(async (item, type = 'movie', opts = {}) => {
+        // Push a real history entry so the browser / Android back button (and the
+        // in-app back button via history.back()) returns to the previous screen
+        // instead of re-triggering a hashchange. Skip when we're *responding* to a
+        // back/forward navigation or a deep link (the entry already exists).
+        if (!opts.skipPush) {
+            try { window.history.pushState({ hadesDetails: true, did: item.id, dtype: type }, '', `#${type}/${item.id}`); } catch { /* ignore */ }
+        }
         setSeasonsData([]);
         setOverviewExpanded(false);
         setRecommendations([]);
@@ -81,15 +87,24 @@ export default function useDetails() {
         }
     }, [loadSources, loadMovieComments, loadRecommendations]);
 
+    // Pure cleanup — called by the popstate handler when we leave a details entry.
+    // Does NOT touch history (the browser already moved us back).
     const closeDetails = useCallback(() => {
         setDetailsOpen(false);
-        window.history.pushState('', '', window.location.pathname);
         setMedia(null);
         setCollapsData(null);
         setAllohaData(null);
         setMovieComments([]);
         setSeasonsData([]);
     }, []);
+
+    // What the in-app back button / ESC / edge-swipe call: step back in history
+    // (which fires popstate -> closeDetails). Falls back to a direct close if for
+    // some reason we aren't sitting on a details history entry.
+    const goBackFromDetails = useCallback(() => {
+        if (window.history.state?.hadesDetails) window.history.back();
+        else closeDetails();
+    }, [closeDetails]);
 
     return {
         media, setMedia,
@@ -107,6 +122,6 @@ export default function useDetails() {
         reviewRating, setReviewRating,
         reviewText, setReviewText,
         loadMovieComments, loadRecommendations, loadSources,
-        openDetails, closeDetails,
+        openDetails, closeDetails, goBackFromDetails,
     };
 }

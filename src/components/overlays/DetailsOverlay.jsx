@@ -1,14 +1,17 @@
+import { useEffect, useRef } from 'react';
 import Card from '../common/Card.jsx';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import InlinePlayer from '../views/InlinePlayer.jsx';
+import AnixartComments from '../views/AnixartComments.jsx';
 
 export default function DetailsOverlay() {
   const {
     detailsOpen,
     media,
     BACKDROP,
-    closeDetails,
+    goBackFromDetails,
+    isAnimeContent,
     tg,
     favorites,
     toggleFavorite,
@@ -30,12 +33,19 @@ export default function DetailsOverlay() {
     getItemStatus, setStatusPickerItem,
   } = useApp();
 
+  // Always start a freshly-opened title at the top (the overlay scrolls internally,
+  // so without this it would keep the previous title's scroll position).
+  const overlayRef = useRef(null);
+  useEffect(() => {
+    if (detailsOpen && overlayRef.current) overlayRef.current.scrollTop = 0;
+  }, [media?.id, detailsOpen]);
+
   return (
-    <div className={`overlay ${detailsOpen ? 'open' : ''}`}>
+    <div ref={overlayRef} className={`overlay ${detailsOpen ? 'open' : ''}`}>
         {media && (
             <>
                 <div className="details-backdrop" style={{ backgroundImage: `url(${BACKDROP}${media.backdrop_path})` }}>
-                    <button className="details-back" onClick={closeDetails}>{I.back}</button>
+                    <button className="details-back" onClick={goBackFromDetails}>{I.back}</button>
                     <button className="details-share" onClick={async (e) => {
                         e.stopPropagation();
                         const url = `${window.location.origin}${window.location.pathname}#${media.media_type}/${media.id}`;
@@ -228,6 +238,8 @@ export default function DetailsOverlay() {
                             </div>
                         )}
                     </div>
+
+                    {isAnimeContent && <AnixartComments media={media} />}
                     </div>{/* /dov-extra */}
                 </div>
             </>

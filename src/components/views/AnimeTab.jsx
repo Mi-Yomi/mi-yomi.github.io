@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import Section from '../common/Section.jsx';
 import HeroCarousel from './HeroCarousel.jsx';
+import AnixartTopSection from './AnixartTopSection.jsx';
 
 export default function AnimeTab() {
     const {
@@ -43,6 +44,8 @@ export default function AnimeTab() {
                     </button>
                 ))}
             </div>
+
+            <AnixartTopSection />
 
             <Section title="Аниме-сериалы" icon={I.tv} items={filteredAnimeSeries} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="tv" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
             <Section title="Аниме-фильмы" icon={I.film} items={filteredAnimeMovies} onSelect={openDetails} onFav={toggleFavorite} favorites={favorites} type="movie" loading={dataLoading} onBookmark={toggleWatchlist} watchlist={watchlist} />
