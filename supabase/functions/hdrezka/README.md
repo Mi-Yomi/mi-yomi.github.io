@@ -1,45 +1,45 @@
 # HDRezka Edge Function
 
-Server-side HDRezka parser + self-contained player. The app embeds it as an `<iframe>`,
-so no extra frontend deps. It exists because HDRezka has **no CORS API and blocks
-datacenter IPs** — it must be fetched from a place where Rezka is reachable.
+Resolves an HDRezka title to its embeddable player and redirects the app's `<iframe>`
+to it. Targets the **kz.rezka.biz / rezka.biz** family, which embeds a **cinemar.cc**
+balancer (no stream decryption needed — we just extract the iframe URL). Runs
+server-side because the mirror blocks browser/CORS access, but it's reachable from far
+more regions than `rezka.ag`.
+
+✅ Validated end-to-end against `https://kz.rezka.biz` (movies + series resolve to a
+cinemar.cc player). The user is in KZ, where this mirror works.
 
 ## Deploy
 
 ```bash
-# one-time
 npm i -g supabase
-supabase login                       # opens browser, paste your access token
-supabase link --project-ref iofadiwrrbzrdnxajgrm   # your project ref
-
-# deploy (must be public so the iframe can load it)
-supabase functions deploy hdrezka --no-verify-jwt
+supabase login
+supabase link --project-ref iofadiwrrbzrdnxajgrm
+supabase functions deploy hdrezka --no-verify-jwt   # public, so the iframe can load it
 ```
 
-Then point the app at it — add to `.env` (and to your build env / GitHub secret):
+Then point the app at it (in `.env` and your build/deploy env):
 
 ```
 VITE_HDREZKA_FN=https://iofadiwrrbzrdnxajgrm.supabase.co/functions/v1/hdrezka
 ```
 
-Rebuild the app. An **"RU HDRezka"** tab now appears on every title.
+Rebuild — an **"RU HDRezka"** tab appears on every title.
 
-## ⚠️ Geo-block
+## If it can't reach the mirror
 
-Supabase Edge Functions run in your project's region (often US/EU). HDRezka frequently
-blocks those IPs. If the tab shows *"HDRezka недоступна с этого сервера"*:
+Supabase functions run in your project's region. If the tab shows
+*"Ни одно зеркало HDRezka недоступно…"*, set secrets and redeploy:
 
-1. Set a working mirror list:
-   `supabase secrets set HDREZKA_MIRRORS="https://hdrezka.ag,https://rezka.ag"`
-2. And/or route through a CIS/residential proxy:
-   `supabase secrets set HDREZKA_PROXY="https://your-proxy/{url}"`
-   (`{url}` is replaced with the URL-encoded target; or a plain prefix proxy.)
-3. Redeploy. If your region simply can't reach Rezka, run the same parser on a small
-   VPS in RU/CIS instead and set `VITE_HDREZKA_FN` to that host.
+```bash
+supabase secrets set HDREZKA_MIRRORS="https://kz.rezka.biz,https://rezka.biz"
+# optional proxy in a reachable region ("{url}" is replaced with the encoded target,
+# or a plain prefix proxy):
+supabase secrets set HDREZKA_PROXY="https://your-proxy/{url}"
+```
 
-## Endpoints (one function, by `?action=`)
+## Debug endpoints
 
-- *(no action)* → the HTML player page (what the app iframes): `?title=..&year=..&type=..`
-- `?action=info&title=..&year=..` → `{ id, isSeries, translators[], seasons[] }`
-- `?action=stream&id=..&translator=..&series=0|1&season=&episode=` → `{ qualities{label:url} }`
-- `?action=search&q=..` → `{ results[] }`
+- `?action=resolve&title=Матрица&year=1999&type=movie` → `{ ok, embed, picked }`
+- `?action=search&q=Матрица` → `{ ok, results[] }`
+- *(no action)* `?title=..&year=..&type=movie|tv` → 302 → the balancer player (iframe target)

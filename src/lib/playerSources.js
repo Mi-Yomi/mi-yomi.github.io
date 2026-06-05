@@ -44,9 +44,10 @@ export function buildPlayerSources({ media, collapsData, allohaData, isAnimeCont
     if (allohaData?.iframe) {
         sources.push({ id: 'alloha', name: 'Alloha', lang: 'ru', url: allohaData.iframe, builtinEpisodes: true });
     }
-    // HDRezka — only if its Edge Function is configured (it serves its own player page)
+    // HDRezka — only if its Edge Function is configured. The function redirects to a
+    // balancer player (cinemar.cc), so sandbox it like the other ad-prone iframes.
     if (HDREZKA_FN) {
-        sources.push({ id: 'hdrezka', name: 'HDRezka', lang: 'ru', url: hdrezkaUrl(media), builtinEpisodes: true });
+        sources.push({ id: 'hdrezka', name: 'HDRezka', lang: 'ru', url: hdrezkaUrl(media), builtinEpisodes: true, ads: true });
     }
     // Anixart — proper anime experience (voiceover + episode picker), anime only.
     // Plays via kodikplayer, which is ad-prone -> mark `ads` so the iframe is sandboxed
