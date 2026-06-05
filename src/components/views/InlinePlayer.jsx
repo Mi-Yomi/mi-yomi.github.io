@@ -80,6 +80,10 @@ export default function InlinePlayer() {
     const enSources = sources.filter(s => s.lang === 'en');
     const isTv = media.media_type === 'tv';
     const builtin = isRuSource(playerSource);
+    const activeSrc = sources.find(s => s.name === playerSource);
+    // Ad-heavy balancers (yohoho) get sandboxed so they can't redirect the whole app
+    // or spawn popups, while still being allowed to run their player.
+    const frameSandbox = activeSrc?.ads ? 'allow-scripts allow-same-origin allow-forms allow-presentation' : undefined;
     const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
 
     const retry = () => {
@@ -94,8 +98,8 @@ export default function InlinePlayer() {
                 <div className="player-picker-label">{I.play} Где смотреть</div>
                 <div className="player-tabs">
                     {ruSources.map(s => (
-                        <button key={s.id} className={`player-tab ${playerSource === s.name ? 'active' : ''}`} onClick={() => selectSource(s)}>
-                            <span className="ru-badge">RU</span> {s.name}
+                        <button key={s.id} className={`player-tab ${playerSource === s.name ? 'active' : ''}`} onClick={() => selectSource(s)} title={s.id === 'yohoho' ? 'Доп. вариант — много рекламы' : undefined}>
+                            <span className="ru-badge">RU</span> {s.name}{s.id === 'yohoho' ? ' ⚠' : ''}
                         </button>
                     ))}
                     {sourceLoading && <span className="player-tab is-loading"><span className="player-tab-dot" /> Ищем озвучки…</span>}
@@ -112,6 +116,10 @@ export default function InlinePlayer() {
                     </div>
                 )}
             </div>
+
+            {playerSource === 'Anixart' && (
+                <AnixartPanel media={media} onPlay={playAnixart} />
+            )}
 
             <div className="player-frame inline">
                 {playerUrl ? (
@@ -137,6 +145,7 @@ export default function InlinePlayer() {
                             allowFullScreen
                             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                             referrerPolicy="no-referrer"
+                            sandbox={frameSandbox}
                             onLoad={() => { setPlayerLoaded(true); setPlayerError(false); if (playerTimerRef.current) clearTimeout(playerTimerRef.current); }}
                         />
                         {activeSkip && (
@@ -155,10 +164,6 @@ export default function InlinePlayer() {
                     </div>
                 )}
             </div>
-
-            {playerSource === 'Anixart' && (
-                <AnixartPanel media={media} onPlay={playAnixart} />
-            )}
 
             {playerSource !== 'Anixart' && isTv && playerUrl && (
                 builtin ? (

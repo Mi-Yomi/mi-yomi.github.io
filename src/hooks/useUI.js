@@ -36,19 +36,30 @@ export default function useUI() {
     const [animeGenre, setAnimeGenre] = useState('all');
     const [librarySort, setLibrarySort] = useState('date');
 
-    // Scroll handler
+    // Scroll handler. The scroll container is `.content` on some layouts but the
+    // window on the desktop layout, so we watch both and target both.
     const handleContentScroll = useCallback((e) => {
         setShowScrollTop(e.target.scrollTop > 400);
     }, []);
 
+    useEffect(() => {
+        const onScroll = () => {
+            const y = Math.max(window.scrollY || 0, contentRef.current?.scrollTop || 0);
+            setShowScrollTop(y > 400);
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
     const scrollToTop = useCallback(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
         tg?.HapticFeedback?.impactOccurred?.('light');
     }, [tg]);
 
-    // Tab change: cards now animate via CSS IntersectionObserver in Card.jsx
-    // anime.js kept only for complex overlay/hero animations in useAppController
+    // Reset scroll to the top whenever the tab changes (window + content container).
     useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
         contentRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     }, [tab]);
 

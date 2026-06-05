@@ -66,16 +66,28 @@ export default function useAppController() {
         if (auth.user) syncWithDB(auth.user.id, auth.user.email);
     }, [auth.user]);
 
-    // Hash-based deep linking
+    // Deep link on first load (e.g. opened/refreshed on #movie/123)
     useEffect(() => {
-        const handleHash = () => {
-            const [type, id] = window.location.hash.substring(1).split('/');
-            if (id) details.openDetails({ id }, type);
-        };
-        handleHash();
-        window.addEventListener('hashchange', handleHash);
-        return () => window.removeEventListener('hashchange', handleHash);
+        const [type, id] = window.location.hash.substring(1).split('/');
+        if (id) details.openDetails({ id }, type, { skipPush: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Back / forward (browser button, Android hardware back, iOS edge-swipe) — close
+    // details or switch to the title in the restored history entry.
+    useEffect(() => {
+        const onPop = () => {
+            const st = window.history.state;
+            const inDetails = !!(st && st.hadesDetails);
+            if (!inDetails) {
+                if (details.detailsOpen) details.closeDetails();
+            } else if (!details.detailsOpen || String(details.media?.id) !== String(st.did)) {
+                details.openDetails({ id: st.did }, st.dtype, { skipPush: true });
+            }
+        };
+        window.addEventListener('popstate', onPop);
+        return () => window.removeEventListener('popstate', onPop);
+    }, [details.detailsOpen, details.media]);
 
     // Load "For You" when history loads
     useEffect(() => {
@@ -157,26 +169,15 @@ export default function useAppController() {
             if (search.searchOpen) { search.setSearchOpen(false); return; }
             if (ui.moodOpen) { ui.setMoodOpen(false); return; }
             if (social.notifOpen) { social.setNotifOpen(false); return; }
-            if (details.detailsOpen) { details.closeDetails(); return; }
+            if (details.detailsOpen) { details.goBackFromDetails(); return; }
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [player.playerOpen, search.searchOpen, ui.moodOpen, social.notifOpen, details.detailsOpen]);
 
-    // Swipe-to-go-back for details
-    useEffect(() => {
-        let touchStartX = 0;
-        const handleTouchStart = (e) => { touchStartX = e.touches[0].clientX; };
-        const handleTouchEnd = (e) => {
-            const diff = e.changedTouches[0].clientX - touchStartX;
-            if (diff > 100 && touchStartX < 40) {
-                if (!player.playerOpen && details.detailsOpen) details.closeDetails();
-            }
-        };
-        document.addEventListener('touchstart', handleTouchStart, { passive: true });
-        document.addEventListener('touchend', handleTouchEnd, { passive: true });
-        return () => { document.removeEventListener('touchstart', handleTouchStart); document.removeEventListener('touchend', handleTouchEnd); };
-    }, [player.playerOpen, details.detailsOpen]);
+    // (Removed the custom left-edge swipe-to-go-back: it double-fired with iOS's
+    // native edge-swipe and could trigger when scrolling a row near the left edge.
+    // System/browser back now closes details via the popstate handler above.)
 
     // Save progress on unload
     useEffect(() => {

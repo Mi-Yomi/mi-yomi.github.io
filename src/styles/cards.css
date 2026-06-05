@@ -6,8 +6,12 @@
 
 .scroll-row {
     display: flex; gap: 16px; padding: 0 20px; overflow-x: auto;
-    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
-    content-visibility: auto; contain-intrinsic-size: auto 260px;
+    /* Gentle snap (mandatory fought the finger); contain horizontal overscroll so
+       a row scrolled to its end doesn't trigger the browser back-swipe / page bounce.
+       content-visibility was removed — its intrinsic-size estimate was wrong, so rows
+       resized as they rendered and jumped the page vertically during scroll. */
+    scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    overscroll-behavior-x: contain; touch-action: pan-x pan-y;
 }
 .scroll-row::-webkit-scrollbar { display: none; }
 
