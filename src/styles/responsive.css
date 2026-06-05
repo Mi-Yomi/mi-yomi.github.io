@@ -1,0 +1,297 @@
+/* ============================================================
+   RESPONSIVE — Desktop / large-screen experience
+   Additive layer. All rules are gated behind min-width media
+   queries so the mobile-first design below is never altered.
+   Breakpoint: >= 1024px is treated as "desktop".
+   ============================================================ */
+
+@media (min-width: 1024px) {
+    :root {
+        --gutter: 56px;
+        --header-h: 72px;
+    }
+
+    /* ---------- Top navigation bar ---------- */
+    .header {
+        padding: 0 var(--gutter);
+        height: var(--header-h);
+        display: flex;
+        align-items: center;
+        gap: 40px;
+        background: linear-gradient(to bottom, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0) 100%);
+    }
+    .header.scrolled {
+        background: rgba(10,10,10,0.82);
+        backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+        border-bottom: 1px solid var(--border);
+    }
+    .logo-main { font-size: 24px; }
+    .logo-sub { font-size: 8px; letter-spacing: 4px; }
+
+    /* Desktop inline nav (rendered only on desktop by AppHeader) */
+    .header-nav {
+        display: flex; align-items: center; gap: 6px;
+        margin-right: auto;
+    }
+    .header-nav-item {
+        position: relative;
+        background: none; border: none; cursor: pointer;
+        font-family: inherit; font-size: 15px; font-weight: 600;
+        color: var(--text-secondary);
+        padding: 8px 16px; border-radius: 10px;
+        transition: color var(--transition-fast) ease, background var(--transition-fast) ease;
+    }
+    .header-nav-item:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+    .header-nav-item.active { color: var(--text); }
+    .header-nav-item.active::after {
+        content: ''; position: absolute; left: 16px; right: 16px; bottom: 2px;
+        height: 2px; border-radius: 2px;
+        background: linear-gradient(90deg, var(--accent), #ff6b6b);
+    }
+    .header-nav-badge {
+        position: absolute; top: 2px; right: 6px;
+        min-width: 16px; height: 16px; padding: 0 4px;
+        background: var(--accent); border-radius: 8px;
+        font-size: 9px; font-weight: 800; color: #fff;
+        display: flex; align-items: center; justify-content: center;
+    }
+    /* Header avatar (desktop) */
+    .header-avatar {
+        width: 38px; height: 38px; border-radius: 50%;
+        border: 2px solid var(--border); cursor: pointer; overflow: hidden;
+        background: linear-gradient(135deg, var(--accent), var(--pink));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0;
+        transition: border-color var(--transition-fast) ease, transform var(--transition-fast) ease;
+        padding: 0;
+    }
+    .header-avatar:hover { border-color: var(--accent); transform: scale(1.05); }
+    .header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .icon-btn { width: 40px; height: 40px; background: rgba(255,255,255,0.06); }
+    .icon-btn:hover { background: rgba(255,255,255,0.14); transform: scale(1.05); }
+
+    /* Hide the mobile bottom nav on desktop */
+    .nav { display: none !important; }
+
+    /* ---------- Content shell ---------- */
+    .content {
+        padding-top: 0;
+        padding-bottom: 80px;
+    }
+
+    /* ---------- Section rows ---------- */
+    .section { margin-bottom: 48px; }
+    .section-head { padding: 0 var(--gutter); margin-bottom: 18px; }
+    .section-title { font-size: 26px; letter-spacing: -0.4px; }
+    .scroll-row { padding: 4px var(--gutter); gap: 20px; }
+
+    /* Bigger cards on desktop */
+    .card { width: 188px; }
+    .card-title { font-size: 15px; }
+    .card-meta { font-size: 12px; }
+
+    .continue-card { width: 360px; }
+    .upcoming-card { width: 220px; }
+
+    /* Genre filters get the desktop gutter */
+    .genre-chips, .tv-genres, .anime-genres { padding: 0 var(--gutter); margin-bottom: 32px; }
+    .genre-chip { font-size: 14px; }
+
+    .mood-widget { margin: 0 var(--gutter) 28px; }
+    .random-btn { margin: 0 var(--gutter) 24px; max-width: 320px; }
+
+    /* ---------- Tab page headers (TV / Anime) ----------
+       The fixed top nav already identifies the section and the hero leads
+       the page (ref: Raya home), so the centered title block is redundant
+       and would collide with the nav. Hide it on desktop. */
+    .tv-header, .anime-header { display: none; }
+}
+
+/* Details poster + meta list are desktop-only (mobile keeps its layout) */
+.dov-poster { display: none; }
+.dov-meta { display: none; }
+
+/* ============================================================
+   HERO — cinematic on desktop (ref: Raya home)
+   ============================================================ */
+@media (min-width: 1024px) {
+    .hero-carousel, .hero {
+        height: 82vh; max-height: 760px; min-height: 560px;
+        margin-bottom: 36px;
+    }
+    .skeleton-hero { height: 82vh; max-height: 760px; min-height: 560px; }
+
+    .hero-slide .hero-bg, .hero-bg { background-position: center 18%; }
+
+    /* Two-direction gradient: dark bottom + dark left, image breathes on the right */
+    .hero-slide .hero-grad, .hero-grad {
+        background:
+            linear-gradient(to top, var(--bg) 2%, rgba(10,10,10,0.15) 42%, transparent 75%),
+            linear-gradient(to right, rgba(10,10,10,0.92) 0%, rgba(10,10,10,0.55) 32%, transparent 62%);
+    }
+
+    .hero-slide .hero-content, .hero-content {
+        left: var(--gutter); right: auto; bottom: 84px;
+        max-width: 620px;
+    }
+    .hero-badge { font-size: 11px; padding: 6px 14px; margin-bottom: 18px; }
+    .hero-title { font-size: clamp(40px, 4.4vw, 64px); margin-bottom: 16px; letter-spacing: -1.5px; }
+    .hero-meta { font-size: 15px; gap: 18px; margin-bottom: 18px; }
+    .hero-overview {
+        font-size: 15px; line-height: 1.6; max-height: none;
+        -webkit-line-clamp: 3; line-clamp: 3; margin-bottom: 26px;
+        color: rgba(255,255,255,0.78);
+    }
+    .hero-btns { gap: 14px; align-items: center; }
+    .hero-btn {
+        font-size: 16px; padding: 15px 38px; border-radius: 12px;
+    }
+    /* Circular secondary action, matching the reference's PLAY + ⊕ pairing */
+    .hero-btn.secondary {
+        width: 54px; height: 54px; padding: 0; border-radius: 50%;
+        justify-content: center; border: 1px solid rgba(255,255,255,0.25);
+    }
+    .hero-btn.secondary svg { width: 22px; height: 22px; }
+    @media (hover: hover) {
+        .hero-btn:hover { transform: scale(1.04); }
+        .hero-btn.secondary:hover { background: rgba(255,255,255,0.18); }
+    }
+    .hero-dots { justify-content: flex-start; left: var(--gutter); right: auto; bottom: 36px; }
+
+    /* Make whole slide clickable but keep buttons above */
+    .hero-content { z-index: 3; }
+}
+
+/* ============================================================
+   DETAILS — two-column layout on desktop (ref: La La Land page)
+   Poster + watch actions on the left, info on the right.
+   ============================================================ */
+@media (min-width: 1024px) {
+    .details-backdrop { height: 66vh; max-height: 620px; }
+    .details-backdrop::after {
+        background: linear-gradient(to top, var(--bg) 1%, rgba(10,10,10,0.35) 38%, rgba(0,0,0,0.25) 100%);
+    }
+    .details-back, .details-fav, .details-share { top: 88px; width: 44px; height: 44px; }
+    .details-back { left: var(--gutter); }
+    .details-fav { right: var(--gutter); }
+    .details-share { right: calc(var(--gutter) + 56px); }
+    @media (hover: hover) {
+        .details-back:hover, .details-fav:hover, .details-share:hover { background: rgba(10,10,10,0.8); transform: scale(1.06); }
+    }
+
+    .details-body {
+        max-width: 1200px;
+        margin: -200px auto 0;
+        padding: 0 var(--gutter) 90px;
+        display: grid;
+        grid-template-columns: 300px minmax(0, 1fr);
+        grid-template-areas:
+            "watch head"
+            "watch player"
+            "watch extra";
+        column-gap: 52px;
+        align-items: start;
+    }
+    .dov-head  { grid-area: head; }
+    /* Poster keeps its own left column the whole way down so the right-hand
+       content can never scroll underneath the sticky poster. */
+    .dov-watch { grid-area: watch; position: sticky; top: 92px; align-self: start; }
+    .dov-player { grid-area: player; margin-top: 22px; }
+    .dov-extra { grid-area: extra; margin-top: 28px; }
+
+    /* Poster */
+    .dov-poster { display: block; margin-bottom: 18px; }
+    .dov-poster-img {
+        width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block;
+        border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 24px 70px rgba(0,0,0,0.7);
+    }
+    .dov-poster-ph {
+        width: 100%; aspect-ratio: 2/3; border-radius: 16px;
+        display: flex; align-items: center; justify-content: center; text-align: center;
+        padding: 16px; font-weight: 700; color: var(--text-muted);
+        background: linear-gradient(160deg, var(--surface), var(--surface-3));
+        border: 1px solid var(--border);
+    }
+
+    /* Head: title sits over the lower backdrop like the reference */
+    .details-top-row { margin-bottom: 14px; }
+    .details-title { font-size: clamp(32px, 3vw, 46px); }
+    .details-original-title { font-size: 14px; }
+    .details-score-ring { width: 64px; height: 64px; }
+    .details-score-ring svg { width: 64px; height: 64px; }
+    .details-score-value { font-size: 17px; }
+    .details-info-chips { margin: 14px 0 14px; }
+    .details-info-chip { font-size: 13px; }
+    .detail-genre-tag { font-size: 13px; }
+
+    /* Details meta list (ref: La La Land "Details" column) */
+    .dov-meta { display: block; margin-top: 22px; }
+    .dov-meta-title {
+        font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+        color: var(--text-muted); margin-bottom: 12px;
+        display: flex; align-items: center; gap: 7px;
+    }
+    .dov-meta-title svg { width: 14px; height: 14px; opacity: 0.6; }
+    .dov-meta-list { display: flex; flex-direction: column; gap: 9px; }
+    .dov-meta-row { display: grid; grid-template-columns: 116px 1fr; gap: 12px; align-items: baseline; }
+    .dov-meta-row dt { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+    .dov-meta-row dd { font-size: 14px; font-weight: 600; color: var(--text); margin: 0; }
+
+    /* Watch column buttons read as a tidy stack */
+    .play-main-btn { font-size: 15px; padding: 15px; }
+    @media (hover: hover) {
+        .play-main-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    }
+    .fallback-grid { grid-template-columns: repeat(2, 1fr); }
+    .fallback-section { margin-top: 18px; padding: 16px; }
+
+    /* Extra column: roomier reading width + bigger headings */
+    .details-overview-section { margin-top: 0; }
+    .details-overview { font-size: 15px; }
+    .detail-cast-title, .recs-title, .comments-title { font-size: 20px; }
+    .detail-cast { margin-top: 32px; }
+    .detail-cast-img, .detail-cast-placeholder { width: 76px; height: 76px; }
+    .detail-cast-card { width: 92px; }
+
+    /* Similar / recommendations as a wrapping grid, not a cramped scroller */
+    .recs-scroll {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 20px 16px; overflow: visible;
+    }
+    .recs-scroll .card { width: 100%; }
+}
+
+/* Wider desktops: cap the cinematic widths so things stay balanced */
+@media (min-width: 1700px) {
+    .scroll-row, .section-head, .genre-chips, .tv-genres, .anime-genres { padding-left: 80px; padding-right: 80px; }
+    .hero-slide .hero-content, .hero-content, .hero-dots { left: 80px; }
+}
+
+/* ============================================================
+   PROFILE — has no hero, so it must clear the fixed nav and
+   read as a centered column rather than a full-bleed stretch.
+   ============================================================ */
+@media (min-width: 1024px) {
+    .tab-content:has(.profile-header) {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding-top: calc(var(--header-h) + 16px);
+    }
+    .profile-cover { border-radius: 24px; }
+    .profile-stats { grid-template-columns: repeat(4, 1fr); max-width: 620px; margin-left: auto; margin-right: auto; }
+    .profile-stat:first-child { border-radius: 20px 0 0 20px; }
+    .profile-stat:last-child { border-radius: 0 20px 20px 0; }
+    .profile-tabs { justify-content: center; flex-wrap: wrap; }
+}
+
+/* ============================================================
+   SEARCH — center the column on desktop instead of edge-to-edge
+   ============================================================ */
+@media (min-width: 1024px) {
+    .search-header { justify-content: center; padding-top: 18px; padding-bottom: 16px; }
+    .search-input { flex: 0 1 720px; }
+    .search-quick-filter { max-width: 1120px; margin-left: auto; margin-right: auto; justify-content: center; }
+    .search-results, .search-history { max-width: 1160px; margin-left: auto; margin-right: auto; }
+    .search-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
+}

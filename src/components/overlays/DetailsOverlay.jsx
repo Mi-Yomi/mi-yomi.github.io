@@ -1,6 +1,7 @@
 import Card from '../common/Card.jsx';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
+import InlinePlayer from '../views/InlinePlayer.jsx';
 
 export default function DetailsOverlay() {
   const {
@@ -13,21 +14,6 @@ export default function DetailsOverlay() {
     toggleFavorite,
     ratingColor,
     pluralize,
-    history,
-    getStoredProgress,
-    formatWatchTime,
-    isRuSource,
-    collapsData,
-    allohaData,
-    FALLBACK_SOURCES,
-    currentSeason,
-    currentEpisode,
-    setCurrentSeason,
-    setCurrentEpisode,
-    playSource,
-    sourceLoading,
-    isAnimeContent,
-    animeData,
     movieComments,
     setReviewOpen,
     watchlist,
@@ -63,6 +49,7 @@ export default function DetailsOverlay() {
                     <button className={`details-fav ${favorites.some(f => f.item_id === String(media.id)) ? 'active' : ''}`} onClick={() => toggleFavorite(media, media.media_type)}>{favorites.some(f => f.item_id === String(media.id)) ? I.heartFilled : I.heart}</button>
                 </div>
                 <div className="details-body">
+                    <div className="dov-head">
                     <div className="details-top-row">
                         <div className="details-top-info">
                             <h1 className="details-title">{media.title || media.name}</h1>
@@ -106,56 +93,50 @@ export default function DetailsOverlay() {
                         </div>
                     )}
 
-                    {/* Continue Button */}
-                    {history.find(h => h.item_id === String(media.id)) && (() => {
-                        const histEntry = history.find(x => x.item_id === String(media.id));
-                        const s = histEntry?.last_season || 1;
-                        const ep = histEntry?.last_episode || 1;
-                        const lastSrc = histEntry?.last_source;
-                        const wasRuSource = isRuSource(lastSrc);
-                        const savedProgress = getStoredProgress(media.id);
-                        const savedTimeStr = savedProgress?.time > 5 ? formatWatchTime(savedProgress.time) : null;
-
-                        const getContinueUrl = () => {
-                            if (wasRuSource || !lastSrc) {
-                                if ((lastSrc === 'Collaps' || !lastSrc) && collapsData?.iframe_url) return { url: collapsData.iframe_url, name: 'Collaps' };
-                                if (lastSrc === 'Alloha' && allohaData?.iframe) return { url: allohaData.iframe, name: 'Alloha' };
-                                if (lastSrc === 'Kodik') return { url: null, name: 'Kodik' };
-                                if (collapsData?.iframe_url) return { url: collapsData.iframe_url, name: 'Collaps' };
-                                if (allohaData?.iframe) return { url: allohaData.iframe, name: 'Alloha' };
-                            }
-                            const srcObj = lastSrc ? FALLBACK_SOURCES.find(fs => fs.name === lastSrc) : null;
-                            if (srcObj) return { url: srcObj.getUrl(media.id, media.media_type, s, ep), name: lastSrc };
-                            return { url: FALLBACK_SOURCES[0].getUrl(media.id, media.media_type, s, ep), name: FALLBACK_SOURCES[0].name };
-                        };
-
+                    {/* Details block (desktop) — director / writers / country / language */}
+                    {(() => {
+                        const crew = media.credits?.crew || [];
+                        const isTv = media.media_type === 'tv';
+                        const directors = isTv
+                            ? (media.created_by || []).map(c => c.name)
+                            : crew.filter(c => c.job === 'Director').map(c => c.name);
+                        const writers = [...new Set(crew.filter(c => c.department === 'Writing' || ['Screenplay', 'Writer', 'Story'].includes(c.job)).map(c => c.name))];
+                        const countries = (media.production_countries || []).map(c => c.name);
+                        const langs = (media.spoken_languages || []).map(l => l.english_name || l.name);
+                        const release = media.release_date || media.first_air_date;
+                        const rows = [
+                            directors.length && { label: isTv ? 'Создатели' : 'Режиссёр', value: directors.slice(0, 3).join(', ') },
+                            writers.length && { label: 'Сценарий', value: writers.slice(0, 3).join(', ') },
+                            countries.length && { label: 'Страна', value: countries.slice(0, 3).join(', ') },
+                            langs.length && { label: 'Язык', value: langs.slice(0, 3).join(', ') },
+                            release && { label: 'Дата выхода', value: new Date(release).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) },
+                        ].filter(Boolean);
+                        if (!rows.length) return null;
                         return (
-                            <button className="play-main-btn continue" onClick={() => {
-                                setCurrentSeason(s);
-                                setCurrentEpisode(ep);
-                                const { url, name } = getContinueUrl();
-                                if (url) playSource(url, name, s, ep);
-                                else alert('Источник пока загружается, подождите пару секунд и нажмите снова');
-                            }}>
-                                {I.play} Продолжить {histEntry?.last_season ? `S${s}:E${ep}` : 'просмотр'}
-                                {savedTimeStr && <span className="continue-time-badge">{I.clock} {savedTimeStr}</span>}
-                                {!savedTimeStr && lastSrc && <span className="continue-source-hint">• {lastSrc}</span>}
-                            </button>
+                            <div className="dov-meta">
+                                <div className="dov-meta-title">{I.info} Детали</div>
+                                <dl className="dov-meta-list">
+                                    {rows.map(r => (
+                                        <div key={r.label} className="dov-meta-row">
+                                            <dt>{r.label}</dt><dd>{r.value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </div>
                         );
                     })()}
+                    </div>{/* /dov-head */}
 
-                    {sourceLoading ? (
-                        <div>
-                            <div className="skeleton-source"></div>
-                            <div className="skeleton-source" style={{opacity:0.6}}></div>
-                        </div>
-                    ) : (
-                        <>
-                            {collapsData && <button className="play-main-btn" onClick={() => playSource(collapsData.iframe_url, 'Collaps')}>{I.play} <span className="ru-badge">RU</span> Смотреть</button>}
-                            {allohaData && <button className="play-main-btn blue" onClick={() => playSource(allohaData.iframe, 'Alloha')}>{I.play} <span className="ru-badge">RU</span> Alloha</button>}
-                            {isAnimeContent && animeData?.myAnimeListId && <button className="play-main-btn pink" onClick={() => playSource(`https://kodik.info/find-player?title=${encodeURIComponent(media.name || media.title)}&mal=${animeData.myAnimeListId}`, 'Kodik')}>{I.play} <span className="ru-badge jp">JP</span> Kodik Anime</button>}
-                        </>
-                    )}
+                    <div className="dov-player">
+                        <InlinePlayer />
+                    </div>{/* /dov-player */}
+
+                    <div className="dov-watch">
+                    <div className="dov-poster">
+                        {media.poster_path
+                            ? <img className="dov-poster-img" src={`${IMG}${media.poster_path}`} alt={media.title || media.name} />
+                            : <div className="dov-poster-ph">{media.title || media.name}</div>}
+                    </div>
 
                     <div className="details-action-row">
                         <button className="play-main-btn secondary" onClick={() => setReviewOpen(true)}>{I.edit} Отзыв {movieComments.length > 0 && `(${movieComments.length})`}</button>
@@ -172,14 +153,9 @@ export default function DetailsOverlay() {
                         </button>
                     </div>
 
-                    <div className="fallback-section">
-                        <div className="fallback-title">{I.globe} Другие плееры (англ. озвучка)</div>
-                        <div className="fallback-grid">{FALLBACK_SOURCES.map(src => <div key={src.id} className="fallback-btn" onClick={() => playSource(src.getUrl(media.id, media.media_type, currentSeason, currentEpisode), src.name)}><div className="fallback-btn-icon">{I[src.icon]}</div><div className="fallback-btn-name">{src.name}</div></div>)}</div>
-                        <div className="fallback-hint">
-                            {I.info} Для русской озвучки используйте Collaps / Alloha / Kodik выше
-                        </div>
-                    </div>
+                    </div>{/* /dov-watch */}
 
+                    <div className="dov-extra">
                     {media.overview && (() => {
                         const isLong = media.overview.length > 150;
                         return (
@@ -252,6 +228,7 @@ export default function DetailsOverlay() {
                             </div>
                         )}
                     </div>
+                    </div>{/* /dov-extra */}
                 </div>
             </>
         )}

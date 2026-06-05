@@ -4,6 +4,23 @@ import { ADMIN_USERNAME, ADMIN_TAG, ADMIN_EMAIL, WHITELIST_ENABLED } from '../li
 import { toBase64 } from '../lib/utils.js';
 
 /**
+ * Local dev bypass — set VITE_DEV_BYPASS=on in .env to skip Supabase login
+ * and open the app straight away. Catalog (movies/series/anime) still loads
+ * from TMDB; Supabase-backed features (watchlist/social) stay empty locally.
+ * Gated behind an env flag so production builds are never affected.
+ */
+// `import.meta.env.DEV` is true only under `vite dev` and false in any production
+// build, so the bypass can never leak into the deployed site even if VITE_DEV_BYPASS
+// is left on in an env file.
+const DEV_BYPASS = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS === 'on';
+const DEV_UUID = '00000000-0000-0000-0000-000000000000';
+const DEV_USER = { id: DEV_UUID, email: ADMIN_EMAIL || 'dev@hades.local' };
+const DEV_PROFILE = {
+    id: DEV_UUID, email: DEV_USER.email, username: 'Dev',
+    tag: '0000', status: 'approved', is_admin: true,
+};
+
+/**
  * Admin detection priority:
  * 1. profiles.is_admin === true  (database flag — most reliable)
  * 2. email === VITE_ADMIN_EMAIL  (env var — works before profile loads)
@@ -14,9 +31,9 @@ import { toBase64 } from '../lib/utils.js';
 
 export default function useAuth() {
     const tg = window.Telegram?.WebApp;
-    const [user, setUser] = useState(null);
-    const [userProfile, setUserProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(DEV_BYPASS ? DEV_USER : null);
+    const [userProfile, setUserProfile] = useState(DEV_BYPASS ? DEV_PROFILE : null);
+    const [loading, setLoading] = useState(!DEV_BYPASS);
     const [nameEditOpen, setNameEditOpen] = useState(false);
     const [newUsername, setNewUsername] = useState('');
     const [refreshingStatus, setRefreshingStatus] = useState(false);
@@ -40,6 +57,7 @@ export default function useAuth() {
 
     // --- Auth session ---
     useEffect(() => {
+        if (DEV_BYPASS) return; // local dev: mock user already set, skip Supabase
         // Timeout: if session check takes too long, stop loading spinner
         const timeout = setTimeout(() => setLoading(false), 8000);
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -85,6 +103,7 @@ export default function useAuth() {
     };
 
     const loadUserProfile = useCallback(async (userId, userEmail) => {
+        if (DEV_BYPASS) { setUserProfile(DEV_PROFILE); setNewUsername(DEV_PROFILE.username); return; }
         const emailIsAdmin = _isAdminEmail(userEmail);
 
         // Step 1: Try to load existing profile (.maybeSingle avoids error on 0 rows)

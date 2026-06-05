@@ -131,22 +131,26 @@ export default function usePlayer(user, media, showToast, userApproved, isAnimeC
         return Math.min(95, Math.max(0, (p.time / p.duration) * 100));
     }, []);
 
-    const playSource = useCallback(async (url, sourceName, season = null, episode = null) => {
+    // The player is rendered INLINE on the details page (no separate overlay).
+    // opts.auto = true when a source is auto-selected on open — in that case we
+    // don't mark history or overwrite the user's preferred source.
+    const playSource = useCallback(async (url, sourceName, season = null, episode = null, opts = {}) => {
         const s = season ?? currentSeason;
         const e = episode ?? currentEpisode;
         setPlayerUrl(url);
         setPlayerSource(sourceName);
-        setPlayerOpen(true);
         setPlayerLoaded(false);
         setPlayerError(false);
         loadSkipData(media, media?.media_type, s, e);
         if (playerTimerRef.current) clearTimeout(playerTimerRef.current);
         playerTimerRef.current = setTimeout(() => { if (!playerLoaded) setPlayerError(true); }, 15000);
-        try { localStorage.setItem('hades_preferred_source', sourceName); } catch {}
-        setTimeout(() => {
-            if (addToHistory && media) addToHistory(media, media.media_type, media.media_type === 'tv' ? s : null, media.media_type === 'tv' ? e : null, sourceName);
-        }, 100);
-        tg?.HapticFeedback?.impactOccurred?.('medium');
+        if (!opts.auto) {
+            try { localStorage.setItem('hades_preferred_source', sourceName); } catch {}
+            setTimeout(() => {
+                if (addToHistory && media) addToHistory(media, media.media_type, media.media_type === 'tv' ? s : null, media.media_type === 'tv' ? e : null, sourceName);
+            }, 100);
+            tg?.HapticFeedback?.impactOccurred?.('medium');
+        }
     }, [userApproved, currentSeason, currentEpisode, media, playerLoaded, showToast, tg, loadSkipData, addToHistory]);
 
     const closePlayer = useCallback(() => {
@@ -172,9 +176,9 @@ export default function usePlayer(user, media, showToast, userApproved, isAnimeC
         if (addToHistory) addToHistory(media, media.media_type, newSeason, newEpisode, playerSource);
     }, [playerOpen, media, playerSource, loadSkipData, addToHistory]);
 
-    // PostMessage listener for player progress
+    // PostMessage listener for player progress (inline player is active whenever a URL is set)
     useEffect(() => {
-        if (!playerOpen || !media) return;
+        if (!playerUrl || !media) return;
         let elapsedSeconds = 0;
         const fallbackTimer = setInterval(() => {
             elapsedSeconds += 5;
@@ -235,7 +239,7 @@ export default function usePlayer(user, media, showToast, userApproved, isAnimeC
         };
         window.addEventListener('message', handlePlayerMessage);
         return () => { window.removeEventListener('message', handlePlayerMessage); clearInterval(fallbackTimer); };
-    }, [playerOpen, media, saveProgress, checkSkipSegment]);
+    }, [playerUrl, media, saveProgress, checkSkipSegment]);
 
     // Swipe-to-go-back
     useEffect(() => {

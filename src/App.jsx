@@ -14,7 +14,6 @@ import FriendProfileView from './components/views/FriendProfileView.jsx';
 
 const SearchOverlay = lazy(() => import('./components/overlays/SearchOverlay.jsx'));
 const DetailsOverlay = lazy(() => import('./components/overlays/DetailsOverlay.jsx'));
-const PlayerOverlay = lazy(() => import('./components/overlays/PlayerOverlay.jsx'));
 const ReviewModal = lazy(() => import('./components/overlays/ReviewModal.jsx'));
 const NameEditModal = lazy(() => import('./components/overlays/NameEditModal.jsx'));
 const MoodOverlay = lazy(() => import('./components/overlays/MoodOverlay.jsx'));
@@ -61,7 +60,6 @@ export default function App() {
             <Suspense fallback={<OverlayFallback />}>
                 <SearchOverlay />
                 <DetailsOverlay />
-                <PlayerOverlay />
                 <ReviewModal />
                 <NameEditModal />
                 <MoodOverlay />
