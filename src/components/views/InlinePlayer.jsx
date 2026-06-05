@@ -24,6 +24,7 @@ export default function InlinePlayer() {
     );
 
     const selectedRef = useRef(null);
+    const hdrezkaReqRef = useRef(0);
 
     const urlFor = useCallback((src, s, e) => {
         if (!src) return null;
@@ -45,12 +46,28 @@ export default function InlinePlayer() {
             try { localStorage.setItem('hades_preferred_source', 'Anixart'); } catch { /* ignore */ }
             return;
         }
+        if (src.special === 'hdrezka') {
+            // Resolve the balancer URL via fetch, then point the iframe straight at it
+            // (a 302 from the function drops the Referer cinemar.cc needs).
+            const myReq = ++hdrezkaReqRef.current;
+            setPlayerSource('HDRezka'); setPlayerUrl(''); setPlayerLoaded(false); setPlayerError(false);
+            fetch(src.resolveUrl)
+                .then((r) => r.json())
+                .then((j) => {
+                    if (myReq !== hdrezkaReqRef.current) return;
+                    if (j?.ok && j.embed) playSource(j.embed, 'HDRezka');
+                    else setPlayerError(true);
+                })
+                .catch(() => { if (myReq === hdrezkaReqRef.current) setPlayerError(true); });
+            return;
+        }
         playSource(urlFor(src, currentSeason, currentEpisode), src.name, currentSeason, currentEpisode);
-    }, [media, currentSeason, currentEpisode, playSource, urlFor, setPlayerSource, setPlayerUrl, setPlayerLoaded]);
+    }, [media, currentSeason, currentEpisode, playSource, urlFor, setPlayerSource, setPlayerUrl, setPlayerLoaded, setPlayerError]);
 
     // Reset selection when the title changes so we re-pick for the new media.
     useEffect(() => {
         selectedRef.current = null;
+        hdrezkaReqRef.current++; // invalidate any in-flight HDRezka resolve
         setPlayerUrl('');
         setPlayerLoaded(false);
     }, [media?.id, setPlayerUrl, setPlayerLoaded]);
@@ -84,6 +101,9 @@ export default function InlinePlayer() {
     // Ad-heavy balancers (yohoho) get sandboxed so they can't redirect the whole app
     // or spawn popups, while still being allowed to run their player.
     const frameSandbox = activeSrc?.ads ? 'allow-scripts allow-same-origin allow-forms allow-presentation' : undefined;
+    // HDRezka redirects to cinemar.cc, which 404s (with X-Frame-Options → the iframe
+    // hangs) unless it gets a Referer. Default players stay no-referrer for privacy.
+    const frameReferrer = activeSrc?.id === 'hdrezka' ? 'unsafe-url' : 'no-referrer';
     const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
 
     const retry = () => {
@@ -144,7 +164,7 @@ export default function InlinePlayer() {
                             title={media.title || media.name}
                             allowFullScreen
                             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                            referrerPolicy="no-referrer"
+                            referrerPolicy={frameReferrer}
                             sandbox={frameSandbox}
                             onLoad={() => { setPlayerLoaded(true); setPlayerError(false); if (playerTimerRef.current) clearTimeout(playerTimerRef.current); }}
                         />
@@ -160,7 +180,7 @@ export default function InlinePlayer() {
                 ) : (
                     <div className="player-empty">
                         <div className="player-empty-icon">{I.play}</div>
-                        <div className="player-empty-text">{playerSource === 'Anixart' ? 'Загрузка Anixart…' : sourceLoading ? 'Загрузка источников…' : 'Выберите плеер выше'}</div>
+                        <div className="player-empty-text">{playerSource === 'Anixart' ? 'Загрузка Anixart…' : playerSource === 'HDRezka' ? 'Поиск на HDRezka…' : sourceLoading ? 'Загрузка источников…' : 'Выберите плеер выше'}</div>
                     </div>
                 )}
             </div>

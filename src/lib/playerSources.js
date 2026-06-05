@@ -13,12 +13,14 @@ export const FALLBACK_SOURCES = [
 /** Russian balancers that handle their own season/episode navigation inside the iframe. */
 export const isRuSource = (name) => ['Collaps', 'Alloha', 'Anixart', 'Yohoho', 'HDRezka'].includes(name);
 
-/** HDRezka player served by our own Supabase Edge Function (searches by title). */
-export const hdrezkaUrl = (media) => {
+/** HDRezka resolve endpoint of our Edge Function — returns { ok, embed } JSON.
+ *  We resolve the balancer URL via fetch and point the iframe straight at it
+ *  (a 302 from the function loses the Referer cinemar.cc requires). */
+export const hdrezkaResolveUrl = (media) => {
     const title = media.title || media.name || '';
     const year = (media.release_date || media.first_air_date || '').slice(0, 4);
     const type = media.media_type || (media.first_air_date ? 'tv' : 'movie');
-    return `${HDREZKA_FN}?title=${encodeURIComponent(title)}&year=${encodeURIComponent(year)}&type=${type}`;
+    return `${HDREZKA_FN}?action=resolve&title=${encodeURIComponent(title)}&year=${encodeURIComponent(year)}&type=${type}`;
 };
 
 /** Yohoho aggregator iframe by Kinopoisk id (extra fallback; injects ads — opt-in only). */
@@ -44,10 +46,11 @@ export function buildPlayerSources({ media, collapsData, allohaData, isAnimeCont
     if (allohaData?.iframe) {
         sources.push({ id: 'alloha', name: 'Alloha', lang: 'ru', url: allohaData.iframe, builtinEpisodes: true });
     }
-    // HDRezka — only if its Edge Function is configured. The function redirects to a
-    // balancer player (cinemar.cc), so sandbox it like the other ad-prone iframes.
+    // HDRezka — only if its Edge Function is configured. Special: resolved via fetch
+    // (the function returns the cinemar.cc embed URL), then the iframe points straight
+    // at cinemar. Sandboxed + unsafe-url referrer (cinemar 404s without a Referer).
     if (HDREZKA_FN) {
-        sources.push({ id: 'hdrezka', name: 'HDRezka', lang: 'ru', url: hdrezkaUrl(media), builtinEpisodes: true, ads: true });
+        sources.push({ id: 'hdrezka', name: 'HDRezka', lang: 'ru', special: 'hdrezka', resolveUrl: hdrezkaResolveUrl(media), builtinEpisodes: true, ads: true });
     }
     // Anixart — proper anime experience (voiceover + episode picker), anime only.
     // Plays via kodikplayer, which is ad-prone -> mark `ads` so the iframe is sandboxed

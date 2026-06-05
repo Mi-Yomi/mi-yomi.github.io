@@ -115,6 +115,10 @@ Deno.serve(async (req) => {
     if (!title) return errHtml('Нет параметра title');
     const { embed } = await resolve(title, year, type);
     if (!embed) return errHtml('На HDRezka не найдено: ' + title);
+    // 302 straight to the balancer. (Supabase forces text/html responses to text/plain,
+    // so we can't serve a wrapper page.) cinemar.cc 404s — with X-Frame-Options, which
+    // is what made the iframe hang — when it gets NO referer, so the app loads the
+    // HDRezka iframe with referrerPolicy other than no-referrer (cinemar accepts any).
     return new Response(null, { status: 302, headers: { ...CORS, Location: embed } });
   } catch (e) {
     const msg = String((e as Error)?.message || e);
