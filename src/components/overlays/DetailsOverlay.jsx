@@ -137,17 +137,7 @@ export default function DetailsOverlay() {
                     })()}
                     </div>{/* /dov-head */}
 
-                    <div className="dov-player">
-                        <InlinePlayer />
-                    </div>{/* /dov-player */}
-
-                    <div className="dov-watch">
-                    <div className="dov-poster">
-                        {media.poster_path
-                            ? <img className="dov-poster-img" src={`${IMG}${media.poster_path}`} alt={media.title || media.name} />
-                            : <div className="dov-poster-ph">{media.title || media.name}</div>}
-                    </div>
-
+                    <div className="dov-actions">
                     <div className="details-action-row">
                         <button className="play-main-btn secondary" onClick={() => setReviewOpen(true)}>{I.edit} Отзыв {movieComments.length > 0 && `(${movieComments.length})`}</button>
                         <button className="play-main-btn secondary" onClick={() => setStatusPickerItem({ id: media.id, title: media.title || media.name, name: media.name, poster_path: media.poster_path, media_type: media.media_type, vote_average: media.vote_average, backdrop_path: media.backdrop_path, release_date: media.release_date || media.first_air_date })}>
@@ -161,6 +151,18 @@ export default function DetailsOverlay() {
                         <button className="play-main-btn secondary font-sm" onClick={() => setAddToCollectionItem({ id: media.id, title: media.title || media.name, poster_path: media.poster_path, media_type: media.media_type, vote_average: media.vote_average })}>
                             {I.folder} В коллекцию
                         </button>
+                    </div>
+                    </div>{/* /dov-actions */}
+
+                    <div className="dov-player">
+                        <InlinePlayer />
+                    </div>{/* /dov-player */}
+
+                    <div className="dov-watch">
+                    <div className="dov-poster">
+                        {media.poster_path
+                            ? <img className="dov-poster-img" src={`${IMG}${media.poster_path}`} alt={media.title || media.name} />
+                            : <div className="dov-poster-ph">{media.title || media.name}</div>}
                     </div>
 
                     </div>{/* /dov-watch */}

@@ -11,7 +11,7 @@ export const FALLBACK_SOURCES = [
 ];
 
 /** Russian balancers that handle their own season/episode navigation inside the iframe. */
-export const isRuSource = (name) => ['Collaps', 'Alloha', 'Anixart', 'Yohoho', 'HDRezka'].includes(name);
+export const isRuSource = (name) => ['Collaps', 'Alloha', 'Anixart', 'HDRezka'].includes(name);
 
 /** HDRezka resolve endpoint of our Edge Function — returns { ok, embed } JSON.
  *  We resolve the balancer URL via fetch and point the iframe straight at it
@@ -22,9 +22,6 @@ export const hdrezkaResolveUrl = (media) => {
     const type = media.media_type || (media.first_air_date ? 'tv' : 'movie');
     return `${HDREZKA_FN}?action=resolve&title=${encodeURIComponent(title)}&year=${encodeURIComponent(year)}&type=${type}`;
 };
-
-/** Yohoho aggregator iframe by Kinopoisk id (extra fallback; injects ads — opt-in only). */
-export const yohohoUrl = (kpId) => `https://yohoho.cc/yo.php?kinopoisk=${kpId}`;
 
 /**
  * Build the ordered list of available players for the current title.
@@ -37,7 +34,6 @@ export function buildPlayerSources({ media, collapsData, allohaData, isAnimeCont
     if (!media) return [];
     const id = media.id;
     const type = media.media_type || (media.first_air_date ? 'tv' : 'movie');
-    const kpId = collapsData?.kinopoisk_id || allohaData?.kinopoisk || null;
     const sources = [];
 
     if (collapsData?.iframe_url) {
@@ -58,11 +54,6 @@ export function buildPlayerSources({ media, collapsData, allohaData, isAnimeCont
     if (isAnimeContent) {
         sources.push({ id: 'anixart', name: 'Anixart', lang: 'ru', special: 'anixart', builtinEpisodes: true, ads: true });
     }
-    // Yohoho aggregator — opt-in extra (ads); only when we have a Kinopoisk id
-    if (kpId) {
-        sources.push({ id: 'yohoho', name: 'Yohoho', lang: 'ru', url: yohohoUrl(kpId), builtinEpisodes: true, ads: true });
-    }
-
     // International balancers (need explicit season/episode) — also ad-prone, sandbox them
     for (const fb of FALLBACK_SOURCES) {
         sources.push({ id: fb.id, name: fb.name, lang: 'en', getUrl: fb.getUrl, builtinEpisodes: false, icon: fb.icon, _fb: fb, ads: true });

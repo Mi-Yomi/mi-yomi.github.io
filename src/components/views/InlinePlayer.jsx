@@ -118,8 +118,8 @@ export default function InlinePlayer() {
                 <div className="player-picker-label">{I.play} Где смотреть</div>
                 <div className="player-tabs">
                     {ruSources.map(s => (
-                        <button key={s.id} className={`player-tab ${playerSource === s.name ? 'active' : ''}`} onClick={() => selectSource(s)} title={s.id === 'yohoho' ? 'Доп. вариант — много рекламы' : undefined}>
-                            <span className="ru-badge">RU</span> {s.name}{s.id === 'yohoho' ? ' ⚠' : ''}
+                        <button key={s.id} className={`player-tab ${playerSource === s.name ? 'active' : ''}`} onClick={() => selectSource(s)}>
+                            <span className="ru-badge">RU</span> {s.name}
                         </button>
                     ))}
                     {sourceLoading && <span className="player-tab is-loading"><span className="player-tab-dot" /> Ищем озвучки…</span>}
