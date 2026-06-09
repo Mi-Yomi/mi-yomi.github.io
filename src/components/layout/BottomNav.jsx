@@ -5,7 +5,7 @@ import { I } from '../../lib/icons.jsx';
 
 const BottomNav = memo(function BottomNav() {
     const { tab, setTab } = useUIContext();
-    const { detailsOpen, playerOpen, viewingFriend, friendRequests, setViewingFriend } = useContentContext();
+    const { detailsOpen, playerOpen, viewingFriend, friendRequests, setViewingFriend, mangaEnabled } = useContentContext();
     const tg = window.Telegram?.WebApp;
 
     return (
@@ -20,6 +20,11 @@ const BottomNav = memo(function BottomNav() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                 <span>Аниме</span>
             </button>
+            {mangaEnabled && (
+                <button className={`nav-item ${tab === 'manga' ? 'active' : ''}`} onClick={() => { setTab('manga'); tg?.HapticFeedback?.impactOccurred?.('light'); }} aria-label="Манга" aria-current={tab === 'manga' ? 'page' : undefined}>
+                    {I.bookOpen}<span>Манга</span>
+                </button>
+            )}
             <button className={`nav-item ${tab === 'profile' ? 'active' : ''}`} onClick={() => { setTab('profile'); setViewingFriend(null); tg?.HapticFeedback?.impactOccurred?.('light'); }} aria-label="Профиль" aria-current={tab === 'profile' ? 'page' : undefined}>
                 {I.user}<span>Профиль</span>
                 {friendRequests.length > 0 && <span className="nav-badge">{friendRequests.length}</span>}

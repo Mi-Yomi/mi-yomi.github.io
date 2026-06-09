@@ -9,13 +9,14 @@ const NAV_LINKS = [
     { id: 'home', label: 'Главная' },
     { id: 'tv', label: 'Сериалы' },
     { id: 'anime', label: 'Аниме' },
+    { id: 'manga', label: 'Манга', requiresManga: true },
     { id: 'profile', label: 'Профиль' },
 ];
 
 const AppHeader = memo(function AppHeader() {
     const { tab, setTab } = useUIContext();
     const { userProfile } = useAuthContext();
-    const { setSearchOpen, detailsOpen, viewingFriend, setViewingFriend, setNotifOpen, unreadNotifCount, friendRequests } = useContentContext();
+    const { setSearchOpen, detailsOpen, viewingFriend, setViewingFriend, setNotifOpen, unreadNotifCount, friendRequests, mangaEnabled } = useContentContext();
     const { playerOpen } = usePlayerContext();
     const headerRef = useRef(null);
     const tg = window.Telegram?.WebApp;
@@ -49,7 +50,7 @@ const AppHeader = memo(function AppHeader() {
             <div className="logo-wrap"><span className="logo-sub">Cinema</span><span className="logo-main">HADES</span></div>
 
             <nav className="header-nav" aria-label="Разделы">
-                {NAV_LINKS.map(link => (
+                {NAV_LINKS.filter(link => !link.requiresManga || mangaEnabled).map(link => (
                     <button
                         key={link.id}
                         className={`header-nav-item ${tab === link.id && !viewingFriend ? 'active' : ''}`}

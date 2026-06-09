@@ -14,6 +14,7 @@ import useSearch from './useSearch.js';
 import useSocial from './useSocial.js';
 import useAdmin from './useAdmin.js';
 import useLibrary from './useLibrary.js';
+import useManga from './useManga.js';
 import { useState } from 'react';
 
 /**
@@ -30,6 +31,7 @@ export default function useAppController() {
     const social = useSocial(auth.user, ui.showToast);
     const admin = useAdmin(auth.user, auth.isAdmin, ui.showToast);
     const lib = useLibrary(auth.user, ui.showToast);
+    const manga = useManga(ui.showToast);
     const [statusPickerItem, setStatusPickerItem] = useState(null);
 
     const syncWithDB = useCallback(async (userId, email) => {
@@ -283,6 +285,7 @@ export default function useAppController() {
         ...social,
         ...admin,
         ...lib,
+        ...manga,
         statusPickerItem, setStatusPickerItem,
         addReview,
         syncWithDB,

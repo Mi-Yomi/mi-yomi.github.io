@@ -9,6 +9,7 @@ import PendingScreen from './components/screens/PendingScreen.jsx';
 import HomeTab from './components/views/HomeTab.jsx';
 import TvTab from './components/views/TvTab.jsx';
 import AnimeTab from './components/views/AnimeTab.jsx';
+import MangaTab from './components/views/MangaTab.jsx';
 import ProfileTab from './components/views/ProfileTab.jsx';
 import FriendProfileView from './components/views/FriendProfileView.jsx';
 
@@ -21,6 +22,8 @@ const NotificationsPanel = lazy(() => import('./components/overlays/Notification
 const CollectionAddMenu = lazy(() => import('./components/overlays/CollectionAddMenu.jsx'));
 const AdminPanel = lazy(() => import('./components/overlays/AdminPanel.jsx'));
 const StatusPicker = lazy(() => import('./components/overlays/StatusPicker.jsx'));
+const MangaDetailsOverlay = lazy(() => import('./components/overlays/MangaDetailsOverlay.jsx'));
+const MangaReader = lazy(() => import('./components/overlays/MangaReader.jsx'));
 
 function OverlayFallback() {
     return null;
@@ -52,6 +55,7 @@ export default function App() {
                 {tab === 'home' && <HomeTab />}
                 {tab === 'tv' && <TvTab />}
                 {tab === 'anime' && <AnimeTab />}
+                {tab === 'manga' && <MangaTab />}
                 {tab === 'profile' && !viewingFriend && <ProfileTab />}
                 {viewingFriend && <FriendProfileView />}
             </main>
@@ -67,6 +71,8 @@ export default function App() {
                 <CollectionAddMenu />
                 <AdminPanel />
                 <StatusPicker />
+                <MangaDetailsOverlay />
+                <MangaReader />
             </Suspense>
         </ErrorBoundary>
     );

@@ -26,3 +26,15 @@ export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || null;
  * Set VITE_WHITELIST=off in .env to disable whitelist completely.
  */
 export const WHITELIST_ENABLED = (import.meta.env.VITE_WHITELIST || 'on') !== 'off';
+
+/**
+ * Manga via the MangaLib API (api2.mangalib.me). No proxy needed:
+ *  - the JSON API is CORS-friendly (reflects the request Origin), and
+ *  - the image hosts (cover.cdnlibs.org covers, img*.imglib.info pages) block only
+ *    an EMPTY referer — the browser's default cross-origin referer (our origin) is
+ *    accepted, so <img> loads them directly. We set referrerPolicy="origin" on
+ *    those <img>s to guarantee a non-empty referer regardless of page policy.
+ * Works the same in dev and production with zero backend.
+ */
+export const MANGA_API = 'https://api2.mangalib.me/api';
+export const MANGA_ENABLED = true;
