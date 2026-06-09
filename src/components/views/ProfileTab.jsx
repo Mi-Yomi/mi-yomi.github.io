@@ -5,6 +5,7 @@ import Card from '../common/Card.jsx';
 import ProfileHeader from './ProfileHeader.jsx';
 import StatsSection from './StatsSection.jsx';
 import SettingsSection from './SettingsSection.jsx';
+import MangaProfileSection from './MangaProfileSection.jsx';
 import CollectionModal from '../overlays/CollectionModal.jsx';
 import { LIBRARY_STATUSES } from '../../lib/libraryStatuses.js';
 
@@ -22,6 +23,7 @@ export default function ProfileTab() {
     friendSearch, setFriendSearch, searchUser, searchResult,
     sendFriendRequest, loadFriendProfile, acceptFriend, declineFriend, friends,
     libraryByStatus, libraryCounts, setStatusPickerItem,
+    mangaEnabled, mangaChaptersRead,
   } = useApp();
 
   const totalLibCount = useMemo(() =>
@@ -42,6 +44,7 @@ export default function ProfileTab() {
     { id: 'history', label: 'История', icon: I.clock },
     { id: 'reviews', label: 'Отзывы', icon: I.penTool },
     { id: 'collections', label: 'Коллекции', icon: I.folder, count: collections.length },
+    ...(mangaEnabled ? [{ id: 'manga', label: 'Манга', icon: I.bookOpen, count: mangaChaptersRead || undefined }] : []),
     { id: 'stats', label: 'Стата', icon: I.barChart },
     { id: 'friends', label: 'Друзья', icon: I.users },
     { id: 'requests', label: 'Заявки', icon: I.inbox, count: friendRequests.length },
@@ -176,6 +179,8 @@ export default function ProfileTab() {
                     )) : <div className="library-empty"><div className="library-empty-icon">{I.folder}</div><div className="library-empty-text">Нет коллекций</div><div className="library-empty-hint">Создайте свою первую коллекцию</div></div>}
                 </div>
             )}
+
+            {profileTab === 'manga' && <MangaProfileSection />}
 
             {profileTab === 'stats' && <StatsSection />}
 

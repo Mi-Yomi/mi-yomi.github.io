@@ -187,6 +187,25 @@ export default function useAuth() {
         setNameEditOpen(false);
     }, [user, newUsername]);
 
+    /**
+     * Toggle whether an item is hidden from friends. `key` is `String(item_id)` for
+     * movies/series or `m:{slug}` for manga. Persisted in profiles.hidden_items;
+     * friends' profile views filter their visible items against this list.
+     * Returns the new hidden state (true = now hidden).
+     */
+    const toggleHidden = useCallback(async (key) => {
+        if (!user || !key) return false;
+        const cur = Array.isArray(userProfile?.hidden_items) ? userProfile.hidden_items : [];
+        const willHide = !cur.includes(key);
+        const next = willHide ? [...cur, key] : cur.filter(k => k !== key);
+        setUserProfile(prev => ({ ...prev, hidden_items: next }));
+        try { await supabase.from('profiles').update({ hidden_items: next }).eq('id', user.id); }
+        catch (e) { console.warn('hidden_items update failed:', e.message); }
+        return willHide;
+    }, [user, userProfile]);
+
+    const isHidden = useCallback((key) => (userProfile?.hidden_items || []).includes(key), [userProfile]);
+
     const handleLogout = useCallback(async () => {
         await supabase.auth.signOut();
         setUser(null);
@@ -268,6 +287,7 @@ export default function useAuth() {
         refreshingStatus,
         loadUserProfile,
         updateUsername,
+        toggleHidden, isHidden,
         handleLogout,
         handleProfileImage,
         refreshApprovalStatus,

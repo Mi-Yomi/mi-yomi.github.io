@@ -23,7 +23,7 @@ export default function MangaTab() {
     const {
         mangaFeed, mangaFeedTab, mangaFeedLoading, loadMangaFeed,
         mangaQuery, setMangaQuery, mangaResults, mangaSearching,
-        openManga, mangaProgress, mangaBookmarks,
+        openManga, mangaProgress, mangaLibrary,
     } = useApp();
 
     useEffect(() => {
@@ -37,7 +37,8 @@ export default function MangaTab() {
         { id: 'new', label: 'Новинки' },
     ];
 
-    const continueList = Object.values(mangaProgress || {}).sort((a, b) => b.ts - a.ts).slice(0, 12);
+    const continueList = Object.entries(mangaProgress || {}).map(([dir, p]) => ({ ...p, dir })).sort((a, b) => b.ts - a.ts).slice(0, 12);
+    const libList = Object.values(mangaLibrary || {}).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 12);
     const searching = mangaQuery.trim().length > 0;
 
     return (
@@ -76,11 +77,11 @@ export default function MangaTab() {
                         </div>
                     )}
 
-                    {mangaBookmarks.length > 0 && (
+                    {libList.length > 0 && (
                         <div className="manga-section">
-                            <div className="manga-section-title">{I.bookmark} Закладки</div>
+                            <div className="manga-section-title">{I.folder} Моя библиотека</div>
                             <div className="manga-grid">
-                                {mangaBookmarks.map((m, i) => <MangaCard key={`${m.dir}-${i}`} item={m} onOpen={openManga} />)}
+                                {libList.map((m, i) => <MangaCard key={`${m.dir}-${i}`} item={m} onOpen={openManga} />)}
                             </div>
                         </div>
                     )}

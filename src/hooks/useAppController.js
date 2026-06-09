@@ -31,7 +31,7 @@ export default function useAppController() {
     const social = useSocial(auth.user, ui.showToast);
     const admin = useAdmin(auth.user, auth.isAdmin, ui.showToast);
     const lib = useLibrary(auth.user, ui.showToast);
-    const manga = useManga(ui.showToast);
+    const manga = useManga(ui.showToast, auth.user);
     const [statusPickerItem, setStatusPickerItem] = useState(null);
 
     const syncWithDB = useCallback(async (userId, email) => {

@@ -21,6 +21,7 @@ export function AppProvider({ children }) {
         loadUserProfile: app.loadUserProfile, updateUsername: app.updateUsername,
         handleLogout: app.handleLogout, handleProfileImage: app.handleProfileImage,
         refreshApprovalStatus: app.refreshApprovalStatus,
+        toggleHidden: app.toggleHidden, isHidden: app.isHidden,
     }), [app.user, app.userProfile, app.loading, app.isAdmin, app.userApproved,
         app.nameEditOpen, app.newUsername, app.refreshingStatus]);
 

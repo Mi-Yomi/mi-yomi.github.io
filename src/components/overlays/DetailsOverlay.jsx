@@ -31,6 +31,7 @@ export default function DetailsOverlay() {
     IMG,
     showToast,
     getItemStatus, setStatusPickerItem,
+    isHidden, toggleHidden,
   } = useApp();
 
   // Always start a freshly-opened title at the top (the overlay scrolls internally,
@@ -150,6 +151,14 @@ export default function DetailsOverlay() {
                         </button>
                         <button className="play-main-btn secondary font-sm" onClick={() => setAddToCollectionItem({ id: media.id, title: media.title || media.name, poster_path: media.poster_path, media_type: media.media_type, vote_average: media.vote_average })}>
                             {I.folder} В коллекцию
+                        </button>
+                    </div>
+                    <div className="details-action-row">
+                        <button
+                            className={`play-main-btn secondary font-sm ${isHidden?.(String(media.id)) ? 'watchlist-active' : ''}`}
+                            onClick={async () => { const h = await toggleHidden(String(media.id)); showToast(h ? 'Скрыто от друзей' : 'Снова видно друзьям'); }}
+                        >
+                            {isHidden?.(String(media.id)) ? I.eye : I.ban} {isHidden?.(String(media.id)) ? 'Показать друзьям' : 'Скрыть от друзей'}
                         </button>
                     </div>
                     </div>{/* /dov-actions */}

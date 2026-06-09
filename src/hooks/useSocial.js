@@ -39,12 +39,12 @@ export default function useSocial(user, showToast) {
         const friendIds = friends.map(f => f.id);
         if (friendIds.length === 0) return;
         const { data } = await supabase.from('history')
-            .select('*, profiles:user_id(username, avatar_url)')
+            .select('*, profiles:user_id(username, avatar_url, hidden_items)')
             .in('user_id', friendIds)
             .gte('watched_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
             .order('watched_at', { ascending: false })
             .limit(20);
-        if (data) setFriendsActivity(data);
+        if (data) setFriendsActivity(data.filter((h) => !((h.profiles?.hidden_items) || []).includes(String(h.item_id))));
     }, [friends]);
 
     const loadFriendProfile = useCallback(async (friend) => {

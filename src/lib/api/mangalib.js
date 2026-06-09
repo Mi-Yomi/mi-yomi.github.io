@@ -58,6 +58,23 @@ export async function searchManga(query, limit = 30) {
     return (d.data || []).slice(0, limit).map(normalizeManga);
 }
 
+// MangaLib's `summary` is either a plain string or a TipTap/ProseMirror doc
+// ({type:'doc', content:[{type:'paragraph', content:[{type:'text', text:'…'}]}]}).
+function nodeText(node) {
+    if (!node) return '';
+    if (typeof node === 'string') return node;
+    if (Array.isArray(node)) return node.map(nodeText).join('');
+    let s = node.text || '';
+    if (node.content) s += nodeText(node.content);
+    if (node.type === 'paragraph') s += '\n';
+    return s;
+}
+function parseSummary(summary) {
+    if (!summary) return '';
+    const raw = typeof summary === 'string' ? summary.replace(/<[^>]+>/g, '') : nodeText(summary);
+    return raw.replace(/\n{3,}/g, '\n\n').trim();
+}
+
 /** Full title details by slug (slug_url, e.g. "706--onepunchman"). */
 export async function getTitle(slug) {
     const d = await mlFetch(`/manga/${encodeURIComponent(slug)}?fields[]=summary&fields[]=genres&fields[]=rate_avg`);
@@ -65,7 +82,7 @@ export async function getTitle(slug) {
     if (!c) return null;
     return {
         ...normalizeManga(c),
-        description: String(c.summary || '').replace(/<[^>]+>/g, '').trim(),
+        description: parseSummary(c.summary),
         status: c.status?.label || '',
         isLicensed: !!c.is_licensed,
     };
@@ -77,6 +94,7 @@ export async function getChapters(slug) {
     const arr = Array.isArray(d.data) ? d.data : [];
     return arr.map((c) => ({
         id: `${c.volume}_${c.number}`,
+        cid: c.id, // real MangaLib chapter id (for comments)
         volume: c.volume,
         number: c.number,
         tome: c.volume,
@@ -95,4 +113,43 @@ export async function getChapterPages(slug, volume, number) {
         .map((p) => ({ link: IMG_BASE + p.url, width: p.width, height: p.height }))
         .filter((p) => p.link);
     return { pages: list, paid: false };
+}
+
+function stripHtml(html) {
+    return String(html || '')
+        .replace(/<\/p>|<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
+function normalizeComment(c) {
+    return {
+        id: c.id,
+        text: stripHtml(c.comment),
+        user: c.user?.username || 'Аноним',
+        avatar: c.user?.avatar?.url || null,
+        date: c.created_at || null,
+        up: c.votes?.up || 0,
+        down: c.votes?.down || 0,
+    };
+}
+
+/** Comments for a whole title (by MangaLib manga id). */
+export async function getTitleComments(mangaId, page = 1) {
+    if (!mangaId) return [];
+    try {
+        const d = await mlFetch(`/comments?manga_id=${mangaId}&page=${page}`);
+        return ((d.data && d.data.root) || []).map(normalizeComment);
+    } catch { return []; }
+}
+
+/** Comments for a single chapter (by MangaLib chapter id = chapter.cid). */
+export async function getChapterComments(chapterId, page = 1) {
+    if (!chapterId) return [];
+    try {
+        const d = await mlFetch(`/comments?chapter_id=${chapterId}&page=${page}`);
+        return ((d.data && d.data.root) || []).map(normalizeComment);
+    } catch { return []; }
 }
