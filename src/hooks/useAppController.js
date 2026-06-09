@@ -165,6 +165,7 @@ export default function useAppController() {
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key !== 'Escape') return;
+            if (admin.adminOpen) { admin.setAdminOpen(false); return; }
             if (player.playerOpen) { player.closePlayer(); return; }
             if (search.searchOpen) { search.setSearchOpen(false); return; }
             if (ui.moodOpen) { ui.setMoodOpen(false); return; }
@@ -173,7 +174,7 @@ export default function useAppController() {
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [player.playerOpen, search.searchOpen, ui.moodOpen, social.notifOpen, details.detailsOpen]);
+    }, [admin.adminOpen, player.playerOpen, search.searchOpen, ui.moodOpen, social.notifOpen, details.detailsOpen]);
 
     // (Removed the custom left-edge swipe-to-go-back: it double-fired with iOS's
     // native edge-swipe and could trigger when scrolling a row near the left edge.

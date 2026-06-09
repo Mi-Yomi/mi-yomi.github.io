@@ -1,7 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/api/supabase.js';
 import { api } from '../lib/api/tmdb.js';
-import { ADMIN_USERNAME, ADMIN_TAG } from '../lib/config.js';
 
 export default function useAdmin(user, isAdmin, showToast) {
     const tg = window.Telegram?.WebApp;
@@ -12,6 +11,7 @@ export default function useAdmin(user, isAdmin, showToast) {
     const [adminSearchQuery, setAdminSearchQuery] = useState('');
     const [adminSearchResults, setAdminSearchResults] = useState([]);
     const [adminEditingId, setAdminEditingId] = useState(null);
+    const adminSearchSeq = useRef(0);
 
     // Approval system
     const [pendingUsers, setPendingUsers] = useState([]);
@@ -26,26 +26,30 @@ export default function useAdmin(user, isAdmin, showToast) {
 
     const saveCuratedList = useCallback(async () => {
         if (!adminListTitle.trim() || adminListItems.length === 0) return;
-        const listData = {
-            title: adminListTitle.trim(),
-            items: adminListItems,
-            created_by: user?.id,
-            created_at: new Date().toISOString(),
-            is_active: true,
-        };
         if (adminEditingId) {
-            const { error } = await supabase.from('curated_lists').update(listData).eq('id', adminEditingId);
-            if (error) { alert('Ошибка: ' + error.message); return; }
+            // Edit: only touch title/items. Previously this re-sent is_active:true and a
+            // fresh created_at, which silently re-showed hidden lists and jumped their order.
+            const { error } = await supabase.from('curated_lists')
+                .update({ title: adminListTitle.trim(), items: adminListItems })
+                .eq('id', adminEditingId);
+            if (error) { showToast('Ошибка: ' + error.message); return; }
         } else {
-            const { error } = await supabase.from('curated_lists').insert(listData);
-            if (error) { alert('Ошибка: ' + error.message); return; }
+            const { error } = await supabase.from('curated_lists').insert({
+                title: adminListTitle.trim(),
+                items: adminListItems,
+                created_by: user?.id,
+                created_at: new Date().toISOString(),
+                is_active: true,
+            });
+            if (error) { showToast('Ошибка: ' + error.message); return; }
         }
         setAdminListTitle('');
         setAdminListItems([]);
         setAdminEditingId(null);
         loadCuratedLists();
+        showToast(adminEditingId ? 'Подборка обновлена' : 'Подборка создана');
         tg?.HapticFeedback?.notificationOccurred?.('success');
-    }, [adminListTitle, adminListItems, adminEditingId, user, loadCuratedLists, tg]);
+    }, [adminListTitle, adminListItems, adminEditingId, user, loadCuratedLists, showToast, tg]);
 
     const deleteCuratedList = useCallback(async (id) => {
         if (!confirm('Удалить эту подборку?')) return;
@@ -65,10 +69,21 @@ export default function useAdmin(user, isAdmin, showToast) {
     }, []);
 
     const adminSearch = useCallback(async (q) => {
-        if (!q.trim()) { setAdminSearchResults([]); return; }
-        const data = await api(`/search/multi?query=${encodeURIComponent(q)}`);
+        const trimmed = q.trim();
+        if (!trimmed) { setAdminSearchResults([]); return; }
+        // Drop out-of-order responses: only the latest query may set results.
+        const seq = ++adminSearchSeq.current;
+        const data = await api(`/search/multi?query=${encodeURIComponent(trimmed)}`);
+        if (seq !== adminSearchSeq.current) return;
         if (data) setAdminSearchResults((data.results || []).filter(r => r.media_type !== 'person').slice(0, 8));
     }, []);
+
+    // Debounce the admin search so typing fires one TMDB call, not one per keystroke.
+    useEffect(() => {
+        if (!adminOpen) return;
+        const t = setTimeout(() => adminSearch(adminSearchQuery), 350);
+        return () => clearTimeout(t);
+    }, [adminSearchQuery, adminOpen, adminSearch]);
 
     const addToAdminList = useCallback((item) => {
         if (adminListItems.some(i => i.id === item.id)) return;

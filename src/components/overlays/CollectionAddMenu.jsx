@@ -17,7 +17,7 @@ export default function CollectionAddMenu() {
     <div className="collection-add-menu">
             <div style={{fontSize:15,fontWeight:800,marginBottom:16}}>Добавить в коллекцию</div>
             {collections.map(col => {
-                const isIn = (col.items || []).some(i => i.id === addToCollectionItem.id);
+                const isIn = (col.items || []).some(i => String(i.id) === String(addToCollectionItem.id));
                 return (
                     <div key={col.id} className="collection-add-item" onClick={() => !isIn && addItemToCollection(col.id, addToCollectionItem)}>
                         <div className="collection-add-item-icon">📁</div>

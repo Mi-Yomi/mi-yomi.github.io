@@ -267,10 +267,39 @@
     .recs-scroll .card { width: 100%; }
 }
 
+/* ---------- Horizontal-row scroll arrows (desktop only) ---------- */
+@media (min-width: 900px) {
+    .scroll-arrow {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 46px; height: 46px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(18,18,20,0.82); color: #fff;
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+        -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+        cursor: pointer; z-index: 30;
+        opacity: 1;
+        transition: opacity .25s ease, transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    /* Tuck each arrow into the gutter so it never sits on top of a poster. */
+    .scroll-arrow.left  { left: 8px; }
+    .scroll-arrow.right { right: 8px; }
+    .scroll-arrow:hover {
+        background: var(--accent); border-color: var(--accent);
+        transform: translateY(-50%) scale(1.08);
+    }
+    .scroll-arrow:active { transform: translateY(-50%) scale(0.95); }
+    .scroll-arrow svg { width: 24px; height: 24px; }
+    /* Nothing more to scroll that way → fade out and stop catching clicks. */
+    .scroll-arrow.is-off { opacity: 0; pointer-events: none; }
+}
+
 /* Wider desktops: cap the cinematic widths so things stay balanced */
 @media (min-width: 1700px) {
     .scroll-row, .section-head, .genre-chips, .tv-genres, .anime-genres { padding-left: 80px; padding-right: 80px; }
     .hero-slide .hero-content, .hero-content, .hero-dots { left: 80px; }
+    .scroll-arrow.left  { left: 16px; }
+    .scroll-arrow.right { right: 16px; }
 }
 
 /* ============================================================
@@ -288,6 +317,34 @@
     .profile-stat:first-child { border-radius: 20px 0 0 20px; }
     .profile-stat:last-child { border-radius: 0 20px 20px 0; }
     .profile-tabs { justify-content: center; flex-wrap: wrap; }
+}
+
+/* ============================================================
+   ADMIN PANEL — a centered modal card on desktop instead of a
+   full-bleed mobile takeover.
+   ============================================================ */
+@media (min-width: 900px) {
+    .admin-overlay {
+        background: rgba(0, 0, 0, 0.62);
+        -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+        align-items: flex-start; justify-content: center;
+        padding: 48px 24px;
+    }
+    .admin-panel {
+        flex: none;
+        width: min(680px, 100%);
+        max-height: calc(100vh - 96px);
+        padding: 28px 32px 36px;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+    }
+    /* Desktop uses the ✕ at top-right; the mobile back arrow is hidden. */
+    .admin-back { display: none; }
+    .admin-close { display: flex; }
+    .admin-header { margin-bottom: 28px; }
+    .admin-header h2 { font-size: 26px; }
+    .admin-search-results { max-height: 280px; }
 }
 
 /* ============================================================

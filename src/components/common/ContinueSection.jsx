@@ -1,4 +1,5 @@
 import ContinueCard from './ContinueCard.jsx';
+import ScrollRow from './ScrollRow.jsx';
 import { useMemo } from 'react';
 
 export default function ContinueSection({ title, icon, items, onSelect, getProgress }) {
@@ -23,7 +24,7 @@ export default function ContinueSection({ title, icon, items, onSelect, getProgr
     return (
         <div className="section">
             <div className="section-head"><h2 className="section-title">{icon} {title}</h2></div>
-            <div className="scroll-row">
+            <ScrollRow>
                 {activeItems.map(m => {
                     const itemId = m.item_id || m.id;
                     const stored = getProgress ? getProgress(itemId) : null;
@@ -45,7 +46,7 @@ export default function ContinueSection({ title, icon, items, onSelect, getProgr
                         </div>
                     );
                 })}
-            </div>
+            </ScrollRow>
         </div>
     );
 }

@@ -1,12 +1,17 @@
 /* Admin Panel */
+.admin-overlay {
+    position: fixed; inset: 0; z-index: 300; display: flex;
+}
 .admin-panel {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: var(--bg); z-index: 300; overflow-y: auto;
+    flex: 1; min-width: 0;
+    background: var(--bg); overflow-y: auto;
     padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 16px);
 }
 .admin-header {
     display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
 }
+/* The header ✕ is a desktop affordance; on mobile the back arrow is used instead. */
+.admin-close { display: none; margin-left: auto; padding: 10px 14px; }
 .admin-header h2 {
     font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
     background: linear-gradient(135deg, var(--gold), #ff6b6b);

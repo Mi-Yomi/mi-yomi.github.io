@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
+import ScrollRow from '../common/ScrollRow.jsx';
 
 const UpcomingSection = memo(function UpcomingSection() {
     const { upcoming, IMG, watchlist, toggleWatchlist, openDetails } = useApp();
@@ -10,7 +11,7 @@ const UpcomingSection = memo(function UpcomingSection() {
     return (
         <div className="section">
             <div className="section-head"><h2 className="section-title">{I.calendar} Скоро в кино</h2></div>
-            <div className="scroll-row">
+            <ScrollRow>
                 {upcoming.map(m => {
                     const daysUntil = Math.ceil((new Date(m.release_date) - new Date()) / (1000 * 60 * 60 * 24));
                     const inWatchlist = watchlist.some(w => w.item_id === String(m.id));
@@ -28,7 +29,7 @@ const UpcomingSection = memo(function UpcomingSection() {
                         </div>
                     );
                 })}
-            </div>
+            </ScrollRow>
         </div>
     );
 });

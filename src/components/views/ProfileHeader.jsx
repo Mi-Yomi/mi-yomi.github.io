@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 
 const ProfileHeader = memo(function ProfileHeader() {
-    const { userProfile, handleProfileImage, user, I, setNameEditOpen, favorites, history, reviews, friends, setProfileTab } = useApp();
+    const { userProfile, handleProfileImage, user, I, setNameEditOpen, favCount, histCount, revCount, friends, setProfileTab } = useApp();
 
     return (
         <>
@@ -22,9 +22,9 @@ const ProfileHeader = memo(function ProfileHeader() {
                 </div>
             </div>
             <div className="profile-stats">
-                <div className="profile-stat" onClick={() => setProfileTab('favorites')}><div className="profile-stat-num">{favorites.length}</div><div className="profile-stat-label">Избранное</div></div>
-                <div className="profile-stat" onClick={() => setProfileTab('history')}><div className="profile-stat-num">{history.length}</div><div className="profile-stat-label">Просмотрено</div></div>
-                <div className="profile-stat" onClick={() => setProfileTab('reviews')}><div className="profile-stat-num">{reviews.length}</div><div className="profile-stat-label">Отзывы</div></div>
+                <div className="profile-stat" onClick={() => setProfileTab('favorites')}><div className="profile-stat-num">{favCount}</div><div className="profile-stat-label">Избранное</div></div>
+                <div className="profile-stat" onClick={() => setProfileTab('history')}><div className="profile-stat-num">{histCount}</div><div className="profile-stat-label">Просмотрено</div></div>
+                <div className="profile-stat" onClick={() => setProfileTab('reviews')}><div className="profile-stat-num">{revCount}</div><div className="profile-stat-label">Отзывы</div></div>
                 <div className="profile-stat" onClick={() => setProfileTab('friends')}><div className="profile-stat-num">{friends.length}</div><div className="profile-stat-label">Друзья</div></div>
             </div>
         </>

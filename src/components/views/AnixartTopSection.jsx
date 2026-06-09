@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import { anixartTop } from '../../lib/api/anixart.js';
 import { api } from '../../lib/api/tmdb.js';
+import ScrollRow from '../common/ScrollRow.jsx';
 
 /**
  * "Топ аниме · Anixart" row for the anime home. Anixart ranks anime far better than
@@ -49,7 +50,7 @@ export default function AnixartTopSection() {
             <div className="section-head">
                 <h2 className="section-title">{I.trophy} Топ аниме <span className="curated-badge">ANIXART</span></h2>
             </div>
-            <div className={`scroll-row ${opening ? 'is-opening' : ''}`}>
+            <ScrollRow className={opening ? 'is-opening' : ''}>
                 {items.map(rel => (
                     <div key={rel.id} className="card card-visible" onClick={() => openAnime(rel)} role="button">
                         <div className="card-poster-wrap">
@@ -63,7 +64,7 @@ export default function AnixartTopSection() {
                         </div>
                     </div>
                 ))}
-            </div>
+            </ScrollRow>
         </div>
     );
 }

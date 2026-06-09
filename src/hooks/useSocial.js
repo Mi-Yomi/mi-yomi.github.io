@@ -118,6 +118,15 @@ export default function useSocial(user, showToast) {
     }, [user]);
 
     // Collections
+    //
+    // Every mutation updates the local `collections` state optimistically and
+    // persists to Supabase in the background. We deliberately do NOT re-read the
+    // whole table after each write (the previous code called loadCollections()
+    // after every mutation): when there is no Supabase auth session — e.g. the
+    // local dev-bypass, where auth.uid() is null and RLS rejects the write — that
+    // re-read returned an empty list and wiped every change, so collections looked
+    // completely broken while favorites/library (which already update optimistically)
+    // kept working. loadCollections() now only runs on login to hydrate state.
     const loadCollections = useCallback(async () => {
         if (!user) return;
         try {
@@ -128,36 +137,54 @@ export default function useSocial(user, showToast) {
 
     const saveCollection = useCallback(async (title, items, id = null) => {
         if (!user || !title.trim()) return;
-        try {
-            if (id) {
-                await supabase.from('user_collections').update({ title, items }).eq('id', id);
-            } else {
-                await supabase.from('user_collections').insert({ user_id: user.id, title, items: items || [], is_public: true });
-            }
-            loadCollections();
-            showToast('Коллекция сохранена');
-        } catch (_e) { showToast('Ошибка сохранения'); }
-    }, [user, loadCollections, showToast]);
+        const cleanTitle = title.trim();
+        const cleanItems = items || [];
+        if (id) {
+            // Rename / update an existing collection — optimistic.
+            setCollections(prev => prev.map(c => c.id === id ? { ...c, title: cleanTitle, items: cleanItems } : c));
+            const { error } = await supabase.from('user_collections').update({ title: cleanTitle, items: cleanItems }).eq('id', id);
+            if (error) console.warn('Collection update failed (kept locally):', error.message);
+            showToast('Коллекция обновлена');
+        } else {
+            // Create a new collection — insert optimistically with a temporary id,
+            // then swap in the real DB row once the insert returns (real login).
+            const tempId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `local-${Date.now()}`;
+            const optimistic = { id: tempId, user_id: user.id, title: cleanTitle, items: cleanItems, is_public: true, created_at: new Date().toISOString() };
+            setCollections(prev => [optimistic, ...prev]);
+            const { data, error } = await supabase
+                .from('user_collections')
+                .insert({ user_id: user.id, title: cleanTitle, items: cleanItems, is_public: true })
+                .select()
+                .single();
+            if (error) console.warn('Collection insert failed (kept locally):', error.message);
+            else if (data) setCollections(prev => prev.map(c => c.id === tempId ? data : c));
+            showToast('Коллекция создана');
+        }
+        tg?.HapticFeedback?.notificationOccurred?.('success');
+    }, [user, showToast, tg]);
 
     const deleteCollection = useCallback(async (id) => {
         if (!confirm('Удалить коллекцию?')) return;
-        try { await supabase.from('user_collections').delete().eq('id', id); loadCollections(); } catch (e) { showToast('Ошибка удаления коллекции'); }
-    }, [loadCollections, showToast]);
+        setCollections(prev => prev.filter(c => c.id !== id));
+        const { error } = await supabase.from('user_collections').delete().eq('id', id);
+        if (error) console.warn('Collection delete failed:', error.message);
+        showToast('Коллекция удалена');
+    }, [showToast]);
 
     const addItemToCollection = useCallback(async (collectionId, item) => {
         const col = collections.find(c => c.id === collectionId);
-        if (!col) return;
+        if (!col) { setAddToCollectionItem(null); return; }
         const items = col.items || [];
-        if (items.some(i => i.id === item.id)) { showToast('Уже в коллекции'); return; }
+        if (items.some(i => String(i.id) === String(item.id))) { showToast('Уже в коллекции'); setAddToCollectionItem(null); return; }
         const newItem = { id: item.id, title: item.title || item.name, poster_path: item.poster_path, media_type: item.media_type || 'movie', vote_average: item.vote_average };
-        try {
-            await supabase.from('user_collections').update({ items: [...items, newItem] }).eq('id', collectionId);
-            loadCollections();
-            showToast('Добавлено в коллекцию');
-            tg?.HapticFeedback?.notificationOccurred?.('success');
-        } catch (e) { showToast('Ошибка добавления в коллекцию'); }
+        const nextItems = [...items, newItem];
+        setCollections(prev => prev.map(c => c.id === collectionId ? { ...c, items: nextItems } : c));
+        const { error } = await supabase.from('user_collections').update({ items: nextItems }).eq('id', collectionId);
+        if (error) console.warn('Add to collection failed (kept locally):', error.message);
+        showToast('Добавлено в коллекцию');
+        tg?.HapticFeedback?.notificationOccurred?.('success');
         setAddToCollectionItem(null);
-    }, [collections, loadCollections, showToast, tg]);
+    }, [collections, showToast, tg]);
 
     // Reactions
     const loadMyReactions = useCallback(async () => {

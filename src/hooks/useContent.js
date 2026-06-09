@@ -28,6 +28,13 @@ export default function useContent(user, showToast) {
     const [reviewPosters, setReviewPosters] = useState({});
     const [watchlist, setWatchlist] = useState([]);
 
+    // Total row counts for the profile stats. The lists above are capped at 30 for
+    // display/pagination, so their `.length` can't be used as the real total — these
+    // come from Supabase `{ count: 'exact' }` and are kept in sync on add/remove.
+    const [favCount, setFavCount] = useState(0);
+    const [histCount, setHistCount] = useState(0);
+    const [revCount, setRevCount] = useState(0);
+
     const loadData = useCallback(async () => {
         setDataLoading(true);
         try {
@@ -69,9 +76,10 @@ export default function useContent(user, showToast) {
     const [revHasMore, setRevHasMore] = useState(true);
 
     const loadFavorites = useCallback(async (userId) => {
-        const { data, error } = await supabase.from('favorites').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(30);
+        const { data, error, count } = await supabase.from('favorites').select('*', { count: 'exact' }).eq('user_id', userId).order('created_at', { ascending: false }).limit(30);
         if (error) console.error('Favorites load error:', error.message);
         if (data) { setFavorites(data); setFavHasMore(data.length >= 30); }
+        if (typeof count === 'number') setFavCount(count);
     }, []);
 
     const loadMoreFavorites = useCallback(async (userId) => {
@@ -82,10 +90,11 @@ export default function useContent(user, showToast) {
     }, [favorites.length, favHasMore]);
 
     const loadHistory = useCallback(async (userId) => {
-        let result = await supabase.from('history').select('*').eq('user_id', userId).order('watched_at', { ascending: false }).limit(30);
-        if (result.error) result = await supabase.from('history').select('*').eq('user_id', userId).limit(30);
+        let result = await supabase.from('history').select('*', { count: 'exact' }).eq('user_id', userId).order('watched_at', { ascending: false }).limit(30);
+        if (result.error) result = await supabase.from('history').select('*', { count: 'exact' }).eq('user_id', userId).limit(30);
         if (result.error) console.error('History load error:', result.error.message);
         if (result.data) { setHistory(result.data); setHistHasMore(result.data.length >= 30); }
+        if (typeof result.count === 'number') setHistCount(result.count);
     }, []);
 
     const loadMoreHistory = useCallback(async (userId) => {
@@ -97,9 +106,10 @@ export default function useContent(user, showToast) {
     }, [history.length, histHasMore]);
 
     const loadReviews = useCallback(async (userId) => {
-        const { data, error } = await supabase.from('reviews').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(30);
+        const { data, error, count } = await supabase.from('reviews').select('*', { count: 'exact' }).eq('user_id', userId).order('created_at', { ascending: false }).limit(30);
         if (error) console.error('Reviews load error:', error.message);
         if (data) { setReviews(data); setRevHasMore(data.length >= 30); }
+        if (typeof count === 'number') setRevCount(count);
     }, []);
 
     const loadWatchlist = useCallback(async (userId) => {
@@ -114,12 +124,14 @@ export default function useContent(user, showToast) {
             tg?.HapticFeedback?.impactOccurred?.('light');
             await supabase.from('favorites').delete().eq('user_id', user.id).eq('item_id', String(item.id));
             setFavorites(prev => prev.filter(f => f.item_id !== String(item.id)));
+            setFavCount(c => Math.max(0, c - 1));
             showToast('Убрано из избранного');
         } else {
             tg?.HapticFeedback?.notificationOccurred?.('success');
             const favItem = { user_id: user.id, item_id: String(item.id), media_type: type, title: item.title || item.name, poster_path: item.poster_path, backdrop_path: item.backdrop_path, vote_average: item.vote_average, release_date: item.release_date || item.first_air_date };
             await supabase.from('favorites').insert(favItem);
             setFavorites([favItem, ...favorites]);
+            setFavCount(c => c + 1);
             showToast('Добавлено в избранное');
         }
     }, [user, favorites, showToast, tg]);
@@ -154,6 +166,10 @@ export default function useContent(user, showToast) {
             await supabase.from('history').delete().eq('user_id', user.id).eq('item_id', itemId);
             const { error } = await supabase.from('history').insert(coreItem);
             if (error) console.warn('History insert error:', error.message);
+            // History dedupes by item, so the real total can change in either direction —
+            // re-read the exact count (head:true fetches no rows) to stay accurate.
+            const { count } = await supabase.from('history').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+            if (typeof count === 'number') setHistCount(count);
         } catch (e) { console.error('History save exception:', e); }
         const localItem = {
             ...coreItem,
@@ -188,6 +204,7 @@ export default function useContent(user, showToast) {
         }
         const savedReview = data || newReview;
         setReviews(prev => [savedReview, ...prev]);
+        setRevCount(c => c + 1);
         if (setMovieComments) setMovieComments(prev => [{ ...savedReview, profiles: userProfile }, ...prev]);
         tg?.HapticFeedback?.notificationOccurred?.('success');
         showToast('Отзыв опубликован!');
@@ -243,7 +260,11 @@ export default function useContent(user, showToast) {
             if (h.genre_ids?.includes(16)) return true;
             return false;
         }).length;
-        const total = history.length;
+        // `total` is the real watched count (for the headline tile); `sampleTotal` is
+        // how many of those rows are actually loaded here (≤30) and is the right
+        // denominator for the movie/tv/anime ratio so the percentages still add up.
+        const sampleTotal = history.length;
+        const total = Math.max(histCount || 0, sampleTotal);
         const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + (Number(r.rating) || 0), 0) / reviews.length).toFixed(1) : '—';
         let totalWatchMinutes = 0;
         history.forEach(h => {
@@ -261,8 +282,8 @@ export default function useContent(user, showToast) {
         [...favorites, ...history].forEach(item => { if (item.genre_ids) item.genre_ids.forEach(g => { genreCounts[g] = (genreCounts[g] || 0) + 1; }); });
         const topGenres = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, count]) => ({ id, name: GENRE_NAMES[id] || `#${id}`, count }));
         const maxGenreCount = topGenres[0]?.count || 1;
-        return { movieCount, tvCount, animeCount, total, avgRating, totalWatchHours, activityCells, topGenres, maxGenreCount };
-    }, [history, reviews, favorites]);
+        return { movieCount, tvCount, animeCount, total, sampleTotal, avgRating, totalWatchHours, activityCells, topGenres, maxGenreCount };
+    }, [history, reviews, favorites, histCount]);
 
     const profileCompletion = useMemo(() => {
         return 0; // computed in orchestrator with userProfile access
@@ -292,6 +313,7 @@ export default function useContent(user, showToast) {
         reviews, setReviews,
         reviewPosters, setReviewPosters,
         watchlist, setWatchlist,
+        favCount, histCount, revCount,
         loadData, loadFavorites, loadHistory, loadReviews, loadWatchlist,
         loadMoreFavorites, loadMoreHistory,
         favHasMore, histHasMore, revHasMore,

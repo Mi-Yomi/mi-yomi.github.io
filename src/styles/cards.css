@@ -15,6 +15,11 @@
 }
 .scroll-row::-webkit-scrollbar { display: none; }
 
+/* Row wrapper holds the desktop scroll arrows. On mobile the row is swiped, so the
+   arrows stay hidden (enabled only at >=900px in responsive.css). */
+.scroll-row-wrap { position: relative; }
+.scroll-arrow { display: none; }
+
 /* Continue Watching Card */
 .continue-card { 
     flex-shrink: 0; width: 280px; scroll-snap-align: start; cursor: pointer; 

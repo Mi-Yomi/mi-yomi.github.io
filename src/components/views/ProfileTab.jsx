@@ -180,35 +180,51 @@ export default function ProfileTab() {
             {profileTab === 'stats' && <StatsSection />}
 
             {profileTab === 'friends' && (
-                <div>
+                <div className="friends-view">
                     <div className="friends-search">
-                        <input className="search-input" placeholder="Ник#Тег" value={friendSearch} onChange={e => setFriendSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchUser()} />
-                        <button onClick={searchUser}>Найти</button>
+                        <span className="friends-search-icon">{I.userPlus}</span>
+                        <input className="friends-search-input" placeholder="Добавить друга — Ник#Тег" value={friendSearch} onChange={e => setFriendSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && searchUser()} />
+                        <button className="friends-search-btn" onClick={searchUser}>Найти</button>
                     </div>
                     {searchResult && searchResult !== 'not_found' && (
-                        <div className="friend-card" style={{ borderColor: 'var(--accent)' }}>
+                        <div className="friend-card found">
                             <div className="friend-avatar">{searchResult.avatar_url ? <img src={searchResult.avatar_url} /> : searchResult.username?.[0]?.toUpperCase()}</div>
-                            <div className="friend-info"><div className="friend-name">{searchResult.username}</div><div className="friend-meta">#{searchResult.tag}</div></div>
-                            <button className="friend-btn accept" onClick={() => sendFriendRequest(searchResult.id)}>{I.plus} Добавить</button>
+                            <div className="friend-info"><div className="friend-name">{searchResult.username}</div><div className="friend-tag">#{searchResult.tag}</div></div>
+                            <button className="friend-btn accept" onClick={() => sendFriendRequest(searchResult.id)}>{I.userPlus} Добавить</button>
                         </div>
                     )}
-                    {searchResult === 'not_found' && <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 20 }}>Не найден</div>}
-                    {friends.length > 0 ? friends.map(f => (
-                        <div key={f.id} className="friend-card" onClick={() => loadFriendProfile(f)}>
-                            <div className="friend-avatar">{f.avatar_url ? <img src={f.avatar_url} /> : f.username?.[0]?.toUpperCase()}</div>
-                            <div className="friend-info"><div className="friend-name">{f.username}</div><div className="friend-meta">#{f.tag} · Нажми чтобы открыть</div></div>
-                        </div>
-                    )) : <div className="library-empty"><div className="library-empty-icon">{I.users}</div><div className="library-empty-text">Найдите друзей по Ник#Тег</div></div>}
+                    {searchResult === 'not_found' && <div className="friends-notfound">{I.search} Пользователь не найден</div>}
+
+                    {friends.length > 0 ? (
+                        <>
+                            <div className="friends-heading">{I.users} Мои друзья <span className="watchlist-badge">{friends.length}</span></div>
+                            <div className="friends-grid">
+                                {friends.map(f => (
+                                    <div key={f.id} className="friend-card" onClick={() => loadFriendProfile(f)}>
+                                        <div className="friend-avatar">{f.avatar_url ? <img src={f.avatar_url} /> : f.username?.[0]?.toUpperCase()}</div>
+                                        <div className="friend-info"><div className="friend-name">{f.username}</div><div className="friend-tag">#{f.tag}</div></div>
+                                        <span className="friend-chevron">{I.back}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="library-empty"><div className="library-empty-icon">{I.users}</div><div className="library-empty-text">Пока нет друзей</div><div className="library-empty-hint">Найдите по Ник#Тег выше</div></div>
+                    )}
                 </div>
             )}
 
-            {profileTab === 'requests' && (friendRequests.length > 0 ? friendRequests.map(req => (
-                <div key={req.requestId} className="friend-card">
-                    <div className="friend-avatar">{req.avatar_url ? <img src={req.avatar_url} /> : req.username?.[0]?.toUpperCase()}</div>
-                    <div className="friend-info"><div className="friend-name">{req.username}</div><div className="friend-meta">хочет дружить</div></div>
-                    <div className="friend-actions"><button className="friend-btn accept" onClick={() => acceptFriend(req.requestId)}>{I.check}</button><button className="friend-btn decline" onClick={() => declineFriend(req.requestId)}>{I.x}</button></div>
+            {profileTab === 'requests' && (friendRequests.length > 0 ? (
+                <div className="friends-grid">
+                    {friendRequests.map(req => (
+                        <div key={req.requestId} className="friend-card request">
+                            <div className="friend-avatar">{req.avatar_url ? <img src={req.avatar_url} /> : req.username?.[0]?.toUpperCase()}</div>
+                            <div className="friend-info"><div className="friend-name">{req.username}</div><div className="friend-tag">хочет дружить</div></div>
+                            <div className="friend-actions"><button className="friend-btn accept icon" onClick={() => acceptFriend(req.requestId)}>{I.check}</button><button className="friend-btn decline icon" onClick={() => declineFriend(req.requestId)}>{I.x}</button></div>
+                        </div>
+                    ))}
                 </div>
-            )) : <div className="library-empty"><div className="library-empty-icon">{I.inbox}</div><div className="library-empty-text">Нет заявок</div></div>)}
+            ) : <div className="library-empty"><div className="library-empty-icon">{I.inbox}</div><div className="library-empty-text">Нет заявок</div></div>)}
 
             {profileTab === 'settings' && <SettingsSection />}
         </div>

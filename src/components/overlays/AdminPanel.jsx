@@ -15,7 +15,6 @@ export default function AdminPanel() {
     adminListTitle,
     adminSearchQuery,
     setAdminSearchQuery,
-    adminSearch,
     adminSearchResults,
     addToAdminList,
     IMG,
@@ -38,12 +37,16 @@ export default function AdminPanel() {
     return null;
   }
 
+  const closePanel = () => { setAdminOpen(false); setAdminEditingId(null); setAdminListTitle(''); setAdminListItems([]); };
+
   return (
-    <div className="admin-panel">
+    <div className="admin-overlay">
+      <div className="admin-panel" role="dialog" aria-modal="true" aria-label="Админ-панель">
             <div className="admin-header">
-                <button className="admin-btn secondary" onClick={() => { setAdminOpen(false); setAdminEditingId(null); setAdminListTitle(''); setAdminListItems([]); }}>{I.back}</button>
+                <button className="admin-btn secondary admin-back" onClick={closePanel} aria-label="Закрыть">{I.back}</button>
                 <h2>Админ-панель</h2>
                 <span className="admin-badge">ADMIN</span>
+                <button className="admin-btn secondary admin-close" onClick={closePanel} aria-label="Закрыть">{I.x}</button>
             </div>
 
             <div className="admin-section">
@@ -61,7 +64,7 @@ export default function AdminPanel() {
                     <input
                         className="admin-input admin-input-search"
                         value={adminSearchQuery}
-                        onChange={e => { setAdminSearchQuery(e.target.value); adminSearch(e.target.value); }}
+                        onChange={e => setAdminSearchQuery(e.target.value)}
                         placeholder="Поиск фильмов и сериалов..."
                     />
                 </div>
@@ -118,7 +121,7 @@ export default function AdminPanel() {
                 <div className="admin-section-title">{I.list} Мои подборки ({curatedLists.length})</div>
                 {curatedLists.length === 0 ? (
                     <div style={{textAlign:'center',padding:'32px 16px',color:'var(--text-muted)'}}>
-                        <div style={{fontSize:32,marginBottom:8}}>{I.fileText}</div>
+                        <div className="admin-empty-icon" style={{marginBottom:8}}>{I.fileText}</div>
                         <div style={{fontSize:13,fontWeight:600}}>Пока нет подборок</div>
                     </div>
                 ) : curatedLists.map(list => (
@@ -183,7 +186,7 @@ export default function AdminPanel() {
                     });
                     if (filtered.length === 0) return (
                         <div style={{textAlign:'center',padding:'32px 16px',color:'var(--text-muted)'}}>
-                            <div style={{fontSize:32,marginBottom:8}}>
+                            <div className="admin-empty-icon" style={{marginBottom:8}}>
                                 {approvalTab === 'pending' ? I.checkCircle : approvalTab === 'approved' ? I.user : I.ban}
                             </div>
                             <div style={{fontSize:13,fontWeight:600}}>
@@ -217,5 +220,6 @@ export default function AdminPanel() {
                 })()}
             </div>
         </div>
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import { I } from '../../lib/icons.jsx';
 import Card from '../common/Card.jsx';
 import ContinueSection from '../common/ContinueSection.jsx';
 import Section from '../common/Section.jsx';
+import ScrollRow from '../common/ScrollRow.jsx';
 import HeroCarousel from './HeroCarousel.jsx';
 import UpcomingSection from './UpcomingSection.jsx';
 import FriendsActivity from './FriendsActivity.jsx';
@@ -51,11 +52,11 @@ export default function HomeTab() {
                 <div className="section-head">
                     <h2 className="section-title">{I.trophy} {cl.title} <span className="curated-badge">ПОДБОРКА</span></h2>
                 </div>
-                <div className="scroll-row">
+                <ScrollRow>
                     {(cl.items || []).map(item => (
                         <Card key={item.id} item={item} onSelect={openDetails} onFav={toggleFavorite} isFav={favorites.some(f => f.item_id === String(item.id))} type={item.media_type} />
                     ))}
-                </div>
+                </ScrollRow>
             </div>
         ))}
 
