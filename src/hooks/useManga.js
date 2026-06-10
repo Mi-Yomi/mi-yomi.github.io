@@ -17,6 +17,13 @@ const readJSON = (key, fallback) => {
 };
 const writeJSON = (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* quota */ } };
 
+// Keep the URL hash in sync with the reading session (replaceState only — no new
+// history entries, so back-button behaviour is untouched). Lets a page reload
+// land back in the manga reader instead of the home tab.
+const setMangaHash = (h) => {
+    try { window.history.replaceState(window.history.state, '', h ? `#${h}` : window.location.pathname + window.location.search); } catch { /* ignore */ }
+};
+
 /**
  * Manga state (MangaLib). Catalog/search/title/chapters/pages/comments come from the
  * API client; per-chapter read progress (%), total reading time, the status library
@@ -47,6 +54,7 @@ export default function useManga(showToast, user) {
 
     // Reader (seamless scroll: next chapters are appended as sections while the user reads)
     const [mangaReaderOpen, setMangaReaderOpen] = useState(false);
+    const [mangaResumeAt, setMangaResumeAt] = useState(null); // % to scroll to when a session opens
     const [mangaCurrentChapter, setMangaCurrentChapter] = useState(null); // chapter currently in view
     const [mangaSections, setMangaSections] = useState([]);              // [{ chapter, pages, comments, error }] in reading order
     const [mangaReaderLoading, setMangaReaderLoading] = useState(false); // first chapter of a session
@@ -102,6 +110,7 @@ export default function useManga(showToast, user) {
         setMangaChapters([]);
         setMangaTitleComments([]);
         setMangaTitleLoading(true);
+        setMangaHash(`manga/${item.dir}`);
         tg?.HapticFeedback?.impactOccurred?.('light');
         try {
             const title = await getTitle(item.dir);
@@ -121,7 +130,7 @@ export default function useManga(showToast, user) {
         setMangaTitleLoading(false);
     }, [showToast, tg]);
 
-    const closeManga = useCallback(() => { setMangaTitle(null); setMangaChapters([]); setMangaTitleComments([]); }, []);
+    const closeManga = useCallback(() => { setMangaTitle(null); setMangaChapters([]); setMangaTitleComments([]); setMangaHash(null); }, []);
 
     // --- Reading progress (per chapter %) ---
     const markChapterProgress = useCallback((dir, chapterId, percent) => {
@@ -139,6 +148,22 @@ export default function useManga(showToast, user) {
     const addReadingTime = useCallback((seconds) => {
         if (!seconds || seconds <= 0) return;
         setMangaSeconds((prev) => { const next = prev + Math.round(seconds); writeJSON(SECONDS_KEY, next); return next; });
+    }, []);
+
+    // Exact resume position: a NON-monotonic "last viewed spot" on the continue
+    // pointer. markChapterProgress is a monotonic max (right for "прочитано"),
+    // wrong for "вернуться где остановился" when the user scrolled back up.
+    const markReadingPosition = useCallback((dir, chapterId, percent) => {
+        if (!dir || !chapterId) return;
+        setMangaProgress((prev) => {
+            const cur = prev[dir];
+            if (!cur || cur.chapterId !== chapterId) return prev;
+            const p = Math.max(0, Math.min(100, Math.round(percent)));
+            if (cur.pct === p) return prev;
+            const next = { ...prev, [dir]: { ...cur, pct: p } };
+            writeJSON(PROGRESS_KEY, next);
+            return next;
+        });
     }, []);
 
     // --- Library statuses ---
@@ -167,7 +192,9 @@ export default function useManga(showToast, user) {
         const dir = title?.dir;
         if (!dir || !chapter) return;
         setMangaProgress((prev) => {
-            const next = { ...prev, [dir]: { dir, chapterId: chapter.id, tome: chapter.tome, chapter: chapter.chapter, title: title.title, cover: title.cover, ts: Date.now() } };
+            // keep the in-chapter position when re-pointing at the same chapter
+            const pct = prev[dir]?.chapterId === chapter.id ? prev[dir].pct : undefined;
+            const next = { ...prev, [dir]: { dir, chapterId: chapter.id, tome: chapter.tome, chapter: chapter.chapter, title: title.title, cover: title.cover, ts: Date.now(), ...(pct != null ? { pct } : {}) } };
             writeJSON(PROGRESS_KEY, next);
             return next;
         });
@@ -203,6 +230,17 @@ export default function useManga(showToast, user) {
         setMangaReaderSession(seq);
         tg?.HapticFeedback?.impactOccurred?.('light');
         const title = mangaTitle;
+        // Resume where the user stopped: exact pointer position for this chapter,
+        // else the saved read % (furthest point). Only mid-chapter values count.
+        {
+            const dir = title?.dir;
+            const pointer = dir ? mangaProgress[dir] : null;
+            const pos = (pointer && pointer.chapterId === chapter.id && typeof pointer.pct === 'number')
+                ? pointer.pct
+                : (dir ? mangaRead[dir]?.[chapter.id] : null);
+            setMangaResumeAt(pos != null && pos >= 2 && pos <= 97 ? pos : null);
+            if (dir) setMangaHash(`manga/${dir}/${chapter.volume}/${chapter.number}`);
+        }
         try {
             const { pages, paid } = await getChapterPages(title?.dir, chapter.volume, chapter.number);
             if (seq !== readerSeqRef.current) return;
@@ -218,7 +256,7 @@ export default function useManga(showToast, user) {
             if (seq === readerSeqRef.current) setMangaReaderError('error');
         }
         if (seq === readerSeqRef.current) setMangaReaderLoading(false);
-    }, [mangaTitle, tg, recordChapterOpened, loadSectionComments]);
+    }, [mangaTitle, mangaProgress, mangaRead, tg, recordChapterOpened, loadSectionComments]);
 
     // Seamless scroll: append the next chapter (reading order) below the last loaded section.
     // Paid/empty chapters become inline note-sections so the flow can continue past them;
@@ -259,6 +297,7 @@ export default function useManga(showToast, user) {
         if (!chapter) return;
         setMangaCurrentChapter((prev) => (prev?.id === chapter.id ? prev : chapter));
         recordChapterOpened(mangaTitle, chapter);
+        if (mangaTitle?.dir) setMangaHash(`manga/${mangaTitle.dir}/${chapter.volume}/${chapter.number}`);
     }, [mangaTitle, recordChapterOpened]);
 
     const closeReader = useCallback(() => {
@@ -269,7 +308,22 @@ export default function useManga(showToast, user) {
         setMangaCurrentChapter(null);
         setMangaNextLoading(false);
         setMangaNextError(false);
+        setMangaHash(mangaTitle?.dir ? `manga/${mangaTitle.dir}` : null);
+    }, [mangaTitle]);
+
+    // Reload restore: a deep link #manga/{dir}/{vol}/{num} requests a chapter to
+    // be reopened once the title's chapter list arrives (set at boot).
+    const restoreRef = useRef(null);
+    const requestReaderRestore = useCallback((dir, volume, number) => {
+        restoreRef.current = { dir, volume: String(volume), number: String(number) };
     }, []);
+    useEffect(() => {
+        const r = restoreRef.current;
+        if (!r || mangaTitle?.dir !== r.dir || !mangaChapters.length) return;
+        restoreRef.current = null;
+        const ch = mangaChapters.find((c) => String(c.volume) === r.volume && String(c.number) === r.number);
+        if (ch) openChapter(ch);
+    }, [mangaTitle, mangaChapters, openChapter]);
 
     // Chapters are newest-first. Adjacent navigation: -1 = newer, +1 = older.
     const goAdjacentChapter = useCallback((dir) => {
@@ -402,9 +456,9 @@ export default function useManga(showToast, user) {
         mangaTitle, mangaChapters, mangaTitleLoading, openManga, closeManga,
         mangaTitleComments, mangaCommentsLoading,
         mangaReaderOpen, mangaCurrentChapter, mangaSections, mangaReaderLoading, mangaReaderError,
-        mangaNextLoading, mangaNextError, mangaReaderSession,
-        openChapter, closeReader, goAdjacentChapter, loadNextChapter, noteChapterInView,
-        mangaProgress, mangaRead, markChapterProgress, addReadingTime,
+        mangaNextLoading, mangaNextError, mangaReaderSession, mangaResumeAt,
+        openChapter, closeReader, goAdjacentChapter, loadNextChapter, noteChapterInView, requestReaderRestore,
+        mangaProgress, mangaRead, markChapterProgress, markReadingPosition, addReadingTime,
         mangaLibrary, getMangaStatus, setMangaStatus, mangaLibraryByStatus,
         mangaChaptersRead, mangaReadMinutes, mangaSeconds,
     };

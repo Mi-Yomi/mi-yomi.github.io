@@ -68,9 +68,21 @@ export default function useAppController() {
         if (auth.user) syncWithDB(auth.user.id, auth.user.email);
     }, [auth.user]);
 
-    // Deep link on first load (e.g. opened/refreshed on #movie/123)
+    // Deep link on first load (e.g. opened/refreshed on #movie/123 or, while
+    // reading manga, #manga/{dir}/{volume}/{number} — restores the reader so a
+    // reload doesn't dump the user back onto the home tab).
     useEffect(() => {
-        const [type, id] = window.location.hash.substring(1).split('/');
+        const parts = window.location.hash.substring(1).split('/');
+        if (parts[0] === 'manga') {
+            const [, dir, vol, num] = parts;
+            if (dir) {
+                ui.setTab('manga');
+                if (vol != null && num != null) manga.requestReaderRestore(dir, vol, num);
+                manga.openManga({ dir });
+            }
+            return;
+        }
+        const [type, id] = parts;
         if (id) details.openDetails({ id }, type, { skipPush: true });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

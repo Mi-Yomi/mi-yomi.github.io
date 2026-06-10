@@ -6,9 +6,9 @@ import MangaComments from '../common/MangaComments.jsx';
 export default function MangaReader() {
     const {
         mangaReaderOpen, mangaTitle, mangaCurrentChapter, mangaChapters,
-        mangaSections, mangaReaderLoading, mangaReaderError, mangaNextError, mangaReaderSession,
+        mangaSections, mangaReaderLoading, mangaReaderError, mangaNextError, mangaReaderSession, mangaResumeAt,
         closeReader, goAdjacentChapter, loadNextChapter, noteChapterInView,
-        markChapterProgress, addReadingTime,
+        markChapterProgress, markReadingPosition, addReadingTime,
     } = useApp();
 
     const scrollRef = useRef(null);
@@ -20,12 +20,16 @@ export default function MangaReader() {
 
     // Reset only on an explicit open (chapter list / nav buttons) — not when the
     // in-view chapter changes because the user scrolled across a chapter boundary.
+    // mangaResumeAt (saved position % for the opened chapter) is applied once the
+    // first section renders — see the layout effect below.
+    const pendingResumeRef = useRef(null);
     useEffect(() => {
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
         setChrome(true);
         setOpenComments(new Set());
         lastSaveRef.current = 0;
-    }, [mangaReaderSession]);
+        pendingResumeRef.current = mangaResumeAt != null ? { session: mangaReaderSession, pct: mangaResumeAt } : null;
+    }, [mangaReaderSession, mangaResumeAt]);
 
     // The hook keeps only the last READER_WINDOW sections; when sections are
     // dropped from the head, subtract their height from scrollTop (before paint)
@@ -49,6 +53,23 @@ export default function MangaReader() {
         }
         prevSectionsRef.current = { session: mangaReaderSession, ids };
         for (const [id, node] of sectionElsRef.current) heightsRef.current.set(id, node.offsetHeight);
+
+        // Apply the saved resume position once the opened chapter's section is in
+        // the DOM (image heights are reserved via aspect-ratio, so offsetHeight is
+        // already representative before the images finish loading).
+        const pend = pendingResumeRef.current;
+        if (pend) {
+            if (pend.session !== mangaReaderSession) {
+                pendingResumeRef.current = null;
+            } else if (mangaSections.length && scrollRef.current) {
+                const node = sectionElsRef.current.get(mangaSections[0].chapter.id);
+                if (node) {
+                    const sc = scrollRef.current;
+                    sc.scrollTop = Math.max(0, (pend.pct / 100) * Math.max(0, node.offsetHeight - sc.clientHeight));
+                    pendingResumeRef.current = null;
+                }
+            }
+        }
     }, [mangaSections, mangaReaderSession]);
 
     // Reading-time accounting: 15s heartbeat that only counts slices where the
@@ -87,20 +108,25 @@ export default function MangaReader() {
         const save = now - lastSaveRef.current > 500;
         if (save) lastSaveRef.current = now;
         let current = null;
+        let currentPct = null;
         for (const sec of mangaSections) {
             const node = sectionElsRef.current.get(sec.chapter.id);
             if (!node) continue;
             const r = node.getBoundingClientRect();
             heightsRef.current.set(sec.chapter.id, r.height); // keep trim compensation fresh
-            if (r.top <= mid && r.bottom > mid) current = sec.chapter;
+            const inMid = r.top <= mid && r.bottom > mid;
+            if (inMid) current = sec.chapter;
             if (r.bottom < view.top || r.top > view.bottom || !sec.pages.length) continue;
             const pct = r.height <= winH + 4
                 ? (r.bottom <= view.bottom + 2 ? 100 : 0) // fits in one screen: read once its end is on screen
                 : Math.max(0, Math.min(100, ((view.bottom - r.top - winH) / (r.height - winH)) * 100));
+            if (inMid) currentPct = pct;
             if (save || pct >= 99) markChapterProgress(mangaTitle.dir, sec.chapter.id, pct);
         }
         if (current && current.id !== mangaCurrentChapter?.id) noteChapterInView(current);
-    }, [mangaTitle, mangaSections, mangaCurrentChapter, markChapterProgress, noteChapterInView]);
+        // Exact "where I stopped" position for the continue pointer (non-monotonic).
+        if (save && current && currentPct != null) markReadingPosition(mangaTitle.dir, current.id, currentPct);
+    }, [mangaTitle, mangaSections, mangaCurrentChapter, markChapterProgress, markReadingPosition, noteChapterInView]);
 
     // Next chapter in reading order after the last loaded section (chapters are newest-first).
     const lastSection = mangaSections[mangaSections.length - 1];
