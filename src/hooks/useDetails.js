@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { api, getImdbId, getMalId, isAnime, searchAlloha, searchCollaps } from '../lib/api/tmdb.js';
+import { api, getImdbId, getMalId, getVideos, isAnime, searchAlloha, searchCollaps } from '../lib/api/tmdb.js';
 import { supabase } from '../lib/api/supabase.js';
 
 export default function useDetails() {
@@ -14,6 +14,7 @@ export default function useDetails() {
     const [seasonsData, setSeasonsData] = useState([]);
     const [overviewExpanded, setOverviewExpanded] = useState(false);
     const [recommendations, setRecommendations] = useState([]);
+    const [videos, setVideos] = useState([]);
 
     // Review modal state
     const [reviewOpen, setReviewOpen] = useState(false);
@@ -29,6 +30,10 @@ export default function useDetails() {
     const loadRecommendations = useCallback(async (id, type) => {
         const data = await api(`/${type}/${id}/recommendations`);
         setRecommendations((data?.results || []).slice(0, 12));
+    }, []);
+
+    const loadVideos = useCallback(async (id, type) => {
+        setVideos(await getVideos(id, type));
     }, []);
 
     const loadSources = useCallback(async (data, type) => {
@@ -63,6 +68,7 @@ export default function useDetails() {
         setSeasonsData([]);
         setOverviewExpanded(false);
         setRecommendations([]);
+        setVideos([]);
         const [data, credits] = await Promise.all([
             api(`/${type}/${item.id}`),
             api(`/${type}/${item.id}/credits`),
@@ -73,6 +79,7 @@ export default function useDetails() {
             loadSources(data, type);
             loadMovieComments(data.id);
             loadRecommendations(data.id, type);
+            loadVideos(data.id, type);
             if (type === 'tv' && data.number_of_seasons) {
                 const seasonsPromises = Array.from({ length: Math.min(data.number_of_seasons, 20) }, (_, i) =>
                     api(`/tv/${data.id}/season/${i + 1}`)
@@ -85,7 +92,7 @@ export default function useDetails() {
                 })));
             }
         }
-    }, [loadSources, loadMovieComments, loadRecommendations]);
+    }, [loadSources, loadMovieComments, loadRecommendations, loadVideos]);
 
     // Pure cleanup — called by the popstate handler when we leave a details entry.
     // Does NOT touch history (the browser already moved us back).
@@ -96,6 +103,7 @@ export default function useDetails() {
         setAllohaData(null);
         setMovieComments([]);
         setSeasonsData([]);
+        setVideos([]);
     }, []);
 
     // What the in-app back button / ESC / edge-swipe call: step back in history
@@ -118,6 +126,7 @@ export default function useDetails() {
         seasonsData, setSeasonsData,
         overviewExpanded, setOverviewExpanded,
         recommendations, setRecommendations,
+        videos,
         reviewOpen, setReviewOpen,
         reviewRating, setReviewRating,
         reviewText, setReviewText,

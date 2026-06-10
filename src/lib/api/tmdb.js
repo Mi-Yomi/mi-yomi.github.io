@@ -69,6 +69,21 @@ function revalidate(path) {
     inflight.set(path, promise);
 }
 
+/**
+ * YouTube trailers/teasers for a title, best first: russian before english,
+ * trailers before teasers, official before fan uploads.
+ * @param {number} id @param {string} type 'movie' | 'tv'
+ * @returns {Promise<Array<{key:string,name:string,type:string,iso_639_1:string}>>}
+ */
+export const getVideos = async (id, type) => {
+    const data = await api(`/${type}/${id}/videos?include_video_language=ru,en`);
+    const score = (v) => (v.iso_639_1 === 'ru' ? 0 : 4) + (v.type === 'Trailer' ? 0 : 2) + (v.official ? 0 : 1);
+    return (data?.results || [])
+        .filter((v) => v.site === 'YouTube' && v.key && (v.type === 'Trailer' || v.type === 'Teaser'))
+        .sort((a, b) => score(a) - score(b))
+        .slice(0, 6);
+};
+
 /** @param {number} tmdbId @param {string} type @returns {Promise<string|null>} */
 export const getImdbId = async (tmdbId, type) => {
     try {

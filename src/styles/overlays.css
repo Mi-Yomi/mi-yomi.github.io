@@ -59,6 +59,32 @@
 .fallback-btn-icon { font-size: 20px; margin-bottom: 4px; }
 .fallback-btn-name { font-size: 10px; font-weight: 700; }
 
+/* Trailer (lite YouTube embed) */
+.trailer-section { margin-top: 24px; }
+.trailer-frame {
+    position: relative; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden;
+    background: #000; border: 1px solid var(--border);
+}
+.trailer-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.trailer-poster { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: #000; cursor: pointer; }
+.trailer-poster img { width: 100%; height: 100%; object-fit: cover; opacity: .8; transition: opacity .2s, transform .3s; }
+.trailer-poster:hover img { opacity: 1; transform: scale(1.02); }
+.trailer-play {
+    position: absolute; inset: 0; margin: auto; width: 62px; height: 62px; border-radius: 50%;
+    background: rgba(229, 9, 20, .92); box-shadow: 0 6px 24px rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center; pointer-events: none;
+}
+.trailer-play svg { width: 26px; height: 26px; color: #fff; margin-left: 3px; }
+.trailer-thumbs { display: flex; gap: 10px; margin-top: 12px; overflow-x: auto; scrollbar-width: none; }
+.trailer-thumbs::-webkit-scrollbar { display: none; }
+.trailer-thumb {
+    flex-shrink: 0; width: 132px; padding: 0; border-radius: 10px; overflow: hidden; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border); text-align: left;
+}
+.trailer-thumb.active { border-color: var(--accent); }
+.trailer-thumb img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.trailer-thumb span { display: block; padding: 5px 8px; font-size: 10px; font-weight: 700; color: var(--text-muted); }
+
 .details-overview-section { margin-top: 24px; padding: 18px; background: var(--surface); border-radius: 18px; border: 1px solid var(--border); }
 .details-section-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 .details-section-label svg { width: 13px; height: 13px; opacity: 0.5; }

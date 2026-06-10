@@ -1,9 +1,48 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Card from '../common/Card.jsx';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import InlinePlayer from '../views/InlinePlayer.jsx';
 import AnixartComments from '../views/AnixartComments.jsx';
+
+// YouTube trailers: lite-embed pattern — a thumbnail until tapped, then an
+// autoplaying youtube-nocookie iframe. Re-mounted per title via key={media.id}.
+function TrailerSection({ videos }) {
+    const [active, setActive] = useState(0);
+    const [playing, setPlaying] = useState(false);
+    if (!videos?.length) return null;
+    const v = videos[Math.min(active, videos.length - 1)];
+    return (
+        <div className="trailer-section">
+            <div className="details-section-label">{I.play} Трейлер</div>
+            <div className="trailer-frame">
+                {playing ? (
+                    <iframe
+                        src={`https://www.youtube-nocookie.com/embed/${v.key}?autoplay=1&rel=0`}
+                        title={v.name || 'Трейлер'}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    />
+                ) : (
+                    <button className="trailer-poster" onClick={() => setPlaying(true)} aria-label="Смотреть трейлер">
+                        <img src={`https://i.ytimg.com/vi/${v.key}/hqdefault.jpg`} alt={v.name || 'Трейлер'} loading="lazy" />
+                        <span className="trailer-play">{I.play}</span>
+                    </button>
+                )}
+            </div>
+            {videos.length > 1 && (
+                <div className="trailer-thumbs">
+                    {videos.map((t, i) => (
+                        <button key={t.key} className={`trailer-thumb ${i === active ? 'active' : ''}`} onClick={() => setActive(i)}>
+                            <img src={`https://i.ytimg.com/vi/${t.key}/mqdefault.jpg`} alt="" loading="lazy" />
+                            <span>{(t.iso_639_1 || '').toUpperCase()}{t.type === 'Teaser' ? ' · тизер' : ''}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function DetailsOverlay() {
   const {
@@ -25,6 +64,7 @@ export default function DetailsOverlay() {
     overviewExpanded,
     setOverviewExpanded,
     recommendations,
+    videos,
     openDetails,
     myReactions,
     toggleReaction,
@@ -177,6 +217,8 @@ export default function DetailsOverlay() {
                     </div>{/* /dov-watch */}
 
                     <div className="dov-extra">
+                    <TrailerSection key={media.id} videos={videos} />
+
                     {media.overview && (() => {
                         const isLong = media.overview.length > 150;
                         return (
