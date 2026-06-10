@@ -217,17 +217,30 @@ export default function useAppController() {
         } catch (e) { console.warn('Failed to process pending sync:', e.message); }
     }, [auth.user]);
 
-    // Review wrapper — bridges ReviewModal (no-args) with content.addReview (needs params)
+    // Review wrapper — bridges ReviewModal (no-args) with content.addReview /
+    // content.updateReview (edit mode when details.reviewEditing is set).
     const addReview = useCallback(async () => {
         if (!details.media || !details.reviewText.trim()) return;
-        const ok = await content.addReview(
-            details.media, details.reviewText, details.reviewRating,
-            auth.userProfile, details.movieComments, details.setMovieComments
-        );
+        let ok;
+        if (details.reviewEditing) {
+            const ratingValue = Math.max(1, Math.min(10, Math.round(Number(details.reviewRating) || 0)));
+            ok = await content.updateReview(details.reviewEditing.id, details.reviewText, ratingValue);
+            if (ok) {
+                details.setMovieComments(prev => prev.map(c => (c.id === details.reviewEditing.id
+                    ? { ...c, content: details.reviewText, rating: ratingValue }
+                    : c)));
+            }
+        } else {
+            ok = await content.addReview(
+                details.media, details.reviewText, details.reviewRating,
+                auth.userProfile, details.movieComments, details.setMovieComments
+            );
+        }
         if (ok) {
             details.setReviewOpen(false);
             details.setReviewText('');
             details.setReviewRating(7);
+            details.setReviewEditing(null);
         }
     }, [details, content, auth.userProfile]);
 

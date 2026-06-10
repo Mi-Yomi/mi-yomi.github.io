@@ -142,8 +142,48 @@
 .notif-empty-hint { font-size: 13px; color: var(--text-muted); }
 
 /* Reaction Buttons */
-.reaction-row { display: flex; gap: 8px; padding: 0 16px 12px; }
+.reaction-row { display: flex; gap: 8px; padding: 0 16px 12px; align-items: center; flex-wrap: wrap; }
 .reaction-btn { display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
 .reaction-btn:active { transform: scale(0.95); }
 .reaction-btn.liked { background: rgba(0,200,83,0.12); border-color: rgba(0,200,83,0.2); color: var(--green); }
 .reaction-btn.disliked { background: rgba(229,9,20,0.12); border-color: rgba(229,9,20,0.2); color: var(--accent); }
+.reaction-btn.open { border-color: var(--accent); color: var(--text); }
+.reaction-btn.danger { color: var(--accent); }
+.rev-own-actions { display: inline-flex; gap: 8px; margin-left: auto; }
+
+/* Comment thread under a review */
+.rev-thread { border-top: 1px solid var(--border); margin: 0 16px 14px; padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.rev-thread-note { font-size: 12px; color: var(--text-muted); text-align: center; padding: 6px 0; }
+.rev-comment { display: flex; gap: 8px; align-items: flex-start; }
+.rev-comment-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+    background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; color: var(--text-muted);
+}
+.rev-comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.rev-comment-bubble { background: var(--surface-2); border-radius: 12px; padding: 8px 11px; flex: 1; min-width: 0; }
+.rev-comment-head { display: flex; align-items: baseline; gap: 7px; margin-bottom: 2px; }
+.rev-comment-user { font-size: 12px; font-weight: 700; }
+.rev-comment-date { font-size: 10px; color: var(--text-muted); }
+.rev-comment-text { font-size: 13px; line-height: 1.45; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
+.rev-comment-side { display: flex; flex-direction: column; gap: 6px; align-items: center; flex-shrink: 0; padding-top: 4px; }
+.rev-comment-like, .rev-comment-del {
+    display: inline-flex; align-items: center; gap: 3px; padding: 4px 7px; border-radius: 8px;
+    background: none; border: none; color: var(--text-muted); font-size: 11px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+}
+.rev-comment-like svg, .rev-comment-del svg { width: 13px; height: 13px; }
+.rev-comment-like.liked { color: var(--green); }
+.rev-comment-del:active, .rev-comment-like:active { transform: scale(0.9); }
+.rev-input-row { display: flex; gap: 8px; }
+.rev-input {
+    flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 9px 12px; color: var(--text); font-family: inherit; font-size: 13px; outline: none;
+}
+.rev-input:focus { border-color: var(--accent); }
+.rev-send {
+    width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; background: var(--accent);
+    border: none; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.rev-send:disabled { opacity: 0.4; }
+.rev-send svg { width: 16px; height: 16px; }

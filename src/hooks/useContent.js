@@ -211,6 +211,34 @@ export default function useContent(user, showToast) {
         return true;
     }, [user, showToast, tg]);
 
+    const updateReview = useCallback(async (reviewId, content, rating) => {
+        if (!user || !content.trim()) return false;
+        const ratingValue = Math.max(1, Math.min(10, Math.round(Number(rating) || 0)));
+        const { error } = await supabase.from('reviews')
+            .update({ content, rating: ratingValue })
+            .eq('id', reviewId).eq('user_id', user.id);
+        if (error) {
+            console.error('Review update error:', error);
+            showToast('Не удалось сохранить изменения');
+            return false;
+        }
+        setReviews(prev => prev.map(r => (r.id === reviewId ? { ...r, content, rating: ratingValue } : r)));
+        tg?.HapticFeedback?.notificationOccurred?.('success');
+        showToast('Отзыв обновлён');
+        return true;
+    }, [user, showToast, tg]);
+
+    const deleteReview = useCallback(async (reviewId) => {
+        if (!user) return false;
+        setReviews(prev => prev.filter(r => r.id !== reviewId));
+        setRevCount(c => Math.max(0, c - 1));
+        const { error } = await supabase.from('reviews').delete().eq('id', reviewId).eq('user_id', user.id);
+        if (error) console.warn('Review delete failed:', error.message);
+        tg?.HapticFeedback?.notificationOccurred?.('success');
+        showToast('Отзыв удалён');
+        return true;
+    }, [user, showToast, tg]);
+
     // For You recommendations based on history
     const loadForYou = useCallback(async () => {
         if (history.length === 0) return;
@@ -318,7 +346,7 @@ export default function useContent(user, showToast) {
         loadMoreFavorites, loadMoreHistory,
         favHasMore, histHasMore, revHasMore,
         toggleFavorite, toggleWatchlist,
-        addToHistory, addReview,
+        addToHistory, addReview, updateReview, deleteReview,
         loadForYou, fetchMoodResults,
         sortItems, calcStats,
         createGenreFilter,

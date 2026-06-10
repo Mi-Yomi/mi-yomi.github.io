@@ -214,6 +214,73 @@ export default function useSocial(user, showToast) {
         } catch (e) { console.warn('Failed to toggle reaction:', e.message); }
     }, [user, myReactions, tg]);
 
+    // --- Comments under reviews (flat threads). Optimistic like collections:
+    // state updates immediately, Supabase write happens in the background.
+    const [reviewComments, setReviewComments] = useState({});               // reviewId -> comments[]
+    const [reviewCommentsLoading, setReviewCommentsLoading] = useState({}); // reviewId -> bool
+
+    const loadReviewComments = useCallback(async (reviewId) => {
+        setReviewCommentsLoading(prev => ({ ...prev, [reviewId]: true }));
+        try {
+            const { data } = await supabase.from('review_comments')
+                .select('*, profiles:user_id(username, tag, avatar_url), review_comment_likes(user_id)')
+                .eq('review_id', reviewId)
+                .order('created_at', { ascending: true });
+            if (data) {
+                setReviewComments(prev => ({
+                    ...prev,
+                    [reviewId]: data.map(({ review_comment_likes: likes, ...c }) => ({
+                        ...c,
+                        likedByMe: (likes || []).some(l => l.user_id === user?.id),
+                    })),
+                }));
+            }
+        } catch (e) { console.warn('Failed to load review comments:', e.message); }
+        setReviewCommentsLoading(prev => ({ ...prev, [reviewId]: false }));
+    }, [user]);
+
+    const addReviewComment = useCallback(async (reviewId, content, userProfile) => {
+        const text = (content || '').trim();
+        if (!user || !text) return false;
+        const tempId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `local-${Date.now()}`;
+        const optimistic = {
+            id: tempId, review_id: reviewId, user_id: user.id, content: text,
+            likes_count: 0, likedByMe: false, created_at: new Date().toISOString(),
+            profiles: { username: userProfile?.username, tag: userProfile?.tag, avatar_url: userProfile?.avatar_url },
+        };
+        setReviewComments(prev => ({ ...prev, [reviewId]: [...(prev[reviewId] || []), optimistic] }));
+        const { data, error } = await supabase.from('review_comments')
+            .insert({ review_id: reviewId, user_id: user.id, content: text })
+            .select('*, profiles:user_id(username, tag, avatar_url)')
+            .single();
+        if (error) console.warn('Review comment insert failed (kept locally):', error.message);
+        else if (data) setReviewComments(prev => ({ ...prev, [reviewId]: (prev[reviewId] || []).map(c => (c.id === tempId ? { ...data, likedByMe: false } : c)) }));
+        tg?.HapticFeedback?.impactOccurred?.('light');
+        return true;
+    }, [user, tg]);
+
+    const deleteReviewComment = useCallback(async (reviewId, commentId) => {
+        setReviewComments(prev => ({ ...prev, [reviewId]: (prev[reviewId] || []).filter(c => c.id !== commentId) }));
+        const { error } = await supabase.from('review_comments').delete().eq('id', commentId);
+        if (error) console.warn('Review comment delete failed:', error.message);
+    }, []);
+
+    const toggleCommentLike = useCallback(async (reviewId, comment) => {
+        if (!user) return;
+        const liked = comment.likedByMe;
+        setReviewComments(prev => ({
+            ...prev,
+            [reviewId]: (prev[reviewId] || []).map(c => (c.id === comment.id
+                ? { ...c, likedByMe: !liked, likes_count: Math.max(0, (c.likes_count || 0) + (liked ? -1 : 1)) }
+                : c)),
+        }));
+        try {
+            if (liked) await supabase.from('review_comment_likes').delete().eq('comment_id', comment.id).eq('user_id', user.id);
+            else await supabase.from('review_comment_likes').insert({ comment_id: comment.id, user_id: user.id });
+            tg?.HapticFeedback?.impactOccurred?.('light');
+        } catch (e) { console.warn('Comment like failed:', e.message); }
+    }, [user, tg]);
+
     // Supabase Realtime for notifications
     useEffect(() => {
         if (!user) return;
@@ -274,5 +341,7 @@ export default function useSocial(user, showToast) {
         loadNotifications, markAllNotificationsRead,
         loadCollections, saveCollection, deleteCollection, addItemToCollection,
         loadMyReactions, toggleReaction,
+        reviewComments, reviewCommentsLoading,
+        loadReviewComments, addReviewComment, deleteReviewComment, toggleCommentLike,
     };
 }

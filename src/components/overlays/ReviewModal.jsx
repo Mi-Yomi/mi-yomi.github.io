@@ -9,15 +9,19 @@ export default function ReviewModal() {
     tg,
     reviewText,
     setReviewText,
+    reviewEditing,
+    setReviewEditing,
     addReview,
   } = useApp();
+
+  const close = () => { setReviewOpen(false); setReviewEditing(null); setReviewText(''); setReviewRating(7); };
 
   return (
     <>
       {reviewOpen && (
-          <div className="modal-overlay" onClick={() => setReviewOpen(false)}>
+          <div className="modal-overlay" onClick={close}>
               <div className="modal-box" onClick={e => e.stopPropagation()}>
-                  <div className="modal-title">Ваш отзыв</div>
+                  <div className="modal-title">{reviewEditing ? 'Изменить отзыв' : 'Ваш отзыв'}</div>
                   <div style={{ textAlign: 'center', marginBottom: 6 }}>
                       <div style={{ fontSize: 36, fontWeight: 900, color: reviewRating >= 7 ? 'var(--green)' : reviewRating >= 5 ? 'var(--gold)' : 'var(--accent)' }}>{reviewRating}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>из 10</div>
@@ -34,8 +38,8 @@ export default function ReviewModal() {
                   <textarea className="modal-textarea" value={reviewText} onChange={e => { if (e.target.value.length <= 500) setReviewText(e.target.value); }} placeholder="Что вам понравилось? Что нет?" maxLength={500} />
                   <div className={`char-counter ${reviewText.length > 450 ? (reviewText.length >= 500 ? 'over' : 'warn') : ''}`}>{reviewText.length}/500</div>
                   <div className="modal-actions">
-                      <button className="modal-btn secondary" onClick={() => setReviewOpen(false)}>Отмена</button>
-                      <button className="modal-btn primary" onClick={addReview} disabled={!reviewText.trim()}>Опубликовать</button>
+                      <button className="modal-btn secondary" onClick={close}>Отмена</button>
+                      <button className="modal-btn primary" onClick={addReview} disabled={!reviewText.trim()}>{reviewEditing ? 'Сохранить' : 'Опубликовать'}</button>
                   </div>
               </div>
           </div>

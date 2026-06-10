@@ -5,6 +5,119 @@ import { I } from '../../lib/icons.jsx';
 import InlinePlayer from '../views/InlinePlayer.jsx';
 import AnixartComments from '../views/AnixartComments.jsx';
 
+// One review card: author, rating, text, like/dislike with counts, own
+// edit/delete, and an expandable flat comment thread with per-comment likes.
+function ReviewCard({ c }) {
+    const {
+        user, userProfile, myReactions, toggleReaction, setMovieComments,
+        reviewComments, reviewCommentsLoading, loadReviewComments,
+        addReviewComment, deleteReviewComment, toggleCommentLike,
+        setReviewEditing, setReviewRating, setReviewText, setReviewOpen,
+        deleteReview,
+    } = useApp();
+    const [threadOpen, setThreadOpen] = useState(false);
+    const [draft, setDraft] = useState('');
+
+    const isMine = user && c.user_id === user.id;
+    const thread = reviewComments[c.id];
+    const commentCount = thread ? thread.length : (c.review_comments?.[0]?.count || 0);
+    const rCls = c.rating >= 7 ? 'high' : c.rating >= 5 ? 'mid' : 'low';
+
+    const adjustLikes = (delta) => setMovieComments(prev => prev.map(x => (x.id === c.id ? { ...x, likes_count: Math.max(0, (x.likes_count || 0) + delta) } : x)));
+    const adjustCommentCount = (delta) => setMovieComments(prev => prev.map(x => (x.id === c.id ? { ...x, review_comments: [{ count: Math.max(0, (x.review_comments?.[0]?.count || 0) + delta) }] } : x)));
+
+    const onLike = () => { const prevR = myReactions[c.id]; toggleReaction(c.id, 'like'); adjustLikes(prevR === 'like' ? -1 : 1); };
+    const onDislike = () => { const prevR = myReactions[c.id]; toggleReaction(c.id, 'dislike'); if (prevR === 'like') adjustLikes(-1); };
+
+    const onToggleThread = () => {
+        const next = !threadOpen;
+        setThreadOpen(next);
+        if (next && !thread) loadReviewComments(c.id);
+    };
+    const send = async () => {
+        const text = draft.trim();
+        if (!text) return;
+        setDraft('');
+        await addReviewComment(c.id, text, userProfile);
+        adjustCommentCount(1);
+    };
+    const onEdit = () => {
+        setReviewEditing(c);
+        setReviewRating(c.rating || 7);
+        setReviewText(c.content || '');
+        setReviewOpen(true);
+    };
+    const onDelete = async () => {
+        if (!confirm('Удалить ваш отзыв?')) return;
+        await deleteReview(c.id);
+        setMovieComments(prev => prev.filter(x => x.id !== c.id));
+    };
+
+    return (
+        <div className="comment-card">
+            <div className="comment-header">
+                <div className="comment-avatar">{c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} /> : c.profiles?.username?.[0]?.toUpperCase() || '?'}</div>
+                <div>
+                    <div className="comment-author">{c.profiles?.username || 'Аноним'} <span className="comment-tag">#{c.profiles?.tag}</span></div>
+                    <div className="comment-date">{c.created_at ? new Date(c.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}</div>
+                </div>
+                <div className={`comment-rating-badge ${rCls}`}>{I.star} {c.rating}</div>
+            </div>
+            <div className="comment-text">{c.content}</div>
+            <div className="reaction-row">
+                <button className={`reaction-btn ${myReactions[c.id] === 'like' ? 'liked' : ''}`} onClick={onLike}>{I.thumbsUp} {c.likes_count > 0 ? c.likes_count : ''}</button>
+                <button className={`reaction-btn ${myReactions[c.id] === 'dislike' ? 'disliked' : ''}`} onClick={onDislike}>{I.thumbsDown}</button>
+                <button className={`reaction-btn ${threadOpen ? 'open' : ''}`} onClick={onToggleThread}>{I.msg} {commentCount > 0 ? commentCount : ''}</button>
+                {isMine && (
+                    <span className="rev-own-actions">
+                        <button className="reaction-btn" onClick={onEdit} aria-label="Изменить отзыв">{I.edit}</button>
+                        <button className="reaction-btn danger" onClick={onDelete} aria-label="Удалить отзыв">{I.trash}</button>
+                    </span>
+                )}
+            </div>
+
+            {threadOpen && (
+                <div className="rev-thread">
+                    {reviewCommentsLoading[c.id] && !thread ? (
+                        <div className="rev-thread-note">Загрузка…</div>
+                    ) : !(thread || []).length ? (
+                        <div className="rev-thread-note">Комментариев пока нет — будьте первым</div>
+                    ) : (
+                        thread.map(cm => (
+                            <div key={cm.id} className="rev-comment">
+                                <div className="rev-comment-avatar">{cm.profiles?.avatar_url ? <img src={cm.profiles.avatar_url} alt="" /> : (cm.profiles?.username?.[0]?.toUpperCase() || '?')}</div>
+                                <div className="rev-comment-bubble">
+                                    <div className="rev-comment-head">
+                                        <span className="rev-comment-user">{cm.profiles?.username || 'Аноним'}</span>
+                                        <span className="rev-comment-date">{cm.created_at ? new Date(cm.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : ''}</span>
+                                    </div>
+                                    <div className="rev-comment-text">{cm.content}</div>
+                                </div>
+                                <div className="rev-comment-side">
+                                    <button className={`rev-comment-like ${cm.likedByMe ? 'liked' : ''}`} onClick={() => toggleCommentLike(c.id, cm)} aria-label="Нравится">
+                                        {I.thumbsUp}{cm.likes_count > 0 && <span>{cm.likes_count}</span>}
+                                    </button>
+                                    {user && cm.user_id === user.id && (
+                                        <button className="rev-comment-del" onClick={() => { deleteReviewComment(c.id, cm.id); adjustCommentCount(-1); }} aria-label="Удалить комментарий">{I.trash}</button>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                    <div className="rev-input-row">
+                        <input
+                            className="rev-input" value={draft} maxLength={500} placeholder="Написать комментарий…"
+                            onChange={(e) => setDraft(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
+                        />
+                        <button className="rev-send" onClick={send} disabled={!draft.trim()} aria-label="Отправить">{I.send}</button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // YouTube trailers: lite-embed pattern — a thumbnail until tapped, then an
 // autoplaying youtube-nocookie iframe. Re-mounted per title via key={media.id}.
 function TrailerSection({ videos }) {
@@ -66,8 +179,6 @@ export default function DetailsOverlay() {
     recommendations,
     videos,
     openDetails,
-    myReactions,
-    toggleReaction,
     IMG,
     showToast,
     getItemStatus, setStatusPickerItem,
@@ -264,26 +375,9 @@ export default function DetailsOverlay() {
                     {/* Comments Section */}
                     <div className="comments-section">
                         <div className="comments-title">{I.msg} Отзывы <span className="comments-count">{movieComments.length}</span></div>
-                        {movieComments.length > 0 ? movieComments.map(c => {
-                            const rCls = c.rating >= 7 ? 'high' : c.rating >= 5 ? 'mid' : 'low';
-                            return (
-                                <div key={c.id || c.created_at} className="comment-card">
-                                    <div className="comment-header">
-                                        <div className="comment-avatar">{c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} /> : c.profiles?.username?.[0]?.toUpperCase() || '?'}</div>
-                                        <div>
-                                            <div className="comment-author">{c.profiles?.username || 'Аноним'} <span className="comment-tag">#{c.profiles?.tag}</span></div>
-                                            <div className="comment-date">{c.created_at ? new Date(c.created_at).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'}) : ''}</div>
-                                        </div>
-                                        <div className={`comment-rating-badge ${rCls}`}>{I.star} {c.rating}</div>
-                                    </div>
-                                    <div className="comment-text">{c.content}</div>
-                                    <div className="reaction-row">
-                                        <button className={`reaction-btn ${myReactions[c.id] === 'like' ? 'liked' : ''}`} onClick={() => toggleReaction(c.id, 'like')}>{I.thumbsUp} {c.likes_count || ''}</button>
-                                        <button className={`reaction-btn ${myReactions[c.id] === 'dislike' ? 'disliked' : ''}`} onClick={() => toggleReaction(c.id, 'dislike')}>{I.thumbsDown}</button>
-                                    </div>
-                                </div>
-                            );
-                        }) : (
+                        {movieComments.length > 0 ? movieComments.map(c => (
+                            <ReviewCard key={c.id || c.created_at} c={c} />
+                        )) : (
                             <div className="comments-empty">
                                 <div className="comments-empty-icon">{I.msg}</div>
                                 <div className="comments-empty-text">Пока нет отзывов</div>

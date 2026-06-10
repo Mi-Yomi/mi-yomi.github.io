@@ -20,9 +20,11 @@ export default function useDetails() {
     const [reviewOpen, setReviewOpen] = useState(false);
     const [reviewRating, setReviewRating] = useState(7);
     const [reviewText, setReviewText] = useState('');
+    const [reviewEditing, setReviewEditing] = useState(null); // review row being edited (null = new)
 
     const loadMovieComments = useCallback(async (movieId) => {
-        const { data, error } = await supabase.from('reviews').select('*, profiles(username, tag, avatar_url)').eq('movie_id', String(movieId)).order('created_at', { ascending: false });
+        // review_comments(count) embeds the comment count per review for the thread toggle
+        const { data, error } = await supabase.from('reviews').select('*, profiles(username, tag, avatar_url), review_comments(count)').eq('movie_id', String(movieId)).order('created_at', { ascending: false });
         if (error) console.error('Comments load error (RLS?):', error);
         setMovieComments(data || []);
     }, []);
@@ -104,6 +106,7 @@ export default function useDetails() {
         setMovieComments([]);
         setSeasonsData([]);
         setVideos([]);
+        setReviewEditing(null);
     }, []);
 
     // What the in-app back button / ESC / edge-swipe call: step back in history
@@ -130,6 +133,7 @@ export default function useDetails() {
         reviewOpen, setReviewOpen,
         reviewRating, setReviewRating,
         reviewText, setReviewText,
+        reviewEditing, setReviewEditing,
         loadMovieComments, loadRecommendations, loadSources,
         openDetails, closeDetails, goBackFromDetails,
     };

@@ -21,6 +21,8 @@ export default function NotificationsPanel() {
     friend_request: I.userPlus,
     friend_accepted: I.userCheck,
     review_like: I.thumbsUp,
+    comment_like: I.thumbsUp,
+    review_comment: I.msg,
     friend_watched: I.eye,
   };
 
