@@ -189,7 +189,9 @@
 .manga-reader-btn:disabled { opacity: .4; }
 .manga-reader-btn svg { width: 20px; height: 20px; }
 
-.manga-reader-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+/* overflow-anchor off: the reader compensates scrollTop manually when old
+   chapter sections are trimmed from the top (see MangaReader useLayoutEffect). */
+.manga-reader-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overflow-anchor: none; }
 .manga-reader-pages { max-width: 760px; margin: 0 auto; }
 .manga-page { width: 100%; display: block; background: #111; }
 .manga-reader-state {
@@ -197,7 +199,29 @@
     gap: 14px; color: var(--text-secondary); text-align: center; padding: 24px;
 }
 .manga-reader-state .manga-empty-icon svg, .manga-reader-state svg { width: 44px; height: 44px; opacity: .5; }
-.manga-reader-end { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 28px 16px 90px; }
+
+/* Seamless chapter flow: dividers between chapters + auto-append states */
+.manga-chapter-divider { display: flex; align-items: center; gap: 12px; padding: 18px 14px; width: 100%; box-sizing: border-box; }
+.manga-chapter-divider-line { flex: 1; height: 1px; background: rgba(255,255,255,.13); }
+.manga-chapter-divider-text {
+    flex-shrink: 0; max-width: 72%; font-size: 12px; font-weight: 700;
+    color: rgba(255,255,255,.55); text-align: center; line-height: 1.4;
+}
+.manga-section-note {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 26px 16px 30px; color: var(--text-muted); font-size: 13px; text-align: center;
+}
+.manga-section-note svg { width: 30px; height: 30px; opacity: .5; }
+.manga-chapter-end { display: flex; flex-direction: column; align-items: center; padding: 2px 0 14px; }
+.manga-chapter-end .manga-comments {
+    max-width: 620px; width: 100%; box-sizing: border-box;
+    margin: 16px auto 0; padding: 0 14px; text-align: left;
+}
+.manga-reader-next {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 30px 16px calc(96px + var(--safe-bottom, 0px));
+    color: var(--text-muted); font-size: 13px; text-align: center;
+}
 .manga-reader-nav {
     display: inline-flex; align-items: center; gap: 6px; padding: 12px 18px; border-radius: 12px;
     background: var(--surface); border: 1px solid var(--border); color: var(--text);
@@ -256,14 +280,12 @@
 .manga-comment-votes { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
 
 /* ---------- Reader: chapter comments at the end ---------- */
-.manga-reader-end-nav { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .manga-reader-comments-toggle {
     margin: 18px auto 0; display: flex; align-items: center; gap: 7px; padding: 11px 18px; border-radius: 12px;
     background: var(--surface); border: 1px solid var(--border); color: var(--text);
     font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
 }
 .manga-reader-comments-toggle svg { width: 16px; height: 16px; }
-.manga-reader-end .manga-comments { max-width: 620px; margin: 16px auto 0; text-align: left; }
 
 /* ---------- Profile manga section ---------- */
 .manga-profile { padding-bottom: 20px; }
