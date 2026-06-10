@@ -1,70 +1,96 @@
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 
+// One settings row: tinted icon chip + title/desc + right slot (chevron, switch,
+// custom node). Rows live inside a .set-card group separated by hairlines.
+function Row({ icon, tint = 'var(--text-secondary)', title, desc, onClick, right, danger }) {
+    return (
+        <div
+            className={`set-row ${onClick ? 'tap' : ''} ${danger ? 'danger' : ''}`}
+            style={{ '--tint': tint }}
+            onClick={onClick}
+            role={onClick ? 'button' : undefined}
+        >
+            <span className="set-row-ic">{icon}</span>
+            <div className="set-row-text">
+                <div className="set-row-title">{title}</div>
+                {desc && <div className="set-row-desc">{desc}</div>}
+            </div>
+            {right !== undefined ? right : (onClick ? <span className="set-row-chev">{I.back}</span> : null)}
+        </div>
+    );
+}
+
+function Switch({ on }) {
+    return <span className={`set-switch ${on ? 'on' : ''}`} aria-checked={on} role="switch"><span className="set-switch-knob" /></span>;
+}
+
 export default function SettingsSection() {
     const { userProfile, user, setNameEditOpen, history, supabase, setHistory, tg, pluralize, toggleAutoSkip, autoSkip, isAdmin, setAdminOpen, loadPendingUsers, handleLogout, loadUserProfile } = useApp();
 
     return (
         <div className="settings-section">
-            <div className="settings-group">
-                <div className="settings-group-title">Аккаунт</div>
-                <div className="settings-item" onClick={() => loadUserProfile(user.id, user.email)}>
-                    <span className="settings-item-icon">{I.refresh}</span>
-                    <div className="settings-item-text"><div className="settings-item-title">Обновить профиль</div><div className="settings-item-desc">Перезагрузить данные из базы</div></div>
-                    <span className="settings-item-arrow">›</span>
-                </div>
-                <div className="settings-item" onClick={() => setNameEditOpen(true)}>
-                    <span className="settings-item-icon">{I.edit}</span>
-                    <div className="settings-item-text"><div className="settings-item-title">Сменить имя</div><div className="settings-item-desc">{userProfile?.username}#{userProfile?.tag}</div></div>
-                    <span className="settings-item-arrow">›</span>
-                </div>
-                <div className="settings-item" onClick={() => document.querySelector('.profile-cover-edit input')?.click()}>
-                    <span className="settings-item-icon">{I.image}</span>
-                    <div className="settings-item-text"><div className="settings-item-title">Обложка профиля</div><div className="settings-item-desc">Загрузить изображение</div></div>
-                    <span className="settings-item-arrow">›</span>
-                </div>
-                <div className="settings-item" onClick={() => document.querySelector('.profile-avatar-edit input')?.click()}>
-                    <span className="settings-item-icon">{I.camera}</span>
-                    <div className="settings-item-text"><div className="settings-item-title">Аватар</div><div className="settings-item-desc">Изменить фото профиля</div></div>
-                    <span className="settings-item-arrow">›</span>
+            <div className="set-group">
+                <div className="set-group-title">Аккаунт</div>
+                <div className="set-card">
+                    <Row icon={I.edit} tint="var(--blue)" title="Имя" desc={`${userProfile?.username}#${userProfile?.tag}`} onClick={() => setNameEditOpen(true)} />
+                    <Row icon={I.camera} tint="var(--purple, #a78bfa)" title="Аватар" desc="Фото профиля" onClick={() => document.querySelector('.profile-avatar-edit input')?.click()} />
+                    <Row icon={I.image} tint="var(--gold)" title="Обложка профиля" desc="Баннер на странице профиля" onClick={() => document.querySelector('.profile-cover-edit input')?.click()} />
+                    <Row icon={I.refresh} tint="var(--green)" title="Обновить профиль" desc="Перезагрузить данные из базы" onClick={() => loadUserProfile(user.id, user.email)} />
                 </div>
             </div>
-            <div className="settings-group">
-                <div className="settings-group-title">Данные</div>
-                <div className="settings-item" onClick={() => { if (confirm('Очистить историю просмотров?')) { supabase.from('history').delete().eq('user_id', user.id); setHistory([]); tg?.HapticFeedback?.notificationOccurred?.('success'); } }}>
-                    <span className="settings-item-icon">{I.trash}</span>
-                    <div className="settings-item-text"><div className="settings-item-title">Очистить историю</div><div className="settings-item-desc">{history.length} {pluralize(history.length, 'запись', 'записи', 'записей')}</div></div>
-                    <span className="settings-item-arrow">›</span>
+
+            <div className="set-group">
+                <div className="set-group-title">Плеер</div>
+                <div className="set-card">
+                    <Row
+                        icon={I.skipForward} tint="var(--accent)"
+                        title="Авто-пропуск заставок" desc="Пропускать intro и outro автоматически"
+                        onClick={toggleAutoSkip} right={<Switch on={autoSkip} />}
+                    />
                 </div>
             </div>
-            <div className="settings-group">
-                <div className="settings-group-title">Плеер</div>
-                <div className="settings-item" onClick={toggleAutoSkip}>
-                    <span className="settings-item-icon">{I.skipForward}</span>
-                    <div className="settings-item-text"><div className="settings-item-title">Авто-пропуск заставок</div><div className="settings-item-desc">Автоматически пропускать intro и outro</div></div>
-                    <div style={{width:44,height:26,borderRadius:13,background:autoSkip?'var(--accent)':'var(--surface-2)',border:'2px solid '+(autoSkip?'var(--accent)':'var(--border)'),transition:'all 0.2s',position:'relative',flexShrink:0}}>
-                        <div style={{width:20,height:20,borderRadius:10,background:'white',position:'absolute',top:1,left:autoSkip?21:1,transition:'all 0.2s',boxShadow:'0 1px 3px rgba(0,0,0,0.3)'}}></div>
-                    </div>
+
+            <div className="set-group">
+                <div className="set-group-title">Данные</div>
+                <div className="set-card">
+                    <Row
+                        icon={I.refresh} tint="var(--green)"
+                        title="Синхронизация" desc="История, прогресс и манга привязаны к аккаунту"
+                        right={<span className="set-row-ok">{I.checkCircle}</span>}
+                    />
+                    <Row
+                        icon={I.trash} tint="var(--accent)"
+                        title="Очистить историю" desc={`${history.length} ${pluralize(history.length, 'запись', 'записи', 'записей')}`}
+                        onClick={() => { if (confirm('Очистить историю просмотров?')) { supabase.from('history').delete().eq('user_id', user.id); setHistory([]); tg?.HapticFeedback?.notificationOccurred?.('success'); } }}
+                    />
                 </div>
             </div>
-            <div className="settings-group">
-                <div className="settings-group-title">Информация</div>
-                <div className="settings-item"><span className="settings-item-icon">{I.mail}</span><div className="settings-item-text"><div className="settings-item-title">Email</div><div className="settings-item-desc">{user.email}</div></div></div>
-                <div className="settings-item"><span className="settings-item-icon">{I.hash}</span><div className="settings-item-text"><div className="settings-item-title">ID</div><div className="settings-item-desc" style={{fontSize:9,fontFamily:'monospace'}}>{user.id}</div></div></div>
+
+            <div className="set-group">
+                <div className="set-group-title">Об аккаунте</div>
+                <div className="set-card">
+                    <Row icon={I.mail} title="Email" desc={user.email} right={null} />
+                    <Row icon={I.hash} title="ID" desc={<span className="set-mono">{user.id}</span>} right={null} />
+                </div>
             </div>
+
             {isAdmin && (
-                <div className="settings-group">
-                    <div className="settings-item" style={{borderColor:'rgba(255,171,0,0.2)'}} onClick={() => { setAdminOpen(true); loadPendingUsers(); }}>
-                        <span className="settings-item-icon" style={{background:'linear-gradient(135deg, var(--gold), #ff6b6b)'}}>{I.crown}</span>
-                        <div className="settings-item-text"><div className="settings-item-title">Админ-панель</div><div className="settings-item-desc">Управление подборками</div></div>
-                        <span className="admin-badge">ADMIN</span>
+                <div className="set-group">
+                    <div className="set-card admin">
+                        <Row
+                            icon={I.crown} tint="var(--gold)"
+                            title="Админ-панель" desc="Заявки и подборки"
+                            onClick={() => { setAdminOpen(true); loadPendingUsers(); }}
+                            right={<span className="admin-badge">ADMIN</span>}
+                        />
                     </div>
                 </div>
             )}
-            <div className="settings-group">
-                <div className="settings-item danger" onClick={handleLogout}>
-                    <span className="settings-item-icon">{I.logout}</span>
-                    <div className="settings-item-text"><div className="settings-item-title">Выйти из аккаунта</div><div className="settings-item-desc">Вы сможете войти снова</div></div>
+
+            <div className="set-group">
+                <div className="set-card">
+                    <Row icon={I.logout} tint="var(--accent)" danger title="Выйти из аккаунта" desc="Вы сможете войти снова" onClick={handleLogout} />
                 </div>
             </div>
         </div>
