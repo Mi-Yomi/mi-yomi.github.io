@@ -24,13 +24,13 @@ function MiniCard({ item, onOpen }) {
 }
 
 export default function MangaProfileSection() {
-    const { mangaChaptersRead, mangaSeconds, mangaLibrary, mangaLibraryByStatus, openManga } = useApp();
+    const { mangaChaptersRead, mangaSeconds, mangaLibrary, mangaLibraryByStatus, openManga, pluralize } = useApp();
     const libCount = Object.keys(mangaLibrary || {}).length;
 
     const tiles = [
-        { icon: I.bookOpen, num: mangaChaptersRead, label: 'Глав прочитано', c: 'var(--accent)' },
-        { icon: I.clock, num: fmtTime(mangaSeconds), label: 'Времени за чтением', c: 'var(--green)' },
-        { icon: I.folder, num: libCount, label: 'Тайтлов в библиотеке', c: 'var(--blue)' },
+        { icon: I.bookOpen, num: mangaChaptersRead, label: pluralize(mangaChaptersRead, 'Глава прочитана', 'Главы прочитаны', 'Глав прочитано'), c: 'var(--accent)' },
+        { icon: I.clock, num: fmtTime(mangaSeconds), label: 'Время чтения', c: 'var(--green)' },
+        { icon: I.folder, num: libCount, label: pluralize(libCount, 'Тайтл в библиотеке', 'Тайтла в библиотеке', 'Тайтлов в библиотеке'), c: 'var(--blue)' },
     ];
 
     return (

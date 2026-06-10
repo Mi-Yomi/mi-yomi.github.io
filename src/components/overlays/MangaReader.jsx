@@ -51,18 +51,37 @@ export default function MangaReader() {
         for (const [id, node] of sectionElsRef.current) heightsRef.current.set(id, node.offsetHeight);
     }, [mangaSections, mangaReaderSession]);
 
-    // Reading-time accounting: count time per chapter view (capped to avoid idle inflation).
+    // Reading-time accounting: 15s heartbeat that only counts slices where the
+    // tab is visible AND the user scrolled/tapped within the last 90s. The old
+    // per-chapter-view timer kept counting with the screen off / tab hidden and
+    // inflated stats by up to 30 min per chapter.
+    const lastActivityRef = useRef(Date.now());
     useEffect(() => {
-        if (!mangaReaderOpen || !mangaCurrentChapter) return undefined;
-        const start = Date.now();
-        return () => addReadingTime(Math.min(1800, (Date.now() - start) / 1000));
-    }, [mangaReaderOpen, mangaCurrentChapter?.id, addReadingTime]);
+        if (!mangaReaderOpen) return undefined;
+        lastActivityRef.current = Date.now();
+        let last = Date.now();
+        const tick = () => {
+            const now = Date.now();
+            if (document.visibilityState === 'visible' && now - lastActivityRef.current < 90000) {
+                addReadingTime((now - last) / 1000);
+            }
+            last = now;
+        };
+        const id = setInterval(tick, 15000);
+        return () => { tick(); clearInterval(id); };
+    }, [mangaReaderOpen, addReadingTime]);
 
     // Track per-chapter read progress (%) and which chapter is in view while scrolling.
+    // Progress = how far you've scrolled THROUGH the chapter (0 with its first
+    // screen showing, 100 when its end reaches the viewport bottom) — the naive
+    // viewBottom/height variant credited a whole screenful the moment a chapter
+    // appeared, which overstated short chapters badly on phones.
     const onScroll = useCallback(() => {
         const el = scrollRef.current;
         if (!el || !mangaTitle || !mangaSections.length) return;
+        lastActivityRef.current = Date.now();
         const view = el.getBoundingClientRect();
+        const winH = view.bottom - view.top;
         const mid = (view.top + view.bottom) / 2;
         const now = Date.now();
         const save = now - lastSaveRef.current > 500;
@@ -75,7 +94,9 @@ export default function MangaReader() {
             heightsRef.current.set(sec.chapter.id, r.height); // keep trim compensation fresh
             if (r.top <= mid && r.bottom > mid) current = sec.chapter;
             if (r.bottom < view.top || r.top > view.bottom || !sec.pages.length) continue;
-            const pct = Math.max(0, Math.min(100, ((view.bottom - r.top) / Math.max(1, r.height)) * 100));
+            const pct = r.height <= winH + 4
+                ? (r.bottom <= view.bottom + 2 ? 100 : 0) // fits in one screen: read once its end is on screen
+                : Math.max(0, Math.min(100, ((view.bottom - r.top - winH) / (r.height - winH)) * 100));
             if (save || pct >= 99) markChapterProgress(mangaTitle.dir, sec.chapter.id, pct);
         }
         if (current && current.id !== mangaCurrentChapter?.id) noteChapterInView(current);
@@ -124,7 +145,7 @@ export default function MangaReader() {
                 </div>
             </div>
 
-            <div className="manga-reader-scroll" ref={scrollRef} onScroll={onScroll} onClick={() => setChrome((v) => !v)}>
+            <div className="manga-reader-scroll" ref={scrollRef} onScroll={onScroll} onClick={() => { lastActivityRef.current = Date.now(); setChrome((v) => !v); }}>
                 {mangaReaderLoading ? (
                     <div className="manga-reader-state"><div className="loader-spin" /><div>Загрузка страниц…</div></div>
                 ) : mangaReaderError === 'paid' ? (
