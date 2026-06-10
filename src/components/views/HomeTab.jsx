@@ -12,7 +12,7 @@ export default function HomeTab() {
   const {
     HOME_GENRES, homeGenre, setHomeGenre, tg,
     setMoodOpen, setMoodStep, setMoodMood, setMoodType, setMoodDuration, setMoodResults,
-    history, getStoredProgress, openDetails,
+    history, getStoredProgress, openDetails, progressVersion,
     randomSpinning, openRandomMovie,
     watchlist, curatedLists, toggleWatchlist,
     forYou, favorites, toggleFavorite,
@@ -37,7 +37,7 @@ export default function HomeTab() {
             <div className="mood-widget-sub">Подберём фильм под настроение за 3 клика</div>
         </div>
 
-        {history.length > 0 && <ContinueSection title="Продолжить" icon={I.play} items={history} onSelect={openDetails} getProgress={getStoredProgress} />}
+        {history.length > 0 && <ContinueSection title="Продолжить" icon={I.play} items={history} onSelect={openDetails} getProgress={getStoredProgress} version={progressVersion} />}
 
         <button className={`random-btn ${randomSpinning ? 'spinning' : ''}`} onClick={openRandomMovie}>
             {I.shuffle} Случайный фильм

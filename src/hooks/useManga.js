@@ -290,6 +290,85 @@ export default function useManga(showToast, user) {
 
     const mangaReadMinutes = useMemo(() => Math.round(mangaSeconds / 60), [mangaSeconds]);
 
+    // --- Cross-device sync of the whole manga state (profiles.manga_state) ---
+    // Hydrate once per login: merge remote into local (per-chapter max %, newest
+    // pointer/library entry by ts, max seconds), then keep pushing local state
+    // debounced. Pushing is gated on hydration so a fresh device can't blow away
+    // the server copy with its empty localStorage.
+    const lastHydrateRef = useRef(0);
+    const pushedStateRef = useRef('');
+    const [mangaHydrated, setMangaHydrated] = useState(false);
+
+    useEffect(() => {
+        if (!user?.id) return undefined;
+        let cancelled = false;
+        const hydrate = () => {
+            lastHydrateRef.current = Date.now();
+            supabase.from('profiles').select('manga_state').eq('id', user.id).single().then(({ data }) => {
+                if (cancelled) return;
+                const remote = data?.manga_state;
+                if (remote) {
+                    setMangaRead((local) => {
+                        const next = { ...local };
+                        for (const dir in (remote.read || {})) {
+                            next[dir] = { ...(next[dir] || {}) };
+                            for (const ch in remote.read[dir]) next[dir][ch] = Math.max(next[dir][ch] || 0, remote.read[dir][ch] || 0);
+                        }
+                        writeJSON(READ_KEY, next);
+                        return next;
+                    });
+                    setMangaProgress((local) => {
+                        const next = { ...local };
+                        for (const dir in (remote.progress || {})) {
+                            const r = remote.progress[dir];
+                            if (r && (!next[dir] || (r.ts || 0) > (next[dir].ts || 0))) next[dir] = r;
+                        }
+                        writeJSON(PROGRESS_KEY, next);
+                        return next;
+                    });
+                    setMangaLibrary((local) => {
+                        const next = { ...local };
+                        for (const dir in (remote.library || {})) {
+                            const r = remote.library[dir];
+                            if (r && (!next[dir] || (r.ts || 0) > (next[dir].ts || 0))) next[dir] = r;
+                        }
+                        writeJSON(LIBRARY_KEY, next);
+                        return next;
+                    });
+                    setMangaSeconds((local) => {
+                        const next = Math.max(local, remote.seconds || 0);
+                        writeJSON(SECONDS_KEY, next);
+                        return next;
+                    });
+                }
+                setMangaHydrated(true);
+            });
+        };
+        hydrate();
+        // Re-merge when the tab comes back into focus after a while — covers a
+        // PC tab left open while the user read on the phone (merge is idempotent).
+        const onVis = () => {
+            if (document.visibilityState === 'visible' && Date.now() - lastHydrateRef.current > 300000) hydrate();
+        };
+        document.addEventListener('visibilitychange', onVis);
+        return () => { cancelled = true; document.removeEventListener('visibilitychange', onVis); };
+    }, [user]);
+
+    useEffect(() => {
+        if (!user?.id || !mangaHydrated) return undefined;
+        const json = JSON.stringify({ read: mangaRead, progress: mangaProgress, library: mangaLibrary, seconds: mangaSeconds });
+        if (json === pushedStateRef.current) return undefined;
+        const t = setTimeout(async () => {
+            try {
+                await supabase.from('profiles')
+                    .update({ manga_state: { v: 1, ts: Date.now(), read: mangaRead, progress: mangaProgress, library: mangaLibrary, seconds: mangaSeconds } })
+                    .eq('id', user.id);
+                pushedStateRef.current = json;
+            } catch (e) { console.warn('Manga state sync failed:', e.message); }
+        }, 2000);
+        return () => clearTimeout(t);
+    }, [mangaRead, mangaProgress, mangaLibrary, mangaSeconds, mangaHydrated, user]);
+
     // Sync the manga library (with last-read chapter) to the user's profile so
     // friends can see what they're reading. Debounced; no-op without a real session.
     useEffect(() => {

@@ -2,8 +2,9 @@ import ContinueCard from './ContinueCard.jsx';
 import ScrollRow from './ScrollRow.jsx';
 import { useMemo } from 'react';
 
-export default function ContinueSection({ title, icon, items, onSelect, getProgress }) {
-    // Filter to only items with active watch progress (started but not finished)
+export default function ContinueSection({ title, icon, items, onSelect, getProgress, version = 0 }) {
+    // Filter to only items with active watch progress (started but not finished).
+    // `version` bumps after server progress hydration so the memo recomputes.
     const activeItems = useMemo(() => {
         if (!items?.length) return [];
         return items.filter(m => {
@@ -17,7 +18,7 @@ export default function ContinueSection({ title, icon, items, onSelect, getProgr
             const bStored = getProgress ? getProgress(b.item_id || b.id) : null;
             return (bStored?.ts || 0) - (aStored?.ts || 0);
         }).slice(0, 5);
-    }, [items, getProgress]);
+    }, [items, getProgress, version]);
 
     if (!activeItems.length) return null;
 

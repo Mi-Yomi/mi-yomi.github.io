@@ -27,6 +27,46 @@ export default function usePlayer(user, media, showToast, userApproved, isAnimeC
     const progressThrottleRef = useRef(null);
     const lastProgressSaveRef = useRef(0);
 
+    // Hydrate continue-watching positions from the server once per login so the
+    // list survives device switches (saveProgress has been upserting to
+    // watch_progress for a while, but nothing ever read it back until now).
+    // progressVersion bumps so memoised "Продолжить" rows recompute.
+    const [progressVersion, setProgressVersion] = useState(0);
+    const lastProgressHydrateRef = useRef(0);
+    useEffect(() => {
+        if (!user?.id) return undefined;
+        let cancelled = false;
+        const hydrate = () => {
+            lastProgressHydrateRef.current = Date.now();
+            supabase.from('watch_progress')
+                .select('item_id, current_time, duration, updated_at')
+                .eq('user_id', user.id)
+                .then(({ data }) => {
+                    if (cancelled || !data?.length) return;
+                    let changed = 0;
+                    for (const row of data) {
+                        const ts = Date.parse(row.updated_at) || 0;
+                        if (!row.current_time || row.current_time < 5) continue;
+                        const local = getStoredProgress(row.item_id);
+                        if ((local?.ts || 0) >= ts) continue;
+                        try {
+                            localStorage.setItem(`hades_progress_${row.item_id}`, JSON.stringify({ time: row.current_time, duration: row.duration || 0, ts }));
+                            changed++;
+                        } catch { /* quota */ }
+                    }
+                    if (changed) setProgressVersion((v) => v + 1);
+                });
+        };
+        hydrate();
+        // Re-hydrate when the tab regains focus after a while (PC tab left open
+        // while the user watched on the phone).
+        const onVis = () => {
+            if (document.visibilityState === 'visible' && Date.now() - lastProgressHydrateRef.current > 300000) hydrate();
+        };
+        document.addEventListener('visibilitychange', onVis);
+        return () => { cancelled = true; document.removeEventListener('visibilitychange', onVis); };
+    }, [user]);
+
     const loadSkipData = useCallback(async (mediaItem, type, season, episode) => {
         setSkipSegments([]);
         setActiveSkip(null);
@@ -123,7 +163,8 @@ export default function usePlayer(user, media, showToast, userApproved, isAnimeC
     const clearProgress = useCallback((itemId) => {
         try { localStorage.removeItem(`hades_progress_${itemId}`); } catch {}
         delete watchProgressRef.current[itemId];
-    }, []);
+        if (user) supabase.from('watch_progress').delete().eq('user_id', user.id).eq('item_id', String(itemId)).then(() => {});
+    }, [user]);
 
     const getProgressPercent = useCallback((itemId) => {
         const p = getStoredProgress(itemId);
@@ -256,7 +297,7 @@ export default function usePlayer(user, media, showToast, userApproved, isAnimeC
         playerCurrentTimeRef, skipDismissedRef,
         watchProgressRef, progressThrottleRef, lastProgressSaveRef,
         loadSkipData, checkSkipSegment, performSkip, toggleAutoSkip,
-        saveProgress, clearProgress, getProgressPercent,
+        saveProgress, clearProgress, getProgressPercent, progressVersion,
         playSource, closePlayer, updatePlayerEpisode,
         isRuSource,
     };
