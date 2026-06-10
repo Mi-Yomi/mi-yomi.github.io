@@ -1,4 +1,5 @@
 import ReactDOM from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import { AppProvider } from './context/AppContext.jsx';
 import App from './App.jsx';
 import './styles/index.css';
@@ -9,11 +10,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </AppProvider>
 );
 
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-            // Force update check on page load
-            reg.update().catch(() => {});
-        }).catch(() => {});
-    });
+// vite-plugin-pwa service worker (precached shell, autoUpdate). No-op in dev.
+registerSW({ immediate: true });
+
+// Drop caches left behind by the old hand-rolled service worker.
+if ('caches' in window) {
+    caches.delete('hades-v3').catch(() => {});
+    caches.delete('tmdb-images-v2').catch(() => {});
 }
