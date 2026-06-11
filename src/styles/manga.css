@@ -194,6 +194,13 @@
 .manga-reader-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overflow-anchor: none; }
 .manga-reader-pages { max-width: 760px; margin: 0 auto; }
 .manga-page { width: 100%; display: block; background: #111; }
+.manga-page-broken {
+    width: 100%; min-height: 280px; box-sizing: border-box; padding: 24px 16px;
+    background: #101010; border: 1px dashed rgba(255,255,255,.16);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; color: var(--text-muted); font-size: 13px; text-align: center;
+}
+.manga-page-broken svg { width: 30px; height: 30px; opacity: .45; }
 .manga-reader-state {
     height: 100%; min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; color: var(--text-secondary); text-align: center; padding: 24px;

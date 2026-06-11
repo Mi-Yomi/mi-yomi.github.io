@@ -18,6 +18,19 @@ export default function MangaReader() {
     const [chrome, setChrome] = useState(true);
     const [openComments, setOpenComments] = useState(() => new Set());
 
+    // Per-page load failures (CDN hiccup -> broken-image icon). A failed page is
+    // replaced by a placeholder with a retry button that reloads ONLY that image
+    // (remount + cache-buster), so the user never has to reload the whole site.
+    const [brokenPages, setBrokenPages] = useState(() => new Set()); // `${chapterId}_${pageIdx}`
+    const [pageRetries, setPageRetries] = useState({});
+    const markPageBroken = useCallback((key) => {
+        setBrokenPages((prev) => { if (prev.has(key)) return prev; const n = new Set(prev); n.add(key); return n; });
+    }, []);
+    const retryPage = useCallback((key) => {
+        setPageRetries((prev) => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+        setBrokenPages((prev) => { const n = new Set(prev); n.delete(key); return n; });
+    }, []);
+
     // Reset only on an explicit open (chapter list / nav buttons) — not when the
     // in-view chapter changes because the user scrolled across a chapter boundary.
     // mangaResumeAt (saved position % for the opened chapter) is applied once the
@@ -27,6 +40,8 @@ export default function MangaReader() {
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
         setChrome(true);
         setOpenComments(new Set());
+        setBrokenPages(new Set());
+        setPageRetries({});
         lastSaveRef.current = 0;
         pendingResumeRef.current = mangaResumeAt != null ? { session: mangaReaderSession, pct: mangaResumeAt } : null;
     }, [mangaReaderSession, mangaResumeAt]);
@@ -204,18 +219,39 @@ export default function MangaReader() {
                                     </div>
                                 ) : (
                                     <>
-                                        {sec.pages.map((p, i) => (
-                                            <img
-                                                key={i}
-                                                className="manga-page"
-                                                src={p.link}
-                                                alt={`Глава ${sec.chapter.chapter} · стр. ${i + 1}`}
-                                                loading={si === 0 && i < 2 ? 'eager' : 'lazy'}
-                                                decoding="async"
-                                                referrerPolicy="origin"
-                                                style={p.width && p.height ? { aspectRatio: `${p.width}/${p.height}` } : undefined}
-                                            />
-                                        ))}
+                                        {sec.pages.map((p, i) => {
+                                            const pageKey = `${sec.chapter.id}_${i}`;
+                                            if (brokenPages.has(pageKey)) {
+                                                return (
+                                                    <div
+                                                        key={`${i}_err`}
+                                                        className="manga-page-broken"
+                                                        style={p.width && p.height ? { aspectRatio: `${p.width}/${p.height}` } : undefined}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        {I.image}
+                                                        <div>Страница {i + 1} не загрузилась</div>
+                                                        <button className="manga-reader-nav primary" onClick={() => retryPage(pageKey)}>
+                                                            {I.refresh} Обновить страницу
+                                                        </button>
+                                                    </div>
+                                                );
+                                            }
+                                            const retry = pageRetries[pageKey] || 0;
+                                            return (
+                                                <img
+                                                    key={`${i}_${retry}`}
+                                                    className="manga-page"
+                                                    src={retry ? `${p.link}${p.link.includes('?') ? '&' : '?'}r=${retry}` : p.link}
+                                                    alt={`Глава ${sec.chapter.chapter} · стр. ${i + 1}`}
+                                                    loading={si === 0 && i < 2 ? 'eager' : 'lazy'}
+                                                    decoding="async"
+                                                    referrerPolicy="origin"
+                                                    style={p.width && p.height ? { aspectRatio: `${p.width}/${p.height}` } : undefined}
+                                                    onError={() => markPageBroken(pageKey)}
+                                                />
+                                            );
+                                        })}
                                         <div className="manga-chapter-end" onClick={(e) => e.stopPropagation()}>
                                             <div className="manga-chapter-divider">
                                                 <span className="manga-chapter-divider-line" />
