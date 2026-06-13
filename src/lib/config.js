@@ -1,6 +1,16 @@
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 export const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 export const HADES_API_URL = import.meta.env.VITE_HADES_API_URL || 'https://hades.178-62-250-207.sslip.io/api';
+export const FIREBASE_CONFIG = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+};
+export const FIREBASE_ENABLED = Object.values(FIREBASE_CONFIG).every(Boolean);
 export const TMDB_KEY = import.meta.env.VITE_TMDB_KEY;
 export const COLLAPS_TOKEN = import.meta.env.VITE_COLLAPS_TOKEN;
 export const COLLAPS_API = import.meta.env.VITE_COLLAPS_API;

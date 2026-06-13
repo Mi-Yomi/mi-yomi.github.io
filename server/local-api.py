@@ -17,6 +17,8 @@ except Exception:
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, urlencode, urlparse
 from urllib.request import Request, urlopen
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 
 DB_PATH = os.environ.get('HADES_DB_PATH', '/root/apps/hades-api/hades.sqlite')
 ALLOWED_ORIGINS = {o.strip() for o in os.environ.get('HADES_ALLOWED_ORIGINS', 'https://mi-yomi.github.io,http://127.0.0.1:5173,http://localhost:5173').split(',') if o.strip()}
@@ -24,6 +26,7 @@ ADMIN_EMAIL = os.environ.get('HADES_ADMIN_EMAIL', '').strip().lower()
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '').strip()
 HADES_PUBLIC_URL = os.environ.get('HADES_PUBLIC_URL', 'https://hades.178-62-250-207.sslip.io').rstrip('/')
+FIREBASE_PROJECT_ID = os.environ.get('FIREBASE_PROJECT_ID', '').strip()
 OAUTH_STATE_SECRET = os.environ.get('HADES_OAUTH_STATE_SECRET') or GOOGLE_CLIENT_SECRET or secrets.token_urlsafe(32)
 PBKDF2_ROUNDS = 180_000
 
@@ -137,6 +140,30 @@ def google_userinfo(access_token):
     req = Request('https://www.googleapis.com/oauth2/v3/userinfo', headers={'Authorization': f'Bearer {access_token}'})
     with urlopen(req, timeout=15) as res:
         return json.loads(res.read().decode())
+
+
+verify_firebase_token_impl = google_id_token.verify_firebase_token
+
+
+def verify_firebase_id_token(token):
+    if not FIREBASE_PROJECT_ID:
+        raise ValueError('Firebase Auth is not configured: FIREBASE_PROJECT_ID is missing')
+    claims = verify_firebase_token_impl(token, google_requests.Request(), audience=FIREBASE_PROJECT_ID)
+    email = (claims.get('email') or '').strip().lower()
+    if not email or not claims.get('email_verified'):
+        raise ValueError('Firebase email is not verified')
+    return claims
+
+
+def get_or_create_firebase_user(c, claims):
+    info = {
+        'sub': claims.get('sub') or claims.get('user_id') or '',
+        'email': claims.get('email'),
+        'email_verified': claims.get('email_verified'),
+        'name': claims.get('name') or claims.get('email', '').split('@')[0],
+        'picture': claims.get('picture'),
+    }
+    return get_or_create_google_user(c, info)
 
 
 def get_or_create_google_user(c, info):
@@ -499,6 +526,13 @@ class Handler(BaseHTTPRequestHandler):
                     if auth.lower().startswith('bearer '):
                         c.execute('delete from sessions where token=?', (auth.split(' ', 1)[1].strip(),))
                     self._send(200, {'ok': True})
+                    return
+
+                if path == '/api/auth/firebase':
+                    claims = verify_firebase_id_token(body.get('idToken') or '')
+                    row = get_or_create_firebase_user(c, claims)
+                    token = make_session(c, row['id'])
+                    self._send(200, {'session': {'access_token': token, 'user': public_user(row)}, 'user': public_user(row)})
                     return
 
                 if path == '/api/query':

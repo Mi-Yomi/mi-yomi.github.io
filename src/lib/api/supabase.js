@@ -1,4 +1,4 @@
-import { HADES_API_URL } from '../config.js';
+import { FIREBASE_CONFIG, FIREBASE_ENABLED, HADES_API_URL } from '../config.js';
 
 const TOKEN_KEY = 'hades_local_api_token';
 const listeners = new Set();
@@ -39,6 +39,26 @@ function normalizeSession(payload) {
     const session = payload?.session || null;
     if (session?.access_token) setToken(session.access_token);
     return session;
+}
+
+async function signInWithFirebaseGoogle() {
+    if (!FIREBASE_ENABLED) {
+        return { data: null, error: { message: 'Firebase Auth не настроен. Добавь VITE_FIREBASE_API_KEY/AUTH_DOMAIN/PROJECT_ID/APP_ID.' } };
+    }
+    const [{ initializeApp }, { getAuth, GoogleAuthProvider, signInWithPopup }] = await Promise.all([
+        import('firebase/app'),
+        import('firebase/auth'),
+    ]);
+    const app = initializeApp(FIREBASE_CONFIG);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    const credential = await signInWithPopup(auth, provider);
+    const idToken = await credential.user.getIdToken();
+    const res = await request('/auth/firebase', { idToken });
+    if (res.error) return { data: null, error: res.error };
+    const session = normalizeSession(res.data);
+    listeners.forEach(fn => fn('SIGNED_IN', session));
+    return { data: { session, user: session?.user }, error: null };
 }
 
 class QueryBuilder {
@@ -143,13 +163,13 @@ export const supabase = {
             listeners.forEach(fn => fn('SIGNED_OUT', null));
             return { error: null };
         },
-        async signInWithOAuth({ provider, options } = {}) {
+        async signInWithOAuth({ provider } = {}) {
             if (provider !== 'google') return { data: null, error: { message: 'Поддерживается только Google login.' } };
-            const redirectTo = options?.redirectTo || window.location.origin;
-            const url = new URL(`${HADES_API_URL}/auth/google/start`);
-            url.searchParams.set('redirect_to', redirectTo);
-            window.location.href = url.toString();
-            return { data: { url: url.toString() }, error: null };
+            try {
+                return await signInWithFirebaseGoogle();
+            } catch (err) {
+                return { data: null, error: { message: err?.message || 'Firebase Google login failed.' } };
+            }
         },
     },
     from(table) { return new QueryBuilder(table); },

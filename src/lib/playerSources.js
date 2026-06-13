@@ -11,7 +11,7 @@ export const FALLBACK_SOURCES = [
 ];
 
 /** Russian balancers that handle their own season/episode navigation inside the iframe. */
-export const isRuSource = (name) => ['Collaps', 'Alloha', 'Anixart', 'HDRezka'].includes(name);
+export const isRuSource = (name) => ['Collaps', 'Alloha', 'Anixart', 'HDRezka', 'Kodik'].includes(name);
 
 /** HDRezka resolve endpoint of our Edge Function — returns { ok, embed } JSON.
  *  We resolve the balancer URL via fetch and point the iframe straight at it
