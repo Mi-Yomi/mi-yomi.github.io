@@ -9,13 +9,22 @@ import secrets
 import sqlite3
 import time
 import uuid
+
+try:
+    import bcrypt
+except Exception:
+    bcrypt = None
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, quote, urlencode, urlparse
 from urllib.request import Request, urlopen
 
 DB_PATH = os.environ.get('HADES_DB_PATH', '/root/apps/hades-api/hades.sqlite')
 ALLOWED_ORIGINS = {o.strip() for o in os.environ.get('HADES_ALLOWED_ORIGINS', 'https://mi-yomi.github.io,http://127.0.0.1:5173,http://localhost:5173').split(',') if o.strip()}
 ADMIN_EMAIL = os.environ.get('HADES_ADMIN_EMAIL', '').strip().lower()
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '').strip()
+HADES_PUBLIC_URL = os.environ.get('HADES_PUBLIC_URL', 'https://hades.178-62-250-207.sslip.io').rstrip('/')
+OAUTH_STATE_SECRET = os.environ.get('HADES_OAUTH_STATE_SECRET') or GOOGLE_CLIENT_SECRET or secrets.token_urlsafe(32)
 PBKDF2_ROUNDS = 180_000
 
 
@@ -58,6 +67,109 @@ def now_iso():
     return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
 
 
+def _b64url(data):
+    return base64.urlsafe_b64encode(data).decode().rstrip('=')
+
+
+def _unb64url(text):
+    return base64.urlsafe_b64decode(text + '=' * (-len(text) % 4))
+
+
+def make_oauth_state(redirect_to):
+    if not redirect_to:
+        redirect_to = 'https://mi-yomi.github.io/'
+    payload = {'redirect_to': redirect_to, 'ts': int(time.time()), 'nonce': secrets.token_urlsafe(12)}
+    body = _b64url(json.dumps(payload, separators=(',', ':')).encode())
+    sig = _b64url(hmac.new(OAUTH_STATE_SECRET.encode(), body.encode(), hashlib.sha256).digest())
+    return f'{body}.{sig}'
+
+
+def verify_oauth_state(state, max_age=600):
+    try:
+        body, sig = state.split('.', 1)
+        expected = _b64url(hmac.new(OAUTH_STATE_SECRET.encode(), body.encode(), hashlib.sha256).digest())
+        if not hmac.compare_digest(sig, expected):
+            raise ValueError('bad oauth state signature')
+        payload = json.loads(_unb64url(body).decode())
+        if int(time.time()) - int(payload.get('ts', 0)) > max_age:
+            raise ValueError('oauth state expired')
+        redirect_to = payload.get('redirect_to') or 'https://mi-yomi.github.io/'
+        if not (redirect_to.startswith('https://mi-yomi.github.io') or redirect_to.startswith('http://localhost:') or redirect_to.startswith('http://127.0.0.1:')):
+            raise ValueError('redirect target is not allowed')
+        return payload
+    except ValueError:
+        raise
+    except Exception as e:
+        raise ValueError('invalid oauth state') from e
+
+
+def google_callback_url():
+    return f'{HADES_PUBLIC_URL}/api/auth/google/callback'
+
+
+def google_auth_url(state):
+    params = {
+        'client_id': GOOGLE_CLIENT_ID,
+        'redirect_uri': google_callback_url(),
+        'response_type': 'code',
+        'scope': 'openid email profile',
+        'state': state,
+        'access_type': 'online',
+        'prompt': 'select_account',
+    }
+    return 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(params)
+
+
+def google_exchange_code(code):
+    payload = urlencode({
+        'code': code,
+        'client_id': GOOGLE_CLIENT_ID,
+        'client_secret': GOOGLE_CLIENT_SECRET,
+        'redirect_uri': google_callback_url(),
+        'grant_type': 'authorization_code',
+    }).encode()
+    req = Request('https://oauth2.googleapis.com/token', data=payload, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+    with urlopen(req, timeout=15) as res:
+        return json.loads(res.read().decode())
+
+
+def google_userinfo(access_token):
+    req = Request('https://www.googleapis.com/oauth2/v3/userinfo', headers={'Authorization': f'Bearer {access_token}'})
+    with urlopen(req, timeout=15) as res:
+        return json.loads(res.read().decode())
+
+
+def get_or_create_google_user(c, info):
+    email = (info.get('email') or '').strip().lower()
+    if not email or not info.get('email_verified'):
+        raise ValueError('Google email is not verified')
+    row = c.execute('select * from users where email=?', (email,)).fetchone()
+    if row:
+        return row
+    user_id = str(uuid.uuid4())
+    created = now_iso()
+    c.execute('insert into users(id,email,password_hash,created_at) values(?,?,?,?)', (user_id, email, f'oauth_google${info.get("sub", "")}', created))
+    profile = {
+        'id': user_id,
+        'email': email,
+        'username': info.get('name') or email.split('@')[0],
+        'avatar_url': info.get('picture'),
+        'tag': str(secrets.randbelow(9000)+1000),
+        'status': 'approved',
+        'is_admin': bool(ADMIN_EMAIL and email == ADMIN_EMAIL),
+        'created_at': created,
+    }
+    upsert_row(c, 'profiles', profile)
+    return c.execute('select * from users where id=?', (user_id,)).fetchone()
+
+
+def redirect_response(handler, location):
+    handler.send_response(302)
+    handler.send_header('Location', location)
+    handler.send_header('Cache-Control', 'no-store')
+    handler.end_headers()
+
+
 def hash_password(password, salt=None):
     if salt is None:
         salt = secrets.token_bytes(16)
@@ -69,6 +181,15 @@ def hash_password(password, salt=None):
 
 def verify_password(password, stored):
     try:
+        if stored.startswith('supabase_bcrypt$'):
+            if bcrypt is None:
+                return False
+            supabase_hash = stored.split('$', 1)[1]
+            return bcrypt.checkpw(password.encode(), supabase_hash.encode())
+        if stored.startswith('$2a$') or stored.startswith('$2b$') or stored.startswith('$2y$'):
+            if bcrypt is None:
+                return False
+            return bcrypt.checkpw(password.encode(), stored.encode())
         scheme, rounds, salt_b64, digest_b64 = stored.split('$')
         if scheme != 'pbkdf2_sha256':
             return False
@@ -269,6 +390,39 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/api/health':
             self._send(200, {'ok': True, 'service': 'hades-local-api'})
             return
+        if path == '/api/auth/google/start':
+            if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+                self._send(503, {'error': 'Google OAuth is not configured: GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET are missing.'})
+                return
+            q = {k: v[0] for k, v in parse_qs(parsed.query).items()}
+            state = make_oauth_state(q.get('redirect_to') or 'https://mi-yomi.github.io/')
+            redirect_response(self, google_auth_url(state))
+            return
+        if path == '/api/auth/google/callback':
+            q = {k: v[0] for k, v in parse_qs(parsed.query).items()}
+            try:
+                payload = verify_oauth_state(q.get('state') or '')
+                redirect_to = payload.get('redirect_to') or 'https://mi-yomi.github.io/'
+                if q.get('error'):
+                    redirect_response(self, f'{redirect_to}?auth_error={quote(q.get("error"))}')
+                    return
+                tokens = google_exchange_code(q.get('code') or '')
+                info = google_userinfo(tokens.get('access_token') or '')
+                with db() as c:
+                    user = get_or_create_google_user(c, info)
+                    session_token = make_session(c, user['id'])
+                sep = '&' if '?' in redirect_to else '?'
+                redirect_response(self, f'{redirect_to}{sep}auth_token={quote(session_token)}')
+                return
+            except Exception as e:
+                target = 'https://mi-yomi.github.io/'
+                try:
+                    target = verify_oauth_state(q.get('state') or '').get('redirect_to') or target
+                except Exception:
+                    pass
+                sep = '&' if '?' in target else '?'
+                redirect_response(self, f'{target}{sep}auth_error={quote(str(e))}')
+                return
         if path == '/api/hdrezka':
             try:
                 q = {k: v[0] for k, v in parse_qs(parsed.query).items()}

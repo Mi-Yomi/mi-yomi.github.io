@@ -8,6 +8,18 @@ function setToken(value) {
     if (value) localStorage.setItem(TOKEN_KEY, value);
     else localStorage.removeItem(TOKEN_KEY);
 }
+function consumeOAuthTokenFromUrl() {
+    const url = new URL(window.location.href);
+    const oauthToken = url.searchParams.get('auth_token') || url.hash.match(/(?:^|[&#])auth_token=([^&]+)/)?.[1];
+    if (!oauthToken) return '';
+    const decoded = decodeURIComponent(oauthToken);
+    setToken(decoded);
+    url.searchParams.delete('auth_token');
+    url.searchParams.delete('auth_error');
+    if (url.hash.includes('auth_token=')) url.hash = '';
+    window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+    return decoded;
+}
 
 async function request(path, body = {}) {
     const headers = { 'Content-Type': 'application/json' };
@@ -114,6 +126,7 @@ export const supabase = {
             return { data: { session, user: session?.user }, error: null };
         },
         async getSession() {
+            consumeOAuthTokenFromUrl();
             if (!token()) return { data: { session: null }, error: null };
             const res = await request('/auth/session', {});
             if (res.error) { setToken(''); return { data: { session: null }, error: null }; }
@@ -130,8 +143,13 @@ export const supabase = {
             listeners.forEach(fn => fn('SIGNED_OUT', null));
             return { error: null };
         },
-        async signInWithOAuth() {
-            return { data: null, error: { message: 'Google login временно отключён на self-host backend. Используй email/пароль.' } };
+        async signInWithOAuth({ provider, options } = {}) {
+            if (provider !== 'google') return { data: null, error: { message: 'Поддерживается только Google login.' } };
+            const redirectTo = options?.redirectTo || window.location.origin;
+            const url = new URL(`${HADES_API_URL}/auth/google/start`);
+            url.searchParams.set('redirect_to', redirectTo);
+            window.location.href = url.toString();
+            return { data: { url: url.toString() }, error: null };
         },
     },
     from(table) { return new QueryBuilder(table); },
