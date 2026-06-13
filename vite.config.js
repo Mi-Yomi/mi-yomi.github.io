@@ -3,13 +3,11 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
-    // VITE_* keys are baked into the bundle at build time. Building without .env
-    // (e.g. from a fresh clone or a git worktree — .env is untracked) silently
-    // produces a black-screen bundle: supabase createClient(undefined) throws on
-    // module init. Fail the build instead.
+    // VITE_* keys are baked into the bundle at build time. Building without the
+    // required public API/movie keys silently produces a broken production bundle.
     const env = loadEnv(mode, process.cwd(), '');
-    if (mode === 'production' && (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_KEY || !env.VITE_TMDB_KEY)) {
-        throw new Error('Missing VITE_SUPABASE_URL / VITE_SUPABASE_KEY / VITE_TMDB_KEY — copy .env to this checkout before building (untracked, not present in fresh clones/worktrees).');
+    if (mode === 'production' && (!env.VITE_TMDB_KEY || !env.VITE_HADES_API_URL)) {
+        throw new Error('Missing VITE_TMDB_KEY / VITE_HADES_API_URL — copy .env to this checkout before building.');
     }
 
     return {
@@ -94,7 +92,6 @@ export default defineConfig(({ mode }) => {
             output: {
                 manualChunks: {
                     vendor: ['react', 'react-dom'],
-                    supabase: ['@supabase/supabase-js'],
                     anime: ['animejs'],
                 },
             },

@@ -1,5 +1,6 @@
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 export const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
+export const HADES_API_URL = import.meta.env.VITE_HADES_API_URL || 'https://hades.178-62-250-207.sslip.io/api';
 export const TMDB_KEY = import.meta.env.VITE_TMDB_KEY;
 export const COLLAPS_TOKEN = import.meta.env.VITE_COLLAPS_TOKEN;
 export const COLLAPS_API = import.meta.env.VITE_COLLAPS_API;

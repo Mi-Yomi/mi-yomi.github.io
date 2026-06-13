@@ -20,7 +20,7 @@ export default function Auth() {
             if (mode === 'signup') {
                 const { error } = await supabase.auth.signUp({ email, password });
                 if (error) throw error;
-                setMsg('Аккаунт создан! Подтвердите почту, затем войдите. После входа ваша заявка будет отправлена администратору на одобрение.'); setMode('login');
+                setMsg('Аккаунт создан! Теперь войдите с этим email и паролем.'); setMode('login');
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
