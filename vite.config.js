@@ -44,6 +44,10 @@ export default defineConfig(({ mode }) => {
                 skipWaiting: true,
                 cleanupOutdatedCaches: true,
                 navigateFallback: '/index.html',
+                // Do not hijack independent GitHub Pages project sites under this user domain.
+                // Without this denylist, HADES' root-scope PWA service worker serves
+                // /index.html for /pixel-mmorpg/* navigations, making the game open HADES.
+                navigateFallbackDenylist: [/^\/pixel-mmorpg(?:\/|$)/],
                 globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
                 runtimeCaching: [
                     {
