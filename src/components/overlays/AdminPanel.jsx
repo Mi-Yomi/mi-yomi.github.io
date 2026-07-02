@@ -5,8 +5,6 @@ export default function AdminPanel() {
   const {
     adminOpen,
     isAdmin,
-    user,
-    userProfile,
     setAdminOpen,
     setAdminEditingId,
     setAdminListTitle,

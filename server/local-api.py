@@ -7,7 +7,9 @@ import os
 import re
 import secrets
 import sqlite3
+import threading
 import time
+import traceback
 import uuid
 
 try:
@@ -17,8 +19,6 @@ except Exception:
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, urlencode, urlparse
 from urllib.request import Request, urlopen
-from google.auth.transport import requests as google_requests
-from google.oauth2 import id_token as google_id_token
 
 DB_PATH = os.environ.get('HADES_DB_PATH', '/root/apps/hades-api/hades.sqlite')
 ALLOWED_ORIGINS = {o.strip() for o in os.environ.get('HADES_ALLOWED_ORIGINS', 'https://mi-yomi.github.io,http://127.0.0.1:5173,http://localhost:5173').split(',') if o.strip()}
@@ -29,6 +29,44 @@ HADES_PUBLIC_URL = os.environ.get('HADES_PUBLIC_URL', 'https://hades.178-62-250-
 FIREBASE_PROJECT_ID = os.environ.get('FIREBASE_PROJECT_ID', '').strip()
 OAUTH_STATE_SECRET = os.environ.get('HADES_OAUTH_STATE_SECRET') or GOOGLE_CLIENT_SECRET or secrets.token_urlsafe(32)
 PBKDF2_ROUNDS = 180_000
+# Must match the frontend VITE_WHITELIST: 'off' = auto-approve, anything else = admin approval
+WHITELIST_ENABLED = os.environ.get('HADES_WHITELIST', 'on') != 'off'
+SESSION_TTL_SECONDS = int(os.environ.get('HADES_SESSION_TTL_DAYS', '30')) * 86400
+# Sliding-window rate limit for credential endpoints, per client IP
+AUTH_RATE_LIMIT = int(os.environ.get('HADES_AUTH_RATE_LIMIT', '20'))
+AUTH_RATE_WINDOW = int(os.environ.get('HADES_AUTH_RATE_WINDOW', '600'))
+
+# Per-table access rules for /api/query. Reads are open to any authenticated
+# user (social features: friends browse each other's profiles/libraries).
+# Writes require ownership: the owner column must equal the session user id.
+#   also_owner  — extra columns that also grant write access to a matched row
+#                 (friendships: the recipient accepts/declines the request)
+#   insert_any  — anyone authenticated may insert (notifications for others)
+#   admin_write — only admins may write (curated home-screen lists)
+#   protected   — fields a non-admin can never set/change on this table
+TABLE_RULES = {
+    'profiles':             {'owner': 'id', 'protected': ('is_admin', 'status', 'email')},
+    'friendships':          {'owner': 'user_id', 'also_owner': ('friend_id',)},
+    'notifications':        {'owner': 'user_id', 'insert_any': True},
+    'history':              {'owner': 'user_id'},
+    'reviews':              {'owner': 'user_id'},
+    'favorites':            {'owner': 'user_id'},
+    'user_library':         {'owner': 'user_id'},
+    'user_collections':     {'owner': 'user_id'},
+    'watchlist':            {'owner': 'user_id'},
+    'watch_progress':       {'owner': 'user_id'},
+    'review_reactions':     {'owner': 'user_id'},
+    'review_comments':      {'owner': 'user_id'},
+    'review_comment_likes': {'owner': 'user_id'},
+    'curated_lists':        {'owner': 'user_id', 'admin_write': True},
+}
+
+# Child-table foreign keys for embedded selects like review_comments(count)
+CHILD_FK = {
+    'review_comments': 'review_id',
+    'review_comment_likes': 'comment_id',
+    'review_reactions': 'review_id',
+}
 
 
 def db():
@@ -142,17 +180,38 @@ def google_userinfo(access_token):
         return json.loads(res.read().decode())
 
 
-verify_firebase_token_impl = google_id_token.verify_firebase_token
+# Overridable in tests; resolved lazily so the module imports without google-auth
+verify_firebase_token_impl = None
 
 
 def verify_firebase_id_token(token):
     if not FIREBASE_PROJECT_ID:
         raise ValueError('Firebase Auth is not configured: FIREBASE_PROJECT_ID is missing')
-    claims = verify_firebase_token_impl(token, google_requests.Request(), audience=FIREBASE_PROJECT_ID)
+    impl = verify_firebase_token_impl
+    if impl is None:
+        try:
+            from google.auth.transport import requests as google_requests
+            from google.oauth2 import id_token as google_id_token
+        except ImportError as e:
+            raise ValueError('google-auth is not installed on the server') from e
+        claims = google_id_token.verify_firebase_token(token, google_requests.Request(), audience=FIREBASE_PROJECT_ID)
+    else:
+        claims = impl(token, None, audience=FIREBASE_PROJECT_ID)
     email = (claims.get('email') or '').strip().lower()
     if not email or not claims.get('email_verified'):
         raise ValueError('Firebase email is not verified')
     return claims
+
+
+def default_status(email):
+    """Approval status for a freshly created profile, decided ONLY server-side."""
+    if ADMIN_EMAIL and email == ADMIN_EMAIL:
+        return 'approved'
+    return 'pending' if WHITELIST_ENABLED else 'approved'
+
+
+def is_admin_email(email):
+    return bool(ADMIN_EMAIL and (email or '').strip().lower() == ADMIN_EMAIL)
 
 
 def get_or_create_firebase_user(c, claims):
@@ -182,8 +241,8 @@ def get_or_create_google_user(c, info):
         'username': info.get('name') or email.split('@')[0],
         'avatar_url': info.get('picture'),
         'tag': str(secrets.randbelow(9000)+1000),
-        'status': 'approved',
-        'is_admin': bool(ADMIN_EMAIL and email == ADMIN_EMAIL),
+        'status': default_status(email),
+        'is_admin': is_admin_email(email),
         'created_at': created,
     }
     upsert_row(c, 'profiles', profile)
@@ -234,6 +293,9 @@ def public_user(row):
 
 def make_session(c, user_id):
     token = secrets.token_urlsafe(48)
+    # Opportunistic cleanup so the table doesn't accumulate dead tokens forever
+    if SESSION_TTL_SECONDS:
+        c.execute('delete from sessions where created_at < ?', (int(time.time()) - SESSION_TTL_SECONDS,))
     c.execute('insert into sessions(token,user_id,created_at) values(?,?,?)', (token, user_id, int(time.time())))
     return token
 
@@ -245,8 +307,48 @@ def get_auth_user(c, headers):
     token = auth.split(' ', 1)[1].strip()
     if not token:
         return None
-    row = c.execute('select u.* from sessions s join users u on u.id=s.user_id where s.token=?', (token,)).fetchone()
+    row = c.execute('select s.created_at as session_created_at, u.* from sessions s join users u on u.id=s.user_id where s.token=?', (token,)).fetchone()
+    if not row:
+        return None
+    if SESSION_TTL_SECONDS and int(time.time()) - int(row['session_created_at']) > SESSION_TTL_SECONDS:
+        c.execute('delete from sessions where token=?', (token,))
+        return None
     return row
+
+
+def get_profile(c, user_id):
+    row = c.execute('select data from rows where table_name=? and id=?', ('profiles', str(user_id))).fetchone()
+    if not row:
+        return None
+    try:
+        return json.loads(row['data'])
+    except Exception:
+        return None
+
+
+def is_admin_user(c, user):
+    if is_admin_email(user['email']):
+        return True
+    profile = get_profile(c, user['id'])
+    return bool(profile and profile.get('is_admin') is True)
+
+
+_rate_lock = threading.Lock()
+_rate_hits = {}
+
+
+def rate_limited(key, limit=None, window=None):
+    limit = limit or AUTH_RATE_LIMIT
+    window = window or AUTH_RATE_WINDOW
+    now = time.time()
+    with _rate_lock:
+        hits = [t for t in _rate_hits.get(key, []) if now - t < window]
+        if len(hits) >= limit:
+            _rate_hits[key] = hits
+            return True
+        hits.append(now)
+        _rate_hits[key] = hits
+        return False
 
 
 def load_rows(c, table):
@@ -262,21 +364,36 @@ def load_rows(c, table):
     return out
 
 
-def get_field(row, key):
-    return row.get(key)
-
-
 def match_filter(row, f):
     op = f.get('op')
     key = f.get('key')
     val = f.get('value')
-    cur = get_field(row, key)
+    cur = row.get(key)
     if op == 'eq':
         return str(cur) == str(val)
-    if op == 'ilike':
+    if op == 'neq':
+        return str(cur) != str(val)
+    if op in ('like', 'ilike'):
         pattern = str(val).replace('%', '').lower()
         return pattern in str(cur or '').lower()
-    return True
+    if op == 'is':
+        if val is None or str(val).lower() == 'null':
+            return cur is None
+        if str(val).lower() in ('true', 'false'):
+            return bool(cur) == (str(val).lower() == 'true')
+        return str(cur) == str(val)
+    if op == 'in':
+        vals = val if isinstance(val, list) else [v.strip() for v in str(val).strip('()').split(',')]
+        return str(cur) in [str(v) for v in vals]
+    if op in ('gt', 'gte', 'lt', 'lte'):
+        try:
+            a, b = float(cur), float(val)
+        except (TypeError, ValueError):
+            a, b = str(cur or ''), str(val or '')
+        return {'gt': a > b, 'gte': a >= b, 'lt': a < b, 'lte': a <= b}[op]
+    # An unknown operator MUST fail loudly: silently matching everything would
+    # turn "delete these rows" into "delete all rows".
+    raise ValueError(f'Unsupported filter operator: {op!r}')
 
 
 def apply_query(rows, q):
@@ -289,7 +406,7 @@ def apply_query(rows, q):
     order = q.get('order')
     if order and order.get('key'):
         key = order['key']
-        rows.sort(key=lambda r: (get_field(r, key) is None, str(get_field(r, key) or '')), reverse=not order.get('ascending', True))
+        rows.sort(key=lambda r: (r.get(key) is None, str(r.get(key) or '')), reverse=not order.get('ascending', True))
     count = len(rows)
     start = q.get('offset')
     end = q.get('end')
@@ -314,6 +431,147 @@ def upsert_row(c, table, item):
                  on conflict(table_name,id) do update set data=excluded.data, updated_at=excluded.updated_at''',
               (table, rid, json.dumps(item, ensure_ascii=False), ts, ts))
     return item
+
+
+# --- Embedded selects -------------------------------------------------------
+# Supports the PostgREST subset the client actually uses:
+#   profiles(f1,f2)          — join profiles via row.user_id
+#   alias:user_id(f1,f2)     — join profiles via the named *_id column
+#   child_table(count)       — [{count: n}] of child rows (FK from CHILD_FK)
+#   child_table(f1,f2)       — list of child rows projected to the fields
+_EMBED_RE = re.compile(r'(?:(\w+):)?(\w+)\(([^)]*)\)')
+
+
+def parse_embeds(select_str):
+    embeds = []
+    for m in _EMBED_RE.finditer(select_str or ''):
+        alias, name, fields = m.group(1), m.group(2), [f.strip() for f in m.group(3).split(',') if f.strip()]
+        embeds.append({'alias': alias or name, 'name': name, 'fields': fields})
+    return embeds
+
+
+def expand_embeds(c, rows, select_str):
+    embeds = parse_embeds(select_str)
+    if not embeds or not rows:
+        return rows
+    profile_cache = {}
+
+    def profile_by_id(pid):
+        key = str(pid)
+        if key not in profile_cache:
+            profile_cache[key] = get_profile(c, key)
+        return profile_cache[key]
+
+    for e in embeds:
+        name, alias, fields = e['name'], e['alias'], e['fields']
+        if name.endswith('_id') or name == 'profiles':
+            col = name if name.endswith('_id') else 'user_id'
+            for r in rows:
+                p = profile_by_id(r.get(col)) if r.get(col) is not None else None
+                r[alias] = {f: p.get(f) for f in fields} if p else None
+        elif name in CHILD_FK:
+            fk = CHILD_FK[name]
+            children = load_rows(c, name)
+            for r in rows:
+                mine = [ch for ch in children if str(ch.get(fk)) == str(r.get('id'))]
+                if fields == ['count']:
+                    r[alias] = [{'count': len(mine)}]
+                else:
+                    r[alias] = [{f: ch.get(f) for f in fields} for ch in mine]
+    return rows
+
+
+# --- /api/query with per-table authorization --------------------------------
+
+def _owned(row, rule, uid):
+    cols = (rule['owner'],) + tuple(rule.get('also_owner', ()))
+    return any(str(row.get(col)) == str(uid) for col in cols)
+
+
+def _sanitize_new_profile(c, item, user):
+    """Non-admins can only create their own profile; approval flags are server-decided."""
+    email = (user['email'] or '').strip().lower()
+    item['id'] = str(user['id'])
+    item['email'] = email
+    item['is_admin'] = is_admin_email(email)
+    item['status'] = default_status(email)
+    existing = get_profile(c, user['id'])
+    if existing:
+        # Re-insert must never reset moderation done since (approved/rejected)
+        item['status'] = existing.get('status', item['status'])
+        item['is_admin'] = existing.get('is_admin', item['is_admin'])
+    return item
+
+
+def handle_query(c, user, body):
+    """Returns (http_status, payload). Raises ValueError for malformed queries."""
+    table = body.get('table')
+    action = body.get('action') or 'select'
+    if not table or not isinstance(table, str) or not table.replace('_', '').isalnum():
+        return 400, {'error': 'Invalid table'}
+    rule = TABLE_RULES.get(table)
+    if rule is None:
+        return 400, {'error': f'Unknown table: {table}'}
+    uid = str(user['id'])
+
+    if action == 'select':
+        rows, count = apply_query(load_rows(c, table), body)
+        rows = expand_embeds(c, rows, body.get('select'))
+        return 200, {'data': rows, 'count': count}
+
+    admin = is_admin_user(c, user)
+    if rule.get('admin_write') and not admin:
+        return 403, {'error': 'Admin only'}
+
+    if action in ('insert', 'upsert'):
+        values = body.get('values') if isinstance(body.get('values'), list) else [body.get('values')]
+        conflict = (body.get('onConflict') or '').split(',') if body.get('onConflict') else []
+        existing = load_rows(c, table) if (action == 'upsert' and conflict) else None
+        saved = []
+        for item in values:
+            item = dict(item or {})
+            if action == 'upsert' and conflict:
+                found = next((r for r in existing if all(str(r.get(k.strip())) == str(item.get(k.strip())) for k in conflict)), None)
+                if found and found.get('id'):
+                    item['id'] = found['id']
+                    if not admin and not _owned(found, rule, uid):
+                        return 403, {'error': 'Forbidden: not your row'}
+            if not admin and not rule.get('insert_any'):
+                if table == 'profiles':
+                    item = _sanitize_new_profile(c, item, user)
+                else:
+                    owner_col = rule['owner']
+                    item.setdefault(owner_col, uid)
+                    if str(item.get(owner_col)) != uid:
+                        return 403, {'error': 'Forbidden: not your row'}
+            saved.append(upsert_row(c, table, item))
+        return 200, {'data': saved, 'count': len(saved)}
+
+    if action == 'update':
+        rows, _ = apply_query(load_rows(c, table), body)
+        if not admin and any(not _owned(r, rule, uid) for r in rows):
+            return 403, {'error': 'Forbidden: not your row'}
+        patch = dict(body.get('values') or {})
+        patch.pop('id', None)
+        if not admin:
+            for key in rule.get('protected', ()):
+                patch.pop(key, None)
+        updated = []
+        for r in rows:
+            r.update(patch)
+            updated.append(upsert_row(c, table, r))
+        return 200, {'data': updated, 'count': len(updated)}
+
+    if action == 'delete':
+        rows, _ = apply_query(load_rows(c, table), body)
+        if not admin and any(not _owned(r, rule, uid) for r in rows):
+            return 403, {'error': 'Forbidden: not your row'}
+        for r in rows:
+            if r.get('id') is not None:
+                c.execute('delete from rows where table_name=? and id=?', (table, str(r['id'])))
+        return 200, {'data': rows, 'count': len(rows)}
+
+    return 400, {'error': 'Invalid action'}
 
 
 REZKA_MIRRORS = [s.strip() for s in os.environ.get('HDREZKA_MIRRORS', 'https://kz.rezka.biz,https://rezka.biz,https://hdrezka.tv').split(',') if s.strip()]
@@ -378,10 +636,14 @@ def rezka_resolve(title, year='', typ=''):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = 'HADESLocalAPI/1.0'
+    server_version = 'HADESLocalAPI/1.1'
 
     def log_message(self, fmt, *args):
         print('%s - - [%s] %s' % (self.client_address[0], self.log_date_time_string(), fmt % args), flush=True)
+
+    def _client_ip(self):
+        fwd = self.headers.get('X-Forwarded-For') or ''
+        return fwd.split(',')[0].strip() or self.client_address[0]
 
     def _origin(self):
         origin = self.headers.get('Origin')
@@ -471,8 +733,12 @@ class Handler(BaseHTTPRequestHandler):
                 html = f'<!doctype html><meta charset="utf-8"><body style="margin:0;background:#000;color:#bbb;font:14px system-ui;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center">HDRezka не найдено: {title}</body>'.encode('utf-8')
                 self.send_response(200); self.send_header('Content-Type','text/html; charset=utf-8'); self.send_header('Content-Length', str(len(html))); self.end_headers(); self.wfile.write(html)
                 return
-            except Exception as e:
-                self._send(500, {'ok': False, 'error': str(e)})
+            except RuntimeError as e:
+                self._send(502, {'ok': False, 'error': str(e)})
+                return
+            except Exception:
+                print(traceback.format_exc(), flush=True)
+                self._send(500, {'ok': False, 'error': 'Internal server error'})
                 return
         self._send(404, {'error': 'not found'})
 
@@ -480,6 +746,10 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         try:
             body = self._read_json()
+            if path in ('/api/auth/signup', '/api/auth/signin', '/api/auth/firebase'):
+                if rate_limited(f'{path}:{self._client_ip()}'):
+                    self._send(429, {'error': 'Слишком много попыток. Подожди несколько минут.'})
+                    return
             with db() as c:
                 if path == '/api/auth/signup':
                     email = (body.get('email') or '').strip().lower()
@@ -495,7 +765,7 @@ class Handler(BaseHTTPRequestHandler):
                     c.execute('insert into users(id,email,password_hash,created_at) values(?,?,?,?)', (user_id, email, hash_password(password), created))
                     profile = {
                         'id': user_id, 'email': email, 'username': email.split('@')[0], 'tag': str(secrets.randbelow(9000)+1000),
-                        'status': 'approved', 'is_admin': bool(ADMIN_EMAIL and email == ADMIN_EMAIL), 'created_at': created,
+                        'status': default_status(email), 'is_admin': is_admin_email(email), 'created_at': created,
                     }
                     upsert_row(c, 'profiles', profile)
                     self._send(200, {'user': {'id': user_id, 'email': email}})
@@ -540,54 +810,16 @@ class Handler(BaseHTTPRequestHandler):
                     if not user:
                         self._send(401, {'error': 'Unauthorized'})
                         return
-                    table = body.get('table')
-                    action = body.get('action') or 'select'
-                    if not table or not table.replace('_', '').isalnum():
-                        self._send(400, {'error': 'Invalid table'})
-                        return
-                    if action == 'select':
-                        rows, count = apply_query(load_rows(c, table), body)
-                        self._send(200, {'data': rows, 'count': count})
-                        return
-                    if action == 'insert':
-                        items = body.get('values') if isinstance(body.get('values'), list) else [body.get('values')]
-                        saved = [upsert_row(c, table, x) for x in items]
-                        self._send(200, {'data': saved, 'count': len(saved)})
-                        return
-                    if action == 'upsert':
-                        values = body.get('values') if isinstance(body.get('values'), list) else [body.get('values')]
-                        saved = []
-                        conflict = (body.get('onConflict') or '').split(',') if body.get('onConflict') else []
-                        existing = load_rows(c, table)
-                        for item in values:
-                            item = dict(item or {})
-                            if conflict:
-                                found = next((r for r in existing if all(str(r.get(k.strip())) == str(item.get(k.strip())) for k in conflict)), None)
-                                if found and found.get('id'):
-                                    item['id'] = found['id']
-                            saved.append(upsert_row(c, table, item))
-                        self._send(200, {'data': saved, 'count': len(saved)})
-                        return
-                    if action == 'update':
-                        rows, _ = apply_query(load_rows(c, table), body)
-                        patch = body.get('values') or {}
-                        updated = []
-                        for r in rows:
-                            r.update(patch)
-                            updated.append(upsert_row(c, table, r))
-                        self._send(200, {'data': updated, 'count': len(updated)})
-                        return
-                    if action == 'delete':
-                        rows, _ = apply_query(load_rows(c, table), body)
-                        ids = [str(r.get('id')) for r in rows if r.get('id') is not None]
-                        for rid in ids:
-                            c.execute('delete from rows where table_name=? and id=?', (table, rid))
-                        self._send(200, {'data': rows, 'count': len(rows)})
-                        return
-                    self._send(400, {'error': 'Invalid action'})
+                    status, payload = handle_query(c, user, body)
+                    self._send(status, payload)
                     return
-        except Exception as e:
-            self._send(500, {'error': str(e)})
+        except ValueError as e:
+            # Malformed input / user-facing config errors — safe to echo
+            self._send(400, {'error': str(e)})
+            return
+        except Exception:
+            print(traceback.format_exc(), flush=True)
+            self._send(500, {'error': 'Internal server error'})
             return
         self._send(404, {'error': 'not found'})
 

@@ -6,3 +6,6 @@ dist
 
 .claude/
 .tmp-build-check/
+
+# Python
+__pycache__/

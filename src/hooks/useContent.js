@@ -1,8 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { api } from '../lib/api/tmdb.js';
 import { supabase } from '../lib/api/supabase.js';
-import { TMDB_KEY } from '../lib/config.js';
-import { ANIME_GENRE_MAP, GENRE_NAMES, MOOD_MAP } from '../lib/utils.js';
+import { GENRE_NAMES, MOOD_MAP } from '../lib/utils.js';
 import { getStoredProgress } from '../lib/utils.js';
 
 export default function useContent(user, showToast) {
@@ -313,9 +312,6 @@ export default function useContent(user, showToast) {
         return { movieCount, tvCount, animeCount, total, sampleTotal, avgRating, totalWatchHours, activityCells, topGenres, maxGenreCount };
     }, [history, reviews, favorites, histCount]);
 
-    const profileCompletion = useMemo(() => {
-        return 0; // computed in orchestrator with userProfile access
-    }, []);
 
     // Memoized genre filters
     const createGenreFilter = useCallback((items, genre, genreMap = null) => {

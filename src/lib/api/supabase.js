@@ -65,6 +65,7 @@ class QueryBuilder {
     constructor(table) {
         this.table = table;
         this.action = 'select';
+        this.selectColumns = '*';
         this.values = undefined;
         this.filters = [];
         this.orFilters = [];
@@ -79,7 +80,7 @@ class QueryBuilder {
         this.onConflictValue = null;
     }
 
-    select(_columns = '*', opts = {}) { this.action = this.action || 'select'; this.countMode = opts?.count || null; this.headMode = !!opts?.head; return this; }
+    select(columns = '*', opts = {}) { this.action = this.action || 'select'; this.selectColumns = columns; this.countMode = opts?.count || null; this.headMode = !!opts?.head; return this; }
     insert(values) { this.action = 'insert'; this.values = values; return this; }
     update(values) { this.action = 'update'; this.values = values; return this; }
     delete() { this.action = 'delete'; return this; }
@@ -104,6 +105,7 @@ class QueryBuilder {
         const payload = {
             table: this.table,
             action: this.action || 'select',
+            select: this.selectColumns,
             values: this.values,
             filters: this.filters,
             orFilters: this.orFilters,

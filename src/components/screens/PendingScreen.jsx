@@ -11,7 +11,6 @@ export default function PendingScreen() {
 
   const status = userProfile?.status || 'pending';
   const isPending = status === 'pending' || !status;
-  const isRejected = status === 'rejected';
 
   return (
     <div className="pending-screen fade-in">

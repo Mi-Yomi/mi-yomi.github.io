@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { IMG, BACKDROP, TMDB_KEY } from '../lib/config.js';
 import { I } from '../lib/icons.jsx';
 import { supabase } from '../lib/api/supabase.js';
-import { api } from '../lib/api/tmdb.js';
 import { FALLBACK_SOURCES, isRuSource } from '../lib/playerSources.js';
 import { getStoredProgress, formatWatchTime, pluralize, ratingColor, HOME_GENRES, TV_GENRES, ANIME_GENRES, MOOD_MAP, ANIME_GENRE_MAP } from '../lib/utils.js';
 import useAuth from './useAuth.js';

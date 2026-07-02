@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useMemo } from 'react';
 import useAppController from '../hooks/useAppController.js';
 import { AuthProvider, useAuthContext } from './AuthContext.jsx';
 import { UIProvider, useUIContext } from './UIContext.jsx';

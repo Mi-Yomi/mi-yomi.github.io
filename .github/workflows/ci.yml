@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      # Build with dummy keys just to catch bundling errors; real builds
+      # still happen locally with the real .env (docs/ is committed).
+      - run: npm run build
+        env:
+          VITE_TMDB_KEY: ci-dummy
+          VITE_HADES_API_URL: https://hades.178-62-250-207.sslip.io/api
+
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run local API unit tests
+        run: python3 server/test_local_api.py

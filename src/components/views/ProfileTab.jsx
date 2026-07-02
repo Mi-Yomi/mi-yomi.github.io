@@ -15,10 +15,10 @@ export default function ProfileTab() {
   const [colModalEditId, setColModalEditId] = useState(null);
   const [libFilter, setLibFilter] = useState('all');
   const {
-    favorites, history, reviews, watchlist, collections, friendRequests,
+    favorites, history, reviews, collections, friendRequests,
     profileTab, setProfileTab, tg, profileCompletion, userProfile,
     librarySort, setLibrarySort, sortItems, openDetails,
-    toggleFavorite, toggleWatchlist, reviewPosters, IMG,
+    toggleFavorite, reviewPosters, IMG,
     saveCollection, deleteCollection,
     friendSearch, setFriendSearch, searchUser, searchResult,
     sendFriendRequest, loadFriendProfile, acceptFriend, declineFriend, friends,

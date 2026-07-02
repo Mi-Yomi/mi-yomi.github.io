@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/api/supabase.js';
-import { ADMIN_USERNAME, ADMIN_TAG, ADMIN_EMAIL, WHITELIST_ENABLED } from '../lib/config.js';
+import { ADMIN_EMAIL, WHITELIST_ENABLED } from '../lib/config.js';
 import { toBase64 } from '../lib/utils.js';
 
 /**
@@ -21,12 +21,9 @@ const DEV_PROFILE = {
 };
 
 /**
- * Admin detection priority:
- * 1. profiles.is_admin === true  (database flag — most reliable)
+ * Admin detection (UI only — the server enforces admin rights on every write):
+ * 1. profiles.is_admin === true  (database flag, set by the server)
  * 2. email === VITE_ADMIN_EMAIL  (env var — works before profile loads)
- * 3. username#tag match          (hardcoded fallback)
- *
- * Admin is auto-approved inline during profile load (no chicken-and-egg).
  */
 
 export default function useAuth() {
@@ -42,7 +39,6 @@ export default function useAuth() {
     const isAdmin = useMemo(() => {
         if (userProfile?.is_admin === true) return true;
         if (ADMIN_EMAIL && user?.email === ADMIN_EMAIL) return true;
-        if (userProfile?.username === ADMIN_USERNAME && userProfile?.tag === ADMIN_TAG) return true;
         return false;
     }, [userProfile, user]);
 
@@ -72,35 +68,17 @@ export default function useAuth() {
         return () => { subscription.unsubscribe(); clearTimeout(timeout); };
     }, []);
 
-    /** Check if this email belongs to admin (env var or hardcoded) */
+    /** Check if this email belongs to admin (env var) */
     const _isAdminEmail = (email) => !!(ADMIN_EMAIL && email === ADMIN_EMAIL);
 
-    /** Check if this profile matches hardcoded admin credentials */
-    const _isAdminProfile = (profile) =>
-        profile && profile.username === ADMIN_USERNAME && profile.tag === ADMIN_TAG;
-
     /**
-     * Auto-fix admin flags in DB if needed.
-     * Called inline during profile load — no separate useEffect, no chicken-and-egg.
+     * Admin flags live server-side: the API sets is_admin/status from
+     * HADES_ADMIN_EMAIL and rejects client attempts to change them.
+     * For the admin email we still surface admin UI locally even if the
+     * profile row predates the flag.
      */
-    const _ensureAdminFlags = async (profile, userId, emailIsAdmin) => {
-        const shouldBeAdmin = emailIsAdmin || _isAdminProfile(profile);
-        if (!shouldBeAdmin) return profile;
-
-        const needsFix = profile.is_admin !== true || profile.status !== 'approved';
-        if (!needsFix) return profile;
-
-        const { error } = await supabase
-            .from('profiles')
-            .update({ is_admin: true, status: 'approved' })
-            .eq('id', userId);
-
-        if (error) {
-            console.warn('[HADES] Admin auto-fix DB update failed:', error.message);
-            // Still return fixed profile locally so admin isn't blocked
-        }
-        return { ...profile, is_admin: true, status: 'approved' };
-    };
+    const _withAdminView = (profile, emailIsAdmin) =>
+        emailIsAdmin ? { ...profile, is_admin: true, status: 'approved' } : profile;
 
     const loadUserProfile = useCallback(async (userId, userEmail) => {
         if (DEV_BYPASS) { setUserProfile(DEV_PROFILE); setNewUsername(DEV_PROFILE.username); return; }
@@ -114,7 +92,7 @@ export default function useAuth() {
             .maybeSingle();
 
         if (existing) {
-            const profile = await _ensureAdminFlags(existing, userId, emailIsAdmin);
+            const profile = _withAdminView(existing, emailIsAdmin);
             setUserProfile(profile);
             setNewUsername(profile.username || '');
             return;
@@ -159,7 +137,7 @@ export default function useAuth() {
                 .maybeSingle();
 
             if (retry) {
-                const profile = await _ensureAdminFlags(retry, userId, emailIsAdmin);
+                const profile = _withAdminView(retry, emailIsAdmin);
                 setUserProfile(profile);
                 setNewUsername(profile.username || '');
                 return;
@@ -262,9 +240,8 @@ export default function useAuth() {
             }
 
             if (data) {
-                // Inline admin fix on refresh too
                 const emailIsAdmin = _isAdminEmail(user.email);
-                const profile = await _ensureAdminFlags(data, user.id, emailIsAdmin);
+                const profile = _withAdminView(data, emailIsAdmin);
                 setUserProfile(profile);
                 if (profile.status === 'approved' || profile.is_admin) {
                     tg?.HapticFeedback?.notificationOccurred?.('success');

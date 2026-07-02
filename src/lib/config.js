@@ -1,5 +1,3 @@
-export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-export const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 export const HADES_API_URL = import.meta.env.VITE_HADES_API_URL || 'https://hades.178-62-250-207.sslip.io/api';
 export const FIREBASE_CONFIG = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -25,9 +23,10 @@ export const BACKDROP = window.innerWidth <= 768
     ? 'https://image.tmdb.org/t/p/w780'
     : 'https://image.tmdb.org/t/p/w1280';
 
-export const ADMIN_USERNAME = 'Vian_u';
-export const ADMIN_TAG = '1787';
-/** Admin by email (optional): set VITE_ADMIN_EMAIL in .env */
+/**
+ * Admin by email: set VITE_ADMIN_EMAIL in .env (UI hint only).
+ * The server decides real admin rights via HADES_ADMIN_EMAIL / profiles.is_admin.
+ */
 export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || null;
 
 /**

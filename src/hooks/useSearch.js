@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api/tmdb.js';
 
-export default function useSearch(showToast) {
+export default function useSearch(_showToast) {
     const [searchOpen, setSearchOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { pluralize, ratingColor, formatWatchTime, getStoredProgress } from '../lib/utils.js';
 
 describe('pluralize', () => {

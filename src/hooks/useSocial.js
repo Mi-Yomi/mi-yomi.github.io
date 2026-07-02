@@ -35,7 +35,7 @@ export default function useSocial(user, showToast) {
         if (r) setFriendRequests(r.map(row => ({ ...row.user, requestId: row.id })));
     }, []);
 
-    const loadFriendsActivity = useCallback(async (userId) => {
+    const loadFriendsActivity = useCallback(async (_userId) => {
         const friendIds = friends.map(f => f.id);
         if (friendIds.length === 0) return;
         const { data } = await supabase.from('history')
