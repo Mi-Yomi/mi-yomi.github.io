@@ -34,7 +34,7 @@ export default function SearchOverlay() {
   } = useApp();
 
   return (
-    <div className={`overlay search-view ${searchOpen ? 'open' : ''}`}>
+    <div className={`overlay search-view ${searchOpen ? 'open' : ''}`} inert={searchOpen ? undefined : ''}>
         <div className="search-header">
             <input className="search-input" placeholder="Поиск фильмов и сериалов..." value={query} onChange={e => setQuery(e.target.value)} autoFocus />
             <button className="search-cancel" onClick={() => { setSearchOpen(false); setQuery(''); setResults([]); setSearchFiltersOpen(false); setDiscoverResults([]); }}>Отмена</button>

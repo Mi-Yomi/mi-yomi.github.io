@@ -56,14 +56,16 @@ const Card = memo(function Card({ item, onSelect, onFav, isFav, type = 'movie', 
                 )}
                 {isNew && <div className="card-new-badge">Новинка</div>}
                 {onBookmark && (
-                    <button className={`card-bookmark ${isBookmarked ? 'active' : ''}`} onClick={e => { e.stopPropagation(); onBookmark(item, isTV ? 'tv' : 'movie'); }}>
+                    <button className={`card-bookmark ${isBookmarked ? 'active' : ''}`} onClick={e => { e.stopPropagation(); onBookmark(item, isTV ? 'tv' : 'movie'); }}
+                        aria-label={isBookmarked ? 'Убрать из «Буду смотреть»' : 'Буду смотреть'} aria-pressed={isBookmarked}>
                         <svg viewBox="0 0 24 24" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                     </button>
                 )}
                 {rating && rating > 0 && <div className={`card-rating ${ratingCls}`}>{I.star} {rating}</div>}
                 {animeFlag ? <div className="card-type anime">Аниме</div> : isTV ? <div className="card-type tv">Сериал</div> : <div className="card-type movie">Фильм</div>}
                 {onFav && (
-                    <button className={`card-fav ${isFav ? 'active' : ''}`} onClick={e => { e.stopPropagation(); onFav(item, isTV ? 'tv' : 'movie'); }}>
+                    <button className={`card-fav ${isFav ? 'active' : ''}`} onClick={e => { e.stopPropagation(); onFav(item, isTV ? 'tv' : 'movie'); }}
+                        aria-label={isFav ? 'Убрать из избранного' : 'В избранное'} aria-pressed={isFav}>
                         {isFav ? I.heartFilled : I.heart}
                     </button>
                 )}

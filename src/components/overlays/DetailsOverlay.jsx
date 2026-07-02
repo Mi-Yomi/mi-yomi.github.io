@@ -56,7 +56,7 @@ function ReviewCard({ c }) {
     return (
         <div className="comment-card">
             <div className="comment-header">
-                <div className="comment-avatar">{c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} /> : c.profiles?.username?.[0]?.toUpperCase() || '?'}</div>
+                <div className="comment-avatar">{c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" /> : c.profiles?.username?.[0]?.toUpperCase() || '?'}</div>
                 <div>
                     <div className="comment-author">{c.profiles?.username || 'Аноним'} <span className="comment-tag">#{c.profiles?.tag}</span></div>
                     <div className="comment-date">{c.created_at ? new Date(c.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}</div>
@@ -65,9 +65,9 @@ function ReviewCard({ c }) {
             </div>
             <div className="comment-text">{c.content}</div>
             <div className="reaction-row">
-                <button className={`reaction-btn ${myReactions[c.id] === 'like' ? 'liked' : ''}`} onClick={onLike}>{I.thumbsUp} {c.likes_count > 0 ? c.likes_count : ''}</button>
-                <button className={`reaction-btn ${myReactions[c.id] === 'dislike' ? 'disliked' : ''}`} onClick={onDislike}>{I.thumbsDown}</button>
-                <button className={`reaction-btn ${threadOpen ? 'open' : ''}`} onClick={onToggleThread}>{I.msg} {commentCount > 0 ? commentCount : ''}</button>
+                <button className={`reaction-btn ${myReactions[c.id] === 'like' ? 'liked' : ''}`} onClick={onLike} aria-label="Нравится" aria-pressed={myReactions[c.id] === 'like'}>{I.thumbsUp} {c.likes_count > 0 ? c.likes_count : ''}</button>
+                <button className={`reaction-btn ${myReactions[c.id] === 'dislike' ? 'disliked' : ''}`} onClick={onDislike} aria-label="Не нравится" aria-pressed={myReactions[c.id] === 'dislike'}>{I.thumbsDown}</button>
+                <button className={`reaction-btn ${threadOpen ? 'open' : ''}`} onClick={onToggleThread} aria-label="Комментарии" aria-expanded={threadOpen}>{I.msg} {commentCount > 0 ? commentCount : ''}</button>
                 {isMine && (
                     <span className="rev-own-actions">
                         <button className="reaction-btn" onClick={onEdit} aria-label="Изменить отзыв">{I.edit}</button>
@@ -193,12 +193,14 @@ export default function DetailsOverlay() {
   }, [media?.id, detailsOpen]);
 
   return (
-    <div ref={overlayRef} className={`overlay ${detailsOpen ? 'open' : ''}`}>
+    // inert: the closed overlay is only translated off-screen, so without it the
+    // hidden screen stays reachable for Tab focus and screen readers.
+    <div ref={overlayRef} className={`overlay ${detailsOpen ? 'open' : ''}`} inert={detailsOpen ? undefined : ''}>
         {media && (
             <>
                 <div className="details-backdrop" style={{ backgroundImage: `url(${BACKDROP}${media.backdrop_path})` }}>
-                    <button className="details-back" onClick={goBackFromDetails}>{I.back}</button>
-                    <button className="details-share" onClick={async (e) => {
+                    <button className="details-back" onClick={goBackFromDetails} aria-label="Назад">{I.back}</button>
+                    <button className="details-share" aria-label="Поделиться" onClick={async (e) => {
                         e.stopPropagation();
                         const url = `${window.location.origin}${window.location.pathname}#${media.media_type}/${media.id}`;
                         const shareData = { title: media.title || media.name, text: `Смотри "${media.title || media.name}" на HADES Cinema`, url };
@@ -208,7 +210,10 @@ export default function DetailsOverlay() {
                     }}>
                         {I.share}
                     </button>
-                    <button className={`details-fav ${favorites.some(f => f.item_id === String(media.id)) ? 'active' : ''}`} onClick={() => toggleFavorite(media, media.media_type)}>{favorites.some(f => f.item_id === String(media.id)) ? I.heartFilled : I.heart}</button>
+                    {(() => { const fav = favorites.some(f => f.item_id === String(media.id)); return (
+                        <button className={`details-fav ${fav ? 'active' : ''}`} onClick={() => toggleFavorite(media, media.media_type)}
+                            aria-label={fav ? 'Убрать из избранного' : 'В избранное'} aria-pressed={fav}>{fav ? I.heartFilled : I.heart}</button>
+                    ); })()}
                 </div>
                 <div className="details-body">
                     <div className="dov-head">
@@ -289,6 +294,13 @@ export default function DetailsOverlay() {
                     })()}
                     </div>{/* /dov-head */}
 
+                    {/* Watching is the primary intent — the player/source picker goes
+                        before the library-management buttons (mobile order; desktop
+                        positions come from grid-template-areas). */}
+                    <div className="dov-player">
+                        <InlinePlayer />
+                    </div>{/* /dov-player */}
+
                     <div className="dov-actions">
                     <div className="details-action-row">
                         <button className="play-main-btn secondary" onClick={() => setReviewOpen(true)}>{I.edit} Отзыв {movieComments.length > 0 && `(${movieComments.length})`}</button>
@@ -297,7 +309,7 @@ export default function DetailsOverlay() {
                         </button>
                     </div>
                     <div className="details-action-row">
-                        <button className={`play-main-btn secondary ${watchlist.some(w => w.item_id === String(media.id)) ? 'watchlist-active' : ''}`} onClick={() => toggleWatchlist(media, media.media_type)}>
+                        <button className={`play-main-btn secondary font-sm ${watchlist.some(w => w.item_id === String(media.id)) ? 'watchlist-active' : ''}`} onClick={() => toggleWatchlist(media, media.media_type)}>
                             {I.bookmark} {watchlist.some(w => w.item_id === String(media.id)) ? 'В списке' : 'Буду смотреть'}
                         </button>
                         <button className="play-main-btn secondary font-sm" onClick={() => setAddToCollectionItem({ id: media.id, title: media.title || media.name, poster_path: media.poster_path, media_type: media.media_type, vote_average: media.vote_average })}>
@@ -313,10 +325,6 @@ export default function DetailsOverlay() {
                         </button>
                     </div>
                     </div>{/* /dov-actions */}
-
-                    <div className="dov-player">
-                        <InlinePlayer />
-                    </div>{/* /dov-player */}
 
                     <div className="dov-watch">
                     <div className="dov-poster">

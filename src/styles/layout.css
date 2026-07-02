@@ -60,7 +60,7 @@
 }
 .nav-item svg { width: 24px; height: 24px; transition: transform var(--transition-fast) var(--ease-spring); }
 .nav-item.active svg { transform: scale(1.15); }
-.nav-item span { font-size: 10px; font-weight: 600; }
+.nav-item span { font-size: 11px; font-weight: 600; }
 .nav-badge {
     position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px;
     background: var(--accent); border-radius: 9px; font-size: 10px; font-weight: 700;

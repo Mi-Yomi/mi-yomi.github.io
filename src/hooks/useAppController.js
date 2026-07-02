@@ -132,26 +132,28 @@ export default function useAppController() {
         fetchPosters();
     }, [content.reviews, ui.profileTab]);
 
-    // Hero carousel auto-cycles
+    // Hero carousel auto-cycles. Ticks are skipped while the tab is hidden so a
+    // backgrounded PWA doesn't burn battery re-rendering slides nobody sees.
     useEffect(() => {
         if (content.trending.length <= 1) return;
         const max = Math.min(content.trending.length, 5);
-        const timer = setInterval(() => ui.setHeroIndex(prev => (prev + 1) % max), 7000);
+        const timer = setInterval(() => { if (!document.hidden) ui.setHeroIndex(prev => (prev + 1) % max); }, 7000);
         return () => clearInterval(timer);
     }, [content.trending]);
 
     useEffect(() => {
-        if (content.tvPopular.length <= 1) return;
-        const max = Math.min(content.tvPopular.length, 5);
-        const timer = setInterval(() => ui.setTvHeroIndex(prev => (prev + 1) % max), 8000);
+        const tvHero = content.tvTrending.length ? content.tvTrending : content.tvPopular;
+        if (tvHero.length <= 1) return;
+        const max = Math.min(tvHero.length, 5);
+        const timer = setInterval(() => { if (!document.hidden) ui.setTvHeroIndex(prev => (prev + 1) % max); }, 8000);
         return () => clearInterval(timer);
-    }, [content.tvPopular]);
+    }, [content.tvTrending, content.tvPopular]);
 
     useEffect(() => {
         const allAnime = [...content.animeSeries, ...content.animeMovies];
         if (allAnime.length <= 1) return;
         const max = Math.min(allAnime.length, 5);
-        const timer = setInterval(() => ui.setAnimeHeroIndex(prev => (prev + 1) % max), 9000);
+        const timer = setInterval(() => { if (!document.hidden) ui.setAnimeHeroIndex(prev => (prev + 1) % max); }, 9000);
         return () => clearInterval(timer);
     }, [content.animeSeries, content.animeMovies]);
 

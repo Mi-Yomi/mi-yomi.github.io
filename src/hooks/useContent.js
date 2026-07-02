@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { api } from '../lib/api/tmdb.js';
+import { NSFW_KEYWORDS } from '../lib/config.js';
 import { supabase } from '../lib/api/supabase.js';
 import { GENRE_NAMES, MOOD_MAP } from '../lib/utils.js';
 import { getStoredProgress } from '../lib/utils.js';
@@ -12,6 +13,7 @@ export default function useContent(user, showToast) {
     const [popular, setPopular] = useState([]);
     const [topRated, setTopRated] = useState([]);
     const [tvPopular, setTvPopular] = useState([]);
+    const [tvTrending, setTvTrending] = useState([]);
     const [tvTop, setTvTop] = useState([]);
     const [tvOnAir, setTvOnAir] = useState([]);
     const [animeMovies, setAnimeMovies] = useState([]);
@@ -37,22 +39,26 @@ export default function useContent(user, showToast) {
     const loadData = useCallback(async () => {
         setDataLoading(true);
         try {
-            const [t, p, tvp] = await Promise.all([
+            const [t, p, tvp, tvtr] = await Promise.all([
                 api('/trending/all/week'),
                 api('/movie/popular'),
                 api('/tv/popular'),
+                api('/trending/tv/week'),
             ]);
             if (t) setTrending(t.results || []);
             if (p) setPopular(p.results || []);
             if (tvp) setTvPopular(tvp.results || []);
+            // TV hero uses trending: /tv/popular is dominated by long-running junk
+            // (game shows, soaps) that makes a poor storefront.
+            if (tvtr) setTvTrending(tvtr.results || []);
             setDataLoading(false);
 
             const [tr, tvt, tva, animeM, animeS, up] = await Promise.all([
                 api('/movie/top_rated'),
                 api('/tv/top_rated'),
                 api('/tv/on_the_air'),
-                api('/discover/movie?with_genres=16&with_original_language=ja&sort_by=popularity.desc'),
-                api('/discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc'),
+                api(`/discover/movie?with_genres=16&with_original_language=ja&sort_by=popularity.desc&without_keywords=${NSFW_KEYWORDS}&vote_count.gte=30`),
+                api(`/discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc&without_keywords=${NSFW_KEYWORDS}&vote_count.gte=30`),
                 api('/movie/upcoming?region=RU'),
             ]);
             if (tr) setTopRated(tr.results || []);
@@ -325,6 +331,7 @@ export default function useContent(user, showToast) {
         popular, setPopular,
         topRated, setTopRated,
         tvPopular, setTvPopular,
+        tvTrending, setTvTrending,
         tvTop, setTvTop,
         tvOnAir, setTvOnAir,
         animeMovies, setAnimeMovies,

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import Section from '../common/Section.jsx';
@@ -5,12 +6,17 @@ import HeroCarousel from './HeroCarousel.jsx';
 
 export default function TvTab() {
     const {
-        tvPopular, tvHeroIndex, setTvHeroIndex, tg,
+        tvPopular, tvTrending, tvHeroIndex, setTvHeroIndex, tg,
         TV_GENRES, tvGenre, setTvGenre,
         filteredTvOnAir, filteredTvPopular, filteredTvTop,
         dataLoading, openDetails, favorites, toggleFavorite,
         toggleWatchlist, watchlist,
     } = useApp();
+
+    const tvHeroItems = useMemo(() =>
+        (tvTrending.length ? tvTrending : tvPopular).filter(i => i.backdrop_path).slice(0, 5),
+        [tvTrending, tvPopular]
+    );
 
     return (
         <div className="tab-content">
@@ -20,10 +26,10 @@ export default function TvTab() {
             </div>
 
             <HeroCarousel
-                items={tvPopular}
+                items={tvHeroItems}
                 activeIndex={tvHeroIndex}
                 setActiveIndex={setTvHeroIndex}
-                badgePrefix="Популярный"
+                badgePrefix="В тренде"
                 badgeIcon={I.tv}
                 badgeStyle="linear-gradient(135deg, var(--purple), var(--pink))"
                 defaultType="tv"

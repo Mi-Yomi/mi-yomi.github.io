@@ -62,9 +62,12 @@ const HeroCarousel = memo(function HeroCarousel({
                             {item.overview && <div className="hero-overview">{item.overview}</div>}
                             <div className="hero-btns">
                                 <button className="hero-btn" style={btnStyle ? { background: btnStyle, color: 'white' } : undefined}>{I.play} Смотреть</button>
-                                <button className="hero-btn secondary" onClick={e => { e.stopPropagation(); toggleFavorite(item, type); }}>
-                                    {favorites.some(f => f.item_id === String(item.id)) ? I.heartFilled : I.heart}
-                                </button>
+                                {(() => { const fav = favorites.some(f => f.item_id === String(item.id)); return (
+                                    <button className="hero-btn secondary" onClick={e => { e.stopPropagation(); toggleFavorite(item, type); }}
+                                        aria-label={fav ? 'Убрать из избранного' : 'В избранное'} aria-pressed={fav}>
+                                        {fav ? I.heartFilled : I.heart}
+                                    </button>
+                                ); })()}
                             </div>
                         </div>
                     </div>
@@ -73,6 +76,7 @@ const HeroCarousel = memo(function HeroCarousel({
             <div className="hero-dots">
                 {items.slice(0, 5).map((_, idx) => (
                     <button key={idx} className={`hero-dot ${activeIdx === idx ? 'active' : ''}`}
+                        aria-label={`Слайд ${idx + 1}`} aria-current={activeIdx === idx}
                         onClick={(e) => { e.stopPropagation(); setIdx(idx); tg?.HapticFeedback?.impactOccurred?.('light'); }} />
                 ))}
             </div>

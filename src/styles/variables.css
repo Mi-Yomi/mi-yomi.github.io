@@ -14,7 +14,8 @@
     --cyan: #00bcd4;
     --text: #fff;
     --text-secondary: #b3b3b3;
-    --text-muted: #666;
+    /* #666 on #0a0a0a is ~3.4:1 contrast - below WCAG AA for small text */
+    --text-muted: #8a8a8a;
     --border: rgba(255,255,255,0.08);
     --glass: rgba(20,20,20,0.85);
     --safe-top: env(safe-area-inset-top, 0px);

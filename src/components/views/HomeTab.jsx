@@ -32,10 +32,11 @@ export default function HomeTab() {
             ))}
         </div>
 
-        <div className="mood-widget" onClick={() => { setMoodOpen(true); setMoodStep(0); setMoodMood(null); setMoodType(null); setMoodDuration(null); setMoodResults([]); }}>
+        <button className="mood-widget" onClick={() => { setMoodOpen(true); setMoodStep(0); setMoodMood(null); setMoodType(null); setMoodDuration(null); setMoodResults([]); }}>
             <div className="mood-widget-title">{I.target} Что посмотреть?</div>
             <div className="mood-widget-sub">Подберём фильм под настроение за 3 клика</div>
-        </div>
+            <span className="mood-widget-cta">Подобрать {I.back}</span>
+        </button>
 
         {history.length > 0 && <ContinueSection title="Продолжить" icon={I.play} items={history} onSelect={openDetails} getProgress={getStoredProgress} version={progressVersion} />}
 

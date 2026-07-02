@@ -46,8 +46,8 @@ export default function ProfileTab() {
     { id: 'collections', label: 'Коллекции', icon: I.folder, count: collections.length },
     ...(mangaEnabled ? [{ id: 'manga', label: 'Манга', icon: I.bookOpen, count: mangaChaptersRead || undefined }] : []),
     { id: 'stats', label: 'Стата', icon: I.barChart },
-    { id: 'friends', label: 'Друзья', icon: I.users },
-    { id: 'requests', label: 'Заявки', icon: I.inbox, count: friendRequests.length },
+    // Incoming requests live inside the friends tab; the badge surfaces them here.
+    { id: 'friends', label: 'Друзья', icon: I.users, count: friendRequests.length },
     { id: 'settings', label: null, icon: I.settings },
   ];
 
@@ -193,12 +193,30 @@ export default function ProfileTab() {
                     </div>
                     {searchResult && searchResult !== 'not_found' && (
                         <div className="friend-card found">
-                            <div className="friend-avatar">{searchResult.avatar_url ? <img src={searchResult.avatar_url} /> : searchResult.username?.[0]?.toUpperCase()}</div>
+                            <div className="friend-avatar">{searchResult.avatar_url ? <img src={searchResult.avatar_url} alt="" /> : searchResult.username?.[0]?.toUpperCase()}</div>
                             <div className="friend-info"><div className="friend-name">{searchResult.username}</div><div className="friend-tag">#{searchResult.tag}</div></div>
                             <button className="friend-btn accept" onClick={() => sendFriendRequest(searchResult.id)}>{I.userPlus} Добавить</button>
                         </div>
                     )}
                     {searchResult === 'not_found' && <div className="friends-notfound">{I.search} Пользователь не найден</div>}
+
+                    {friendRequests.length > 0 && (
+                        <>
+                            <div className="friends-heading">{I.inbox} Заявки <span className="watchlist-badge">{friendRequests.length}</span></div>
+                            <div className="friends-grid">
+                                {friendRequests.map(req => (
+                                    <div key={req.requestId} className="friend-card request">
+                                        <div className="friend-avatar">{req.avatar_url ? <img src={req.avatar_url} alt="" /> : req.username?.[0]?.toUpperCase()}</div>
+                                        <div className="friend-info"><div className="friend-name">{req.username}</div><div className="friend-tag">хочет дружить</div></div>
+                                        <div className="friend-actions">
+                                            <button className="friend-btn accept icon" onClick={() => acceptFriend(req.requestId)} aria-label="Принять заявку">{I.check}</button>
+                                            <button className="friend-btn decline icon" onClick={() => declineFriend(req.requestId)} aria-label="Отклонить заявку">{I.x}</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
 
                     {friends.length > 0 ? (
                         <>
@@ -206,7 +224,7 @@ export default function ProfileTab() {
                             <div className="friends-grid">
                                 {friends.map(f => (
                                     <div key={f.id} className="friend-card" onClick={() => loadFriendProfile(f)}>
-                                        <div className="friend-avatar">{f.avatar_url ? <img src={f.avatar_url} /> : f.username?.[0]?.toUpperCase()}</div>
+                                        <div className="friend-avatar">{f.avatar_url ? <img src={f.avatar_url} alt="" /> : f.username?.[0]?.toUpperCase()}</div>
                                         <div className="friend-info"><div className="friend-name">{f.username}</div><div className="friend-tag">#{f.tag}</div></div>
                                         <span className="friend-chevron">{I.back}</span>
                                     </div>
@@ -218,18 +236,6 @@ export default function ProfileTab() {
                     )}
                 </div>
             )}
-
-            {profileTab === 'requests' && (friendRequests.length > 0 ? (
-                <div className="friends-grid">
-                    {friendRequests.map(req => (
-                        <div key={req.requestId} className="friend-card request">
-                            <div className="friend-avatar">{req.avatar_url ? <img src={req.avatar_url} /> : req.username?.[0]?.toUpperCase()}</div>
-                            <div className="friend-info"><div className="friend-name">{req.username}</div><div className="friend-tag">хочет дружить</div></div>
-                            <div className="friend-actions"><button className="friend-btn accept icon" onClick={() => acceptFriend(req.requestId)}>{I.check}</button><button className="friend-btn decline icon" onClick={() => declineFriend(req.requestId)}>{I.x}</button></div>
-                        </div>
-                    ))}
-                </div>
-            ) : <div className="library-empty"><div className="library-empty-icon">{I.inbox}</div><div className="library-empty-text">Нет заявок</div></div>)}
 
             {profileTab === 'settings' && <SettingsSection />}
         </div>

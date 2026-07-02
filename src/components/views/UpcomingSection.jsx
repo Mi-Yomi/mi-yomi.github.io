@@ -19,7 +19,7 @@ const UpcomingSection = memo(function UpcomingSection() {
                         <div key={m.id} className="upcoming-card" onClick={() => openDetails(m, 'movie')}>
                             {m.poster_path && <img className="upcoming-poster" src={`${IMG}${m.poster_path}`} alt="" loading="lazy" />}
                             <div className="upcoming-countdown">{daysUntil <= 0 ? 'Уже вышел' : `${daysUntil} дн.`}</div>
-                            <button className={`upcoming-remind ${inWatchlist ? 'active' : ''}`} onClick={e => { e.stopPropagation(); toggleWatchlist(m, 'movie'); }}>
+                            <button className={`upcoming-remind ${inWatchlist ? 'active' : ''}`} onClick={e => { e.stopPropagation(); toggleWatchlist(m, 'movie'); }} aria-label={inWatchlist ? 'Убрать из «Буду смотреть»' : 'Напомнить о выходе'} aria-pressed={inWatchlist}>
                                 {inWatchlist ? I.check : I.bell}
                             </button>
                             <div className="upcoming-info">

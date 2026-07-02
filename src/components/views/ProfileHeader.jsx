@@ -12,7 +12,7 @@ const ProfileHeader = memo(function ProfileHeader() {
                 </div>
                 <div className="profile-user">
                     <div className="profile-avatar-wrap">
-                        {userProfile?.avatar_url ? <img src={userProfile.avatar_url} className="profile-avatar" /> : <div className="profile-avatar-placeholder">{user.email[0].toUpperCase()}</div>}
+                        {userProfile?.avatar_url ? <img src={userProfile.avatar_url} className="profile-avatar" alt="Ваш аватар" /> : <div className="profile-avatar-placeholder">{user.email[0].toUpperCase()}</div>}
                         <label className="profile-avatar-edit">📷 <input type="file" accept="image/*" hidden onChange={e => handleProfileImage(e, 'avatar')} /></label>
                     </div>
                     <div className="profile-info">

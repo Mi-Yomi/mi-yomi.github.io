@@ -46,3 +46,10 @@ export const WHITELIST_ENABLED = (import.meta.env.VITE_WHITELIST || 'on') !== 'o
  */
 export const MANGA_API = 'https://api2.mangalib.me/api';
 export const MANGA_ENABLED = true;
+
+/**
+ * TMDB keyword ids excluded from anime discover queries (ecchi, etchi, hentai,
+ * erotica, erotic). Sorting anime by popularity without this fills the hero
+ * carousel with 18+ titles.
+ */
+export const NSFW_KEYWORDS = '195669,285672,198385,325693,256466';

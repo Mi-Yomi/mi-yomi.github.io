@@ -21,7 +21,7 @@ export default function useAdmin(user, isAdmin, showToast) {
     const loadCuratedLists = useCallback(async () => {
         const { data, error } = await supabase.from('curated_lists').select('*').order('created_at', { ascending: false });
         if (data) setCuratedLists(data);
-        if (error) console.error('Curated lists load error:', error);
+        if (error) console.error('Curated lists load error:', error.message || error);
     }, []);
 
     const saveCuratedList = useCallback(async () => {

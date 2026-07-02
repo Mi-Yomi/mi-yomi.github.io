@@ -42,7 +42,7 @@ export default function FriendProfileView() {
             <div className="profile-user">
                 <div className="profile-avatar-wrap">
                     {viewingFriend.avatar_url || friendData.profile?.avatar_url ?
-                        <img src={viewingFriend.avatar_url || friendData.profile?.avatar_url} className="profile-avatar" /> :
+                        <img src={viewingFriend.avatar_url || friendData.profile?.avatar_url} className="profile-avatar" alt="Аватар друга" /> :
                         <div className="profile-avatar-placeholder">{viewingFriend.username?.[0]?.toUpperCase()}</div>
                     }
                 </div>
