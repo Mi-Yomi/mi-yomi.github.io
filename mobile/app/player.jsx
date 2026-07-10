@@ -50,7 +50,7 @@ export default function PlayerScreen() {
         return (
             <View style={styles.container}>
                 <Text style={styles.error}>Нет URL для воспроизведения</Text>
-                <Pressable onPress={() => router.back()} style={styles.backBtn}>
+                <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Назад">
                     <Text style={styles.backText}>Назад</Text>
                 </Pressable>
             </View>
@@ -66,14 +66,15 @@ export default function PlayerScreen() {
                     allowsInlineMediaPlayback
                     mediaPlaybackRequiresUserAction={false}
                     scrollEnabled={false}
+                    accessibilityLabel={`Видеоплеер: ${title || 'видео'}`}
                 />
             </View>
             <View style={[styles.controls, { top: insets.top + 12 }]}>
-                <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+                <Pressable onPress={() => router.back()} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Закрыть плеер">
                     <Text style={styles.closeText}>✕ Закрыть</Text>
                 </Pressable>
                 {pipAvailable && Platform.OS === 'android' && (
-                    <Pressable onPress={handlePip} style={styles.pipBtn}>
+                    <Pressable onPress={handlePip} style={styles.pipBtn} accessibilityRole="button" accessibilityLabel="Включить картинку в картинке">
                         <Text style={styles.pipText}>⊡ PiP</Text>
                     </Pressable>
                 )}

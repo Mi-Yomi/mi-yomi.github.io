@@ -8,6 +8,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../providers/AuthProvider';
 import { DataProvider } from '../providers/DataProvider';
 import { SocialProvider } from '../providers/SocialProvider';
+import { MangaProvider } from '../providers/MangaProvider';
+import { ToastProvider } from '../providers/ToastProvider';
+import { DownloadsProvider } from '../providers/DownloadsProvider';
 import { theme } from '../theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -51,6 +54,8 @@ function RootNavigator() {
             <Stack.Screen name="search" options={{ animation: 'fade', presentation: 'modal' }} />
             <Stack.Screen name="mood" options={{ animation: 'fade', presentation: 'modal' }} />
             <Stack.Screen name="friend-profile" />
+            <Stack.Screen name="manga/[slug]" />
+            <Stack.Screen name="manga/reader" options={{ animation: 'slide_from_bottom', gestureEnabled: false, presentation: 'fullScreenModal' }} />
         </Stack>
     );
 }
@@ -59,14 +64,20 @@ export default function RootLayout() {
     return (
         <GestureHandlerRootView style={styles.root}>
             <SafeAreaProvider>
-                <AuthProvider>
-                    <DataProvider>
-                        <SocialProvider>
-                            <StatusBar style="light" />
-                            <RootNavigator />
-                        </SocialProvider>
-                    </DataProvider>
-                </AuthProvider>
+                <ToastProvider>
+                    <AuthProvider>
+                        <DataProvider>
+                            <MangaProvider>
+                                <DownloadsProvider>
+                                    <SocialProvider>
+                                        <StatusBar style="light" />
+                                        <RootNavigator />
+                                    </SocialProvider>
+                                </DownloadsProvider>
+                            </MangaProvider>
+                        </DataProvider>
+                    </AuthProvider>
+                </ToastProvider>
             </SafeAreaProvider>
         </GestureHandlerRootView>
     );

@@ -65,4 +65,27 @@ describe('local auth Firebase adapter', () => {
     expect(data).toBeNull();
     expect(error.message).toContain('Firebase Auth не настроен');
   });
+
+  it('clears an expired session and notifies auth listeners on a 401', async () => {
+    vi.doMock('../config.js', () => ({
+      HADES_API_URL: 'https://hades.example/api',
+      FIREBASE_ENABLED: false,
+      FIREBASE_CONFIG: {},
+    }));
+    localStorage.setItem('hades_local_api_token', 'expired-token');
+    global.fetch.mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'Unauthorized' }),
+    });
+    const { supabase } = await import('./supabase.js');
+    const listener = vi.fn();
+    supabase.auth.onAuthStateChange(listener);
+
+    const { error } = await supabase.from('favorites').select('*');
+
+    expect(error.status).toBe(401);
+    expect(localStorage.getItem('hades_local_api_token')).toBeNull();
+    expect(listener).toHaveBeenCalledWith('SIGNED_OUT', null);
+  });
 });

@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { api, getImdbId, getMalId, getVideos, isAnime, searchAlloha, searchCollaps } from '../lib/api/tmdb.js';
 import { supabase } from '../lib/api/supabase.js';
 
-export default function useDetails() {
+export default function useDetails(skipPrivateData = false) {
     const [media, setMedia] = useState(null);
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [collapsData, setCollapsData] = useState(null);
@@ -23,11 +23,15 @@ export default function useDetails() {
     const [reviewEditing, setReviewEditing] = useState(null); // review row being edited (null = new)
 
     const loadMovieComments = useCallback(async (movieId) => {
+        if (skipPrivateData) {
+            setMovieComments([]);
+            return;
+        }
         // review_comments(count) embeds the comment count per review for the thread toggle
         const { data, error } = await supabase.from('reviews').select('*, profiles(username, tag, avatar_url), review_comments(count)').eq('movie_id', String(movieId)).order('created_at', { ascending: false });
         if (error) console.error('Comments load error (RLS?):', error);
         setMovieComments(data || []);
-    }, []);
+    }, [skipPrivateData]);
 
     const loadRecommendations = useCallback(async (id, type) => {
         const data = await api(`/${type}/${id}/recommendations`);

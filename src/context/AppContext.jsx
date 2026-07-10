@@ -1,17 +1,15 @@
-import { createContext, useMemo } from 'react';
+import { useMemo } from 'react';
 import useAppController from '../hooks/useAppController.js';
 import { AuthProvider, useAuthContext } from './AuthContext.jsx';
 import { UIProvider, useUIContext } from './UIContext.jsx';
 import { ContentProvider, useContentContext } from './ContentContext.jsx';
 import { PlayerProvider, usePlayerContext } from './PlayerContext.jsx';
 
-const AppContext = createContext(null);
-
 export function AppProvider({ children }) {
     const app = useAppController();
 
     const authValue = useMemo(() => ({
-        tg: app.tg, user: app.user, setUser: app.setUser,
+        tg: app.tg, devBypass: app.devBypass, user: app.user, setUser: app.setUser,
         userProfile: app.userProfile, setUserProfile: app.setUserProfile,
         loading: app.loading, setLoading: app.setLoading,
         isAdmin: app.isAdmin, userApproved: app.userApproved,
@@ -22,7 +20,8 @@ export function AppProvider({ children }) {
         handleLogout: app.handleLogout, handleProfileImage: app.handleProfileImage,
         refreshApprovalStatus: app.refreshApprovalStatus,
         toggleHidden: app.toggleHidden, isHidden: app.isHidden,
-    }), [app.user, app.userProfile, app.loading, app.isAdmin, app.userApproved,
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are the state slice only; controller functions are recreated every render and would defeat the memo
+    }), [app.devBypass, app.user, app.userProfile, app.loading, app.isAdmin, app.userApproved,
         app.nameEditOpen, app.newUsername, app.refreshingStatus]);
 
     const uiValue = useMemo(() => ({
@@ -47,6 +46,7 @@ export function AppProvider({ children }) {
         animeGenre: app.animeGenre, setAnimeGenre: app.setAnimeGenre,
         librarySort: app.librarySort, setLibrarySort: app.setLibrarySort,
         handleContentScroll: app.handleContentScroll, scrollToTop: app.scrollToTop,
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are the state slice only; controller functions are recreated every render and would defeat the memo
     }), [app.tab, app.profileTab, app.heroIndex, app.tvHeroIndex, app.animeHeroIndex,
         app.showScrollTop, app.randomSpinning, app.toasts,
         app.moodOpen, app.moodStep, app.moodMood, app.moodType, app.moodDuration,
@@ -69,6 +69,7 @@ export function AppProvider({ children }) {
         getProgressPercent: app.getProgressPercent,
         playSource: app.playSource, closePlayer: app.closePlayer,
         updatePlayerEpisode: app.updatePlayerEpisode, isRuSource: app.isRuSource,
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are the state slice only; controller functions are recreated every render and would defeat the memo
     }), [app.playerOpen, app.playerUrl, app.currentSeason, app.currentEpisode,
         app.playerSource, app.playerLoaded, app.playerError,
         app.skipSegments, app.activeSkip, app.autoSkip]);
@@ -102,5 +103,3 @@ export { useAuthContext } from './AuthContext.jsx';
 export { useUIContext } from './UIContext.jsx';
 export { useContentContext } from './ContentContext.jsx';
 export { usePlayerContext } from './PlayerContext.jsx';
-
-export default AppContext;

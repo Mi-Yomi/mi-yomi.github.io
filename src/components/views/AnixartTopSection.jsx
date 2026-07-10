@@ -4,6 +4,7 @@ import { I } from '../../lib/icons.jsx';
 import { anixartTop } from '../../lib/api/anixart.js';
 import { api } from '../../lib/api/tmdb.js';
 import ScrollRow from '../common/ScrollRow.jsx';
+import { activateOnKeyboard } from '../../lib/a11y.js';
 
 /**
  * "Топ аниме · Anixart" row for the anime home. Anixart ranks anime far better than
@@ -52,7 +53,9 @@ export default function AnixartTopSection() {
             </div>
             <ScrollRow className={opening ? 'is-opening' : ''}>
                 {items.map(rel => (
-                    <div key={rel.id} className="card card-visible" onClick={() => openAnime(rel)} role="button">
+                    <div key={rel.id} className="card card-visible" onClick={() => openAnime(rel)}
+                        onKeyDown={(event) => activateOnKeyboard(event, () => openAnime(rel))}
+                        role="button" tabIndex={0} aria-label={`Открыть ${rel.title_ru}`}>
                         <div className="card-poster-wrap">
                             <img className="card-poster loaded" src={rel.image} alt={rel.title_ru} loading="lazy" decoding="async" />
                             {rel.grade > 0 && <div className="card-rating rating-green">{I.star} {rel.grade.toFixed(1)}</div>}

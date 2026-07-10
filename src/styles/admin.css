@@ -61,6 +61,7 @@
     background: var(--surface-2); border-radius: 10px; margin-bottom: 6px;
     cursor: pointer; transition: background 0.15s;
 }
+.admin-search-item { width: 100%; color: var(--text); font-family: inherit; text-align: left; }
 .admin-search-item:active { background: var(--surface-3); }
 .admin-search-item img { width: 36px; height: 54px; border-radius: 6px; object-fit: cover; }
 .admin-search-item-info { flex: 1; }

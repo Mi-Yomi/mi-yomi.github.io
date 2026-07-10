@@ -1,15 +1,19 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { useAuth } from '../../providers/AuthProvider';
 import { useData } from '../../providers/DataProvider';
 import { useSocial } from '../../providers/SocialProvider';
+import { useManga } from '../../providers/MangaProvider';
+import { useDownloads } from '../../providers/DownloadsProvider';
 import MediaCard from '../../components/components/MediaCard';
+import MangaCard from '../../components/components/MangaCard';
 import { theme } from '../../theme';
 import { LIBRARY_STATUSES } from '../../lib/libraryStatuses';
-import { IMG } from '../../lib/config';
+import { MANGA_STATUSES } from '../../lib/mangaStatuses';
 import { ratingColor, getAvatarUrl, getCoverUrl } from '../../lib/utils';
 
 const TABS = [
@@ -17,6 +21,7 @@ const TABS = [
     { id: 'favorites', label: '❤️ Избранное' },
     { id: 'history', label: '🕐 История' },
     { id: 'reviews', label: '✍️ Отзывы' },
+    { id: 'manga', label: '📖 Манга' },
     { id: 'collections', label: '📁 Коллекции' },
     { id: 'friends', label: '👥 Друзья' },
     { id: 'requests', label: '📩 Заявки' },
@@ -27,8 +32,10 @@ export default function ProfileScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { user, userProfile, logout, isAdmin, updateUsername } = useAuth();
-    const { favorites, history, reviews, library, libraryByStatus, libraryCounts, collections, sortItems, setItemStatus } = useData();
-    const { friends, friendRequests, friendSearch, setFriendSearch, searchResult, setSearchResult, searchUser, sendFriendRequest, loadFriendProfile, acceptFriend, declineFriend, saveCollection, deleteCollection } = useSocial();
+    const { favorites, history, reviews, libraryByStatus, libraryCounts, collections, sortItems, setItemStatus } = useData();
+    const { friends, friendRequests, friendSearch, setFriendSearch, searchResult, searchUser, sendFriendRequest, loadFriendProfile, acceptFriend, declineFriend, saveCollection, deleteCollection } = useSocial();
+    const { mangaLibraryByStatus, mangaLibraryCounts, mangaChaptersRead, mangaReadMinutes } = useManga();
+    const { downloadedCount } = useDownloads();
     const [profileTab, setProfileTab] = useState('favorites');
     const [librarySort, setLibrarySort] = useState('date');
     const [nameEditOpen, setNameEditOpen] = useState(false);
@@ -37,13 +44,15 @@ export default function ProfileScreen() {
     const [colModalTitle, setColModalTitle] = useState('');
     const [colModalEditId, setColModalEditId] = useState(null);
     const [statusPickerItem, setStatusPickerItem] = useState(null);
+    const scrollRef = useRef(null);
+    useScrollToTop(scrollRef);
 
     const searchUserHandler = () => {
         if (friendSearch.includes('#')) searchUser();
     };
 
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollRef} style={styles.container} showsVerticalScrollIndicator={false}>
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <Text style={styles.logo}>👤 Профиль</Text>
                 <Pressable onPress={() => router.push('/search')} style={styles.searchBtn}>
@@ -79,6 +88,7 @@ export default function ProfileScreen() {
                         <Text style={[styles.tabText, profileTab === t.id && styles.tabTextActive]}>{t.label}</Text>
                         {t.id.startsWith('lib_') && libraryCounts[t.id.replace('lib_', '')] > 0 && <Text style={styles.tabBadge}>{libraryCounts[t.id.replace('lib_', '')]}</Text>}
                         {t.id === 'requests' && friendRequests?.length > 0 && <Text style={styles.tabBadge}>{friendRequests.length}</Text>}
+                        {t.id === 'manga' && Object.values(mangaLibraryCounts).reduce((a, b) => a + b, 0) > 0 && <Text style={styles.tabBadge}>{Object.values(mangaLibraryCounts).reduce((a, b) => a + b, 0)}</Text>}
                     </Pressable>
                 ))}
             </ScrollView>
@@ -130,6 +140,44 @@ export default function ProfileScreen() {
                         <Text style={styles.reviewBody} numberOfLines={3}>{r.content}</Text>
                     </Pressable>
                 )) : <View style={styles.empty}><Text style={styles.emptyIcon}>📝</Text><Text style={styles.emptyText}>Нет отзывов</Text></View>)}
+
+                {profileTab === 'manga' && (
+                    <View>
+                        <View style={styles.mangaStats}>
+                            <View style={styles.mangaStat}>
+                                <Text style={styles.mangaStatValue}>{Object.values(mangaLibraryCounts).reduce((a, b) => a + b, 0)}</Text>
+                                <Text style={styles.mangaStatLabel}>На полке</Text>
+                            </View>
+                            <View style={styles.mangaStat}>
+                                <Text style={styles.mangaStatValue}>{mangaChaptersRead}</Text>
+                                <Text style={styles.mangaStatLabel}>Глав прочитано</Text>
+                            </View>
+                            <View style={styles.mangaStat}>
+                                <Text style={styles.mangaStatValue}>{mangaReadMinutes}</Text>
+                                <Text style={styles.mangaStatLabel}>Минут чтения</Text>
+                            </View>
+                            <View style={styles.mangaStat}>
+                                <Text style={[styles.mangaStatValue, { color: theme.blue }]}>{downloadedCount}</Text>
+                                <Text style={styles.mangaStatLabel}>Скачано глав</Text>
+                            </View>
+                        </View>
+                        {MANGA_STATUSES.map(s => {
+                            const items = mangaLibraryByStatus[s.id] || [];
+                            if (!items.length) return null;
+                            return (
+                                <View key={s.id} style={styles.mangaGroup}>
+                                    <Text style={[styles.mangaGroupTitle, { color: s.color }]}>{s.label} · {items.length}</Text>
+                                    <View style={styles.grid}>
+                                        {items.map(e => <MangaCard key={e.dir} item={e} width={100} />)}
+                                    </View>
+                                </View>
+                            );
+                        })}
+                        {Object.values(mangaLibraryCounts).every(c => c === 0) && (
+                            <View style={styles.empty}><Text style={styles.emptyIcon}>📖</Text><Text style={styles.emptyText}>Полка пуста — загляните во вкладку Манга</Text></View>
+                        )}
+                    </View>
+                )}
 
                 {profileTab === 'collections' && (
                     <View>
@@ -276,6 +324,12 @@ const styles = StyleSheet.create({
     reviewRating: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
     reviewRatingText: { fontSize: 12, fontWeight: '800' },
     reviewBody: { color: theme.textSecondary, fontSize: 13, lineHeight: 20 },
+    mangaStats: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+    mangaStat: { flex: 1, backgroundColor: theme.surface, borderRadius: 14, padding: 14, alignItems: 'center' },
+    mangaStatValue: { color: theme.orange, fontSize: 20, fontWeight: '900' },
+    mangaStatLabel: { color: theme.textMuted, fontSize: 10, marginTop: 4, textAlign: 'center' },
+    mangaGroup: { marginBottom: 20 },
+    mangaGroupTitle: { fontSize: 14, fontWeight: '800', marginBottom: 10 },
     createColBtn: { backgroundColor: theme.surface, padding: 14, borderRadius: 12, marginBottom: 12, alignItems: 'center' },
     createColText: { color: theme.accent, fontWeight: '700' },
     colCard: { backgroundColor: theme.surface, borderRadius: 14, padding: 16, marginBottom: 12 },

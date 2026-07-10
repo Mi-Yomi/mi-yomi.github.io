@@ -1,5 +1,8 @@
+import { useRef } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
+import '../../styles/admin.css';
 import { I } from '../../lib/icons.jsx';
+import useDialogFocus from '../../hooks/useDialogFocus.js';
 
 export default function AdminPanel() {
   const {
@@ -30,6 +33,8 @@ export default function AdminPanel() {
     approveUser,
     rejectUser,
   } = useApp();
+  const dialogRef = useRef(null);
+  useDialogFocus(adminOpen && isAdmin, dialogRef);
 
   if (!adminOpen || !isAdmin) {
     return null;
@@ -39,7 +44,7 @@ export default function AdminPanel() {
 
   return (
     <div className="admin-overlay">
-      <div className="admin-panel" role="dialog" aria-modal="true" aria-label="Админ-панель">
+      <div ref={dialogRef} className="admin-panel" role="dialog" aria-modal="true" aria-label="Админ-панель" tabIndex={-1}>
             <div className="admin-header">
                 <button className="admin-btn secondary admin-back" onClick={closePanel} aria-label="Закрыть">{I.back}</button>
                 <h2>Админ-панель</h2>
@@ -70,14 +75,14 @@ export default function AdminPanel() {
                 {adminSearchResults.length > 0 && (
                     <div className="admin-search-results">
                         {adminSearchResults.map(item => (
-                            <div key={item.id} className="admin-search-item" onClick={() => addToAdminList(item)}>
+                            <button key={item.id} className="admin-search-item" onClick={() => addToAdminList(item)}>
                                 {item.poster_path && <img src={`${IMG}${item.poster_path}`} alt="" />}
                                 <div className="admin-search-item-info">
                                     <div className="admin-search-item-title">{item.title || item.name}</div>
                                     <div className="admin-search-item-year">{(item.release_date || item.first_air_date || '').split('-')[0]} • {item.media_type === 'tv' ? 'Сериал' : 'Фильм'}</div>
                                 </div>
                                 <span style={{color:'var(--green)',fontSize:18}}>{I.plus}</span>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 )}

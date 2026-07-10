@@ -1,50 +1,59 @@
-# Welcome to your Expo app 👋
+# HADES Mobile 📱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+React Native (Expo) приложение для iPhone — мобильная версия онлайн-кинотеатра: фильмы, сериалы, аниме и чтение манги. Использует те же Supabase и TMDB, что и сайт, поэтому аккаунт, библиотека и прогресс чтения манги синхронизируются между сайтом и приложением.
 
-## Get started
+## Разделы
 
-1. Install dependencies
+- **Главная** — тренды, «Продолжить просмотр», «Продолжить чтение», подборки, подбор по настроению
+- **Сериалы / Аниме** — каталоги TMDB с жанровыми фильтрами и hero-каруселью
+- **Манга** — каталог MangaLib (обновления / популярное / новинки) с фильтром по жанрам, случайный тайтл, полка «Читаю», продолжение чтения, shimmer-скелетоны при загрузке
+  - Экран тайтла: параллакс-обложка с плавающей шапкой, описание, жанры, комментарии MangaLib, статусы (Читаю / Хочу / Прочитано / Любимое / Брошено), список глав с прогрессом, сортировкой и **офлайн-загрузкой** (иконка облака у главы)
+  - Читалка: два режима — вертикальный скролл и постраничный RTL (перелистывание как в бумажной манге, настройка запоминается), pinch-zoom + двойной тап для фиксированного зума, восстановление позиции, быстрый выбор главы (шторка со списком), префетч следующей главы, офлайн-чтение скачанных глав (📴 в шапке), скрываемые панели по тапу
+- **Быстрые действия** — долгое нажатие на карточке: статус манги, избранное/«буду смотреть» для кино; долгий тап по «Продолжить чтение» убирает тайтл из ряда
+- **Тосты** — анимированные уведомления о действиях (статусы, загрузки)
+- Повторный тап по активной вкладке прокручивает наверх; pull-to-refresh на всех каталогах
+- **Профиль** — библиотека, избранное, история, отзывы, манга-полка со статистикой, друзья
+- **Плеер** — просмотр фильмов/сериалов через WebView-источники
+
+> `expo-pip` используется как необязательное Android-улучшение и защищён runtime-проверкой. Пакет пока не имеет отметки о тестировании React Native New Architecture, поэтому PiP нужно проверять на реальной EAS-сборке после обновлений SDK.
+
+## Синхронизация манги
+
+Прогресс чтения, полка и время чтения хранятся в AsyncStorage и мержатся с `profiles.manga_state` в Supabase — те же ключи и структура, что у веб-версии (`src/hooks/useManga.js`), так что можно начать читать на сайте и продолжить в приложении.
+
+Картинки MangaLib (обложки и страницы) отдаются только с непустым `Referer` — все `<Image>` для манги передают `MANGA_IMG_HEADERS` из `lib/config.js`.
+
+## Запуск
+
+1. Установить зависимости:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Создать `.env` с ключами (см. `lib/config.js`):
 
-   ```bash
-    npx expo start
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=...
+   EXPO_PUBLIC_SUPABASE_KEY=...
+   EXPO_PUBLIC_TMDB_KEY=...
+   EXPO_PUBLIC_COLLAPS_TOKEN=...
+   EXPO_PUBLIC_COLLAPS_API=...
+   EXPO_PUBLIC_ALLOHA_TOKEN=...
    ```
 
-In the output, you'll find options to open the app in a
+3. Запустить dev-сервер:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```bash
+   npx expo start
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+   На iPhone: установить [Expo Go](https://expo.dev/go) и отсканировать QR-код (телефон и компьютер должны быть в одной сети).
 
-## Get a fresh project
-
-When you're ready, run:
+## Сборка для iPhone (EAS)
 
 ```bash
-npm run reset-project
+npx eas build --platform ios --profile preview
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Профили сборки настроены в `eas.json`.

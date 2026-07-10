@@ -25,6 +25,7 @@
 .search-quick-filter { display: flex; gap: 6px; padding: 8px 16px 0; }
 .search-quick-btn {
     padding: 9px 18px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border);
+    min-height: 44px;
     color: var(--text-muted); font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
     transition: all 0.15s;
 }
@@ -38,7 +39,7 @@
 .filter-row { display: flex; flex-direction: column; gap: 6px; }
 .filter-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.filter-chip { padding: 6px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.filter-chip { min-height: 44px; padding: 6px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
 .filter-chip.active { background: var(--accent); border-color: var(--accent); color: white; }
 .filter-chip:active { transform: scale(0.95); }
 .filter-year-row { display: flex; align-items: center; gap: 10px; }
@@ -46,16 +47,16 @@
 .filter-apply { padding: 12px; border-radius: 10px; background: var(--accent); color: white; font-weight: 800; font-size: 13px; border: none; cursor: pointer; font-family: inherit; transition: all 0.2s; }
 .filter-apply:active { transform: scale(0.97); }
 .filter-rating-row { display: flex; gap: 4px; align-items: center; }
-.filter-rating-btn { width: 32px; height: 32px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); font-weight: 800; font-size: 11px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.filter-rating-btn { min-width: 44px; height: 44px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); font-weight: 800; font-size: 11px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
 .filter-rating-btn.active { background: var(--gold); border-color: var(--gold); color: black; }
 .filter-sort-row { display: flex; gap: 6px; }
-.filter-sort-btn { flex: 1; padding: 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; transition: all 0.2s; }
+.filter-sort-btn { flex: 1; min-height: 44px; padding: 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; transition: all 0.2s; }
 .filter-sort-btn.active { background: var(--blue); border-color: var(--blue); color: white; }
 
 /* Search History */
 .search-history { padding: 16px; }
 .search-history-title { font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.search-history-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; cursor: pointer; border-bottom: 1px solid var(--border); }
+.search-history-item { display: flex; width: 100%; align-items: center; gap: 12px; padding: 14px 0; cursor: pointer; border: 0; border-bottom: 1px solid var(--border); background: none; color: var(--text); text-align: left; font-family: inherit; }
 .search-history-item:active { opacity: 0.7; }
 .search-history-icon { color: var(--text-muted); font-size: 16px; }
 .search-history-text { font-size: 15px; font-weight: 600; flex: 1; }

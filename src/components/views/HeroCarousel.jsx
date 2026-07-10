@@ -41,19 +41,23 @@ const HeroCarousel = memo(function HeroCarousel({
     if (items.length === 0) return <div className="skeleton-hero"></div>;
 
     return (
-        <div className="hero-carousel" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <section className="hero-carousel" aria-label="Рекомендации" aria-roledescription="карусель" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             {items.slice(0, 5).map((item, idx) => {
                 const type = item.media_type || defaultType || (item.first_air_date ? 'tv' : 'movie');
+                const isActive = activeIdx === idx;
+                const isAdjacent = idx === (activeIdx + 1) % maxSlides || idx === (activeIdx - 1 + maxSlides) % maxSlides;
                 return (
-                    <div key={item.id} className={`hero-slide ${activeIdx === idx ? 'active' : ''}`}
+                    <div key={item.id} className={`hero-slide ${isActive ? 'active' : ''}`}
+                        role="group" aria-roledescription="слайд" aria-label={`${idx + 1} из ${maxSlides}: ${item.title || item.name}`}
+                        aria-hidden={!isActive} inert={isActive ? undefined : ''}
                         onClick={() => openDetails(item, type)}>
-                        <div className="hero-bg" style={{ backgroundImage: `url(${BACKDROP}${item.backdrop_path})` }}></div>
+                        <div className="hero-bg" style={{ backgroundImage: isActive || isAdjacent ? `url(${BACKDROP}${item.backdrop_path})` : undefined }}></div>
                         <div className="hero-grad"></div>
                         <div className="hero-content">
                             <div className="hero-badge" style={badgeStyle ? { background: badgeStyle } : undefined}>
                                 {badgeIcon} #{idx + 1} {badgePrefix}
                             </div>
-                            <h1 className="hero-title">{item.title || item.name}</h1>
+                            <h2 className="hero-title">{item.title || item.name}</h2>
                             <div className="hero-meta">
                                 <span className={`rating ${ratingColor(item.vote_average)}`}>{I.star} {item.vote_average?.toFixed(1)}</span>
                                 <span>{(item.release_date || item.first_air_date || '').split('-')[0]}</span>
@@ -76,11 +80,11 @@ const HeroCarousel = memo(function HeroCarousel({
             <div className="hero-dots">
                 {items.slice(0, 5).map((_, idx) => (
                     <button key={idx} className={`hero-dot ${activeIdx === idx ? 'active' : ''}`}
-                        aria-label={`Слайд ${idx + 1}`} aria-current={activeIdx === idx}
+                        aria-label={`Показать слайд ${idx + 1}: ${items[idx]?.title || items[idx]?.name || ''}`} aria-current={activeIdx === idx ? 'true' : undefined}
                         onClick={(e) => { e.stopPropagation(); setIdx(idx); tg?.HapticFeedback?.impactOccurred?.('light'); }} />
                 ))}
             </div>
-        </div>
+        </section>
     );
 });
 

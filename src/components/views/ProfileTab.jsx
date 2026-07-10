@@ -8,6 +8,7 @@ import SettingsSection from './SettingsSection.jsx';
 import MangaProfileSection from './MangaProfileSection.jsx';
 import CollectionModal from '../overlays/CollectionModal.jsx';
 import { LIBRARY_STATUSES } from '../../lib/libraryStatuses.js';
+import { activateOnKeyboard } from '../../lib/a11y.js';
 
 export default function ProfileTab() {
   const [colModalOpen, setColModalOpen] = useState(false);
@@ -145,7 +146,9 @@ export default function ProfileTab() {
                 const posterSrc = (favorites.find(f => f.item_id === r.movie_id)?.poster_path) || (history.find(h => h.item_id === r.movie_id)?.poster_path) || reviewPosters[r.movie_id] || null;
                 return (
                     <div key={r.id || r.movie_id} className="friend-review-card">
-                        <div className="friend-review-top" onClick={() => openDetails({ id: r.movie_id }, r.media_type || 'movie')}>
+                        <div className="friend-review-top" onClick={() => openDetails({ id: r.movie_id }, r.media_type || 'movie')}
+                            onKeyDown={(event) => activateOnKeyboard(event, () => openDetails({ id: r.movie_id }, r.media_type || 'movie'))}
+                            role="button" tabIndex={0} aria-label={`Открыть ${r.title}`}>
                             {posterSrc ? <img className="friend-review-poster" src={`${IMG}${posterSrc}`} alt="" /> : <div className="friend-review-poster-ph">{I.film}</div>}
                             <div className="friend-review-info">
                                 <div className="friend-review-title">{r.title}</div>
@@ -155,7 +158,7 @@ export default function ProfileTab() {
                         </div>
                         <div className="friend-review-body">{r.content}</div>
                         {r.created_at && <div style={{padding:'0 16px 8px',fontSize:10,color:'var(--text-muted)'}}>{new Date(r.created_at).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'})}</div>}
-                        <div className="friend-review-action" onClick={() => openDetails({ id: r.movie_id }, r.media_type || 'movie')}>{I.play} Открыть фильм</div>
+                        <button className="friend-review-action" onClick={() => openDetails({ id: r.movie_id }, r.media_type || 'movie')}>{I.play} Открыть фильм</button>
                     </div>
                 );
             }) : <div className="library-empty"><div className="library-empty-icon">{I.penTool}</div><div className="library-empty-text">Нет отзывов</div><div className="library-empty-hint">Откройте фильм и оставьте отзыв</div></div>)}
@@ -223,7 +226,9 @@ export default function ProfileTab() {
                             <div className="friends-heading">{I.users} Мои друзья <span className="watchlist-badge">{friends.length}</span></div>
                             <div className="friends-grid">
                                 {friends.map(f => (
-                                    <div key={f.id} className="friend-card" onClick={() => loadFriendProfile(f)}>
+                                    <div key={f.id} className="friend-card" onClick={() => loadFriendProfile(f)}
+                                        onKeyDown={(event) => activateOnKeyboard(event, () => loadFriendProfile(f))}
+                                        role="button" tabIndex={0} aria-label={`Открыть профиль ${f.username}`}>
                                         <div className="friend-avatar">{f.avatar_url ? <img src={f.avatar_url} alt="" /> : f.username?.[0]?.toUpperCase()}</div>
                                         <div className="friend-info"><div className="friend-name">{f.username}</div><div className="friend-tag">#{f.tag}</div></div>
                                         <span className="friend-chevron">{I.back}</span>

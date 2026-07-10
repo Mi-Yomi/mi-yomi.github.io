@@ -45,7 +45,7 @@
     box-shadow: 0 4px 14px var(--accent-glow);
 }
 .profile-info { text-align: center; }
-.profile-name { font-size: 26px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+.profile-name { font-size: 26px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; background: none; border: 0; color: var(--text); font-family: inherit; }
 .profile-name svg { width: 16px; height: 16px; opacity: 0.3; }
 .profile-name-edit { font-size: 16px; opacity: 0.4; }
 .profile-tag { font-size: 15px; color: var(--text-muted); margin-top: 3px; font-weight: 600; }
@@ -57,7 +57,7 @@
 }
 .profile-stat {
     text-align: center; cursor: pointer; transition: all 0.2s;
-    padding: 22px 14px; background: var(--surface);
+    padding: 22px 14px; background: var(--surface); border: 0; color: var(--text); font-family: inherit;
 }
 .profile-stat:first-child { border-radius: 20px 0 0 20px; }
 .profile-stat:last-child { border-radius: 0 20px 20px 0; }
@@ -132,7 +132,8 @@
 .set-card.admin { border-color: rgba(255, 171, 0, 0.25); }
 .set-row {
     display: flex; align-items: center; gap: 13px; padding: 13px 14px;
-    position: relative; transition: background .15s;
+    width: 100%; position: relative; transition: background .15s;
+    border: 0; color: var(--text); background: transparent; text-align: left; font-family: inherit;
 }
 .set-row + .set-row::before {
     content: ''; position: absolute; top: 0; left: 64px; right: 0; height: 1px;
@@ -214,6 +215,7 @@
     display: flex; align-items: center; gap: 8px; padding: 0 18px 16px;
     font-size: 13px; color: var(--accent); font-weight: 700; cursor: pointer;
 }
+.friend-review-action { width: 100%; border: 0; font-family: inherit; }
 .friend-review-action svg { width: 16px; height: 16px; }
 
 .review-card {

@@ -255,6 +255,7 @@ export default function useAuth() {
 
     return {
         tg,
+        devBypass: DEV_BYPASS,
         user, setUser,
         userProfile, setUserProfile,
         loading, setLoading,

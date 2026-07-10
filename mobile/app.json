@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "HADES",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
-    "userInterfaceStyle": "automatic",
+    "scheme": "hades",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -16,9 +16,10 @@
       }
     },
     "android": {
+      "package": "com.miyomi.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0a0a0a"
       }
     },
     "web": {
@@ -38,7 +39,8 @@
         }
       ],
       "expo-secure-store",
-      "expo-pip"
+      "expo-pip",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

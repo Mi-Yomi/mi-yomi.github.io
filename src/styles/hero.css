@@ -60,17 +60,20 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-.hero-dots { 
-    display: flex; justify-content: center; gap: 8px; 
+.hero-dots {
+    display: flex; justify-content: center; gap: 0;
     position: absolute; bottom: 12px; left: 0; right: 0; z-index: 10;
 }
 .hero-dot {
-    width: 8px; height: 8px; border-radius: 50%; 
-    background: rgba(255,255,255,0.3); border: none; cursor: pointer;
-    transition: all 0.3s var(--ease-out-expo); padding: 0;
+    width: 44px; height: 44px; border: none; cursor: pointer; padding: 0;
+    background: transparent; position: relative; margin: -18px 0;
 }
-.hero-dot.active { 
-    width: 28px; border-radius: 4px; 
-    background: var(--accent); 
+.hero-dot::before {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px;
+    border-radius: 50%; background: rgba(255,255,255,0.3);
+    transform: translate(-50%, -50%); transition: all 0.3s var(--ease-out-expo);
+}
+.hero-dot.active::before {
+    width: 28px; border-radius: 4px; background: var(--accent);
     box-shadow: 0 0 10px var(--accent-glow);
 }

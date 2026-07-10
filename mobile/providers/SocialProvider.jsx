@@ -26,7 +26,7 @@ export function SocialProvider({ children }) {
         if (r) setFriendRequests(r.map(row => ({ ...row.user, requestId: row.id })));
     }, []);
 
-    const loadFriendsActivity = useCallback(async (userId) => {
+    const loadFriendsActivity = useCallback(async () => {
         const friendIds = friends.map(f => f.id);
         if (friendIds.length === 0) return;
         const { data } = await supabase.from('history')
@@ -116,7 +116,7 @@ export function SocialProvider({ children }) {
     }, [user, loadFriends, loadNotifications, loadCollections]);
 
     useEffect(() => {
-        if (user && friends.length > 0) loadFriendsActivity(user.id);
+        if (user && friends.length > 0) loadFriendsActivity();
     }, [user, friends, loadFriendsActivity]);
 
     useEffect(() => {
@@ -133,7 +133,7 @@ export function SocialProvider({ children }) {
         unreadNotifCount, loadFriends, loadFriendProfile, loadNotifications, loadCollections,
         saveCollection, deleteCollection, acceptFriend, declineFriend, sendFriendRequest, searchUser,
         setViewingFriend,
-    }), [friends, friendRequests, friendsActivity, notifications, collections, viewingFriend, friendData, friendSearch, searchResult, unreadNotifCount]);
+    }), [friends, friendRequests, friendsActivity, notifications, collections, viewingFriend, friendData, friendSearch, searchResult, unreadNotifCount, loadFriends, loadFriendProfile, loadNotifications, loadCollections, saveCollection, deleteCollection, acceptFriend, declineFriend, sendFriendRequest, searchUser]);
 
     return <SocialContext.Provider value={value}>{children}</SocialContext.Provider>;
 }

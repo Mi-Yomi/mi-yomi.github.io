@@ -116,6 +116,8 @@
 .collection-modal-header { padding: calc(var(--safe-top) + 16px) 16px 16px; display: flex; align-items: center; gap: 12px; }
 .collection-add-menu { position: fixed; bottom: 0; left: 0; right: 0; z-index: 320; background: var(--surface); border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 20px 16px calc(var(--safe-bottom) + 20px); animation: slideUp 0.3s; border: 1px solid var(--border); }
 .collection-add-item { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; cursor: pointer; transition: all 0.15s; }
+.collection-add-item { width: 100%; border: 0; background: transparent; color: var(--text); font-family: inherit; text-align: left; }
+.collection-add-item:disabled { cursor: default; opacity: .65; }
 .collection-add-item:active { background: var(--surface-2); }
 .collection-add-item-icon { font-size: 20px; }
 .collection-add-item-name { font-size: 14px; font-weight: 700; flex: 1; }
@@ -130,6 +132,7 @@
 .notif-mark-all { font-size: 12px; color: var(--accent); font-weight: 700; cursor: pointer; background: none; border: none; font-family: inherit; }
 .notif-list { padding: 0 16px; }
 .notif-item { display: flex; gap: 12px; padding: 14px; border-radius: 14px; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+.notif-item { width: 100%; color: var(--text); font-family: inherit; text-align: left; }
 .notif-item.unread { background: rgba(229,9,20,0.06); border-color: rgba(229,9,20,0.15); }
 .notif-item:active { transform: scale(0.98); }
 .notif-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }

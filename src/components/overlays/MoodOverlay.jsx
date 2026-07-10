@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import Card from '../common/Card.jsx';
+import useDialogFocus from '../../hooks/useDialogFocus.js';
 
 export default function MoodOverlay() {
   const {
@@ -20,16 +22,18 @@ export default function MoodOverlay() {
     MOOD_MAP,
     openDetails,
   } = useApp();
+  const dialogRef = useRef(null);
+  useDialogFocus(moodOpen, dialogRef);
 
   if (!moodOpen) {
     return null;
   }
 
   return (
-    <div className="mood-overlay">
+    <div ref={dialogRef} className="mood-overlay" role="dialog" aria-modal="true" aria-labelledby="mood-dialog-title" tabIndex={-1}>
             <div className="mood-header">
-                <button className="mood-close" onClick={() => setMoodOpen(false)}>{I.x}</button>
-                <span style={{fontSize:16,fontWeight:800,display:'flex',alignItems:'center',gap:6}}>{I.target} Что посмотреть?</span>
+                <button className="mood-close" onClick={() => setMoodOpen(false)} aria-label="Закрыть подбор">{I.x}</button>
+                <span id="mood-dialog-title" style={{fontSize:16,fontWeight:800,display:'flex',alignItems:'center',gap:6}}>{I.target} Что посмотреть?</span>
             </div>
 
             {moodStep === 0 && (
@@ -38,10 +42,10 @@ export default function MoodOverlay() {
                     <div className="mood-step-sub">Выберите что вам сейчас хочется</div>
                     <div className="mood-grid">
                         {[{id:'fun',emoji:'😂',label:'Весело'},{id:'scary',emoji:'😱',label:'Страшно'},{id:'sad',emoji:'😢',label:'Грустно'},{id:'tense',emoji:'😤',label:'Напряжённо'},{id:'romantic',emoji:'❤️',label:'Романтика'},{id:'epic',emoji:'🔥',label:'Эпик'}].map(m => (
-                            <div key={m.id} className={`mood-card ${moodMood === m.id ? 'selected' : ''}`} onClick={() => { setMoodMood(m.id); setMoodStep(1); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
+                            <button key={m.id} className={`mood-card ${moodMood === m.id ? 'selected' : ''}`} aria-pressed={moodMood === m.id} onClick={() => { setMoodMood(m.id); setMoodStep(1); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
                                 <div className="mood-card-emoji">{m.emoji}</div>
                                 <div className="mood-card-label">{m.label}</div>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 </>
@@ -53,10 +57,10 @@ export default function MoodOverlay() {
                     <div className="mood-step-sub">Выберите формат</div>
                     <div className="mood-grid">
                         {[{id:'movie',icon:I.film,label:'Фильм'},{id:'tv',icon:I.tv,label:'Сериал'}].map(t => (
-                            <div key={t.id} className={`mood-card ${moodType === t.id ? 'selected' : ''}`} onClick={() => { setMoodType(t.id); setMoodStep(2); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
+                            <button key={t.id} className={`mood-card ${moodType === t.id ? 'selected' : ''}`} aria-pressed={moodType === t.id} onClick={() => { setMoodType(t.id); setMoodStep(2); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
                                 <div className="mood-card-emoji mood-card-icon">{t.icon}</div>
                                 <div className="mood-card-label">{t.label}</div>
-                            </div>
+                            </button>
                         ))}
                     </div>
                     <button className="mood-back" onClick={() => setMoodStep(0)}>{I.back} Назад</button>
@@ -70,10 +74,10 @@ export default function MoodOverlay() {
                     {moodType === 'movie' ? (
                         <div className="mood-grid">
                             {[{id:'short',icon:I.zap,label:'До 90 мин'},{id:'medium',icon:I.target,label:'90-120 мин'},{id:'long',icon:I.clock,label:'120+ мин'},{id:'any',icon:I.shuffle,label:'Без разницы'}].map(d => (
-                                <div key={d.id} className="mood-card" onClick={() => { setMoodDuration(d.id); fetchMoodResults(); tg?.HapticFeedback?.impactOccurred?.('medium'); }}>
+                                <button key={d.id} className="mood-card" onClick={() => { setMoodDuration(d.id); fetchMoodResults(); tg?.HapticFeedback?.impactOccurred?.('medium'); }}>
                                     <div className="mood-card-emoji mood-card-icon">{d.icon}</div>
                                     <div className="mood-card-label">{d.label}</div>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     ) : <div style={{textAlign:'center',padding:20}}><button className="filter-apply" style={{width:'100%'}} onClick={fetchMoodResults}>{moodLoading ? 'Подбираем...' : <>{I.search} Подобрать</>}</button></div>}

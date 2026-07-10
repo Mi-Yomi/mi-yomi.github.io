@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
 import { LIBRARY_STATUSES } from '../lib/libraryStatuses';
 import { MOOD_MAP } from '../lib/utils';
-import { getStoredProgress } from '../lib/utils';
 
 const DataContext = createContext(null);
 
@@ -199,7 +198,7 @@ export function DataProvider({ children }) {
         toggleFavorite, toggleWatchlist, setItemStatus, getItemStatus, addToHistory,
         loadCatalog, loadUserData, loadForYou, fetchMoodResults, loadCuratedLists,
         sortItems, libraryByStatus, libraryCounts,
-    }), [trending, popular, topRated, tvPopular, tvTop, tvOnAir, animeMovies, animeSeries, upcoming, forYou, favorites, history, watchlist, reviews, library, curatedLists, dataLoading, toggleFavorite, toggleWatchlist, setItemStatus, getItemStatus, addToHistory, sortItems, libraryByStatus, libraryCounts]);
+    }), [trending, popular, topRated, tvPopular, tvTop, tvOnAir, animeMovies, animeSeries, upcoming, forYou, favorites, history, watchlist, reviews, library, curatedLists, dataLoading, toggleFavorite, toggleWatchlist, setItemStatus, getItemStatus, addToHistory, sortItems, libraryByStatus, libraryCounts, loadCatalog, loadUserData, loadForYou, fetchMoodResults, loadCuratedLists]);
 
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

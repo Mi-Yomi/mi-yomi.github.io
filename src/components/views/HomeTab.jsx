@@ -21,11 +21,13 @@ export default function HomeTab() {
 
   return (
     <div className="tab-content">
+        <h1 className="sr-only">HADES Cinema — фильмы, сериалы, аниме и манга</h1>
         <HeroCarousel />
 
         <div className="genre-chips">
             {HOME_GENRES.map(g => (
                 <button key={g.id} className={`genre-chip ${homeGenre === g.id ? 'active' : ''}`}
+                    aria-pressed={homeGenre === g.id}
                     onClick={() => { setHomeGenre(g.id); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
                     {g.label}
                 </button>

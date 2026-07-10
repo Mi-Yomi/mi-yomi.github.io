@@ -17,6 +17,17 @@ export function AuthProvider({ children }) {
         return userProfile.status === 'approved';
     }, [userProfile, isAdmin]);
 
+    const loadProfile = useCallback(async (userId, email) => {
+        let { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+        if (!data) {
+            const username = email ? email.split('@')[0] : 'User';
+            const tag = Math.floor(1000 + Math.random() * 9000).toString();
+            const { data: np } = await supabase.from('profiles').insert({ id: userId, email, username, tag, status: 'pending' }).select().single();
+            data = np;
+        }
+        if (data) setUserProfile(data);
+    }, []);
+
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
@@ -39,18 +50,7 @@ export function AuthProvider({ children }) {
             }
         });
         return () => subscription.unsubscribe();
-    }, []);
-
-    const loadProfile = useCallback(async (userId, email) => {
-        let { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-        if (!data) {
-            const username = email ? email.split('@')[0] : 'User';
-            const tag = Math.floor(1000 + Math.random() * 9000).toString();
-            const { data: np } = await supabase.from('profiles').insert({ id: userId, email, username, tag, status: 'pending' }).select().single();
-            data = np;
-        }
-        if (data) setUserProfile(data);
-    }, []);
+    }, [loadProfile]);
 
     const logout = useCallback(async () => {
         await supabase.auth.signOut();

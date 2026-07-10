@@ -1,13 +1,16 @@
 import { memo, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { IMG_SM } from '../../lib/config';
 import { ratingColor, GENRE_NAMES } from '../../lib/utils';
+import { useData } from '../../providers/DataProvider';
 import { theme } from '../../theme';
 
-const MediaCard = memo(function MediaCard({ item, width = 140, compact }) {
+const MediaCard = memo(function MediaCard({ item, width = 140 }) {
     const router = useRouter();
+    const { favorites, toggleFavorite, watchlist, toggleWatchlist } = useData();
     const year = (item.release_date || item.first_air_date || '').split('-')[0];
     const rating = item.vote_average?.toFixed(1);
     const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
@@ -20,11 +23,27 @@ const MediaCard = memo(function MediaCard({ item, width = 140, compact }) {
         router.push(`/details/${type}/${item.id}`);
     }, [item.id, type, router]);
 
+    // Long-press: favorite / watchlist without opening the details screen.
+    const handleLongPress = useCallback(() => {
+        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+        const isFav = favorites?.some(f => f.item_id === String(item.id));
+        const inList = watchlist?.some(w => w.item_id === String(item.id));
+        Alert.alert(item.title || item.name || '', 'Быстрые действия', [
+            { text: isFav ? '💔 Убрать из избранного' : '❤️ В избранное', onPress: () => toggleFavorite(item, type) },
+            { text: inList ? '✂️ Убрать из «Буду смотреть»' : '🔖 Буду смотреть', onPress: () => toggleWatchlist(item, type) },
+            { text: 'Отмена', style: 'cancel' },
+        ]);
+    }, [item, type, favorites, watchlist, toggleFavorite, toggleWatchlist]);
+
     return (
-        <Pressable onPress={handlePress} style={({ pressed }) => [styles.card, { width }, pressed && styles.pressed]}>
+        <Pressable onPress={handlePress} onLongPress={handleLongPress}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.title || item.name}. ${typeLabel}${year ? `, ${year}` : ''}${rating ? `, рейтинг ${rating}` : ''}`}
+            accessibilityHint="Нажмите, чтобы открыть. Удерживайте для быстрых действий"
+            style={({ pressed }) => [styles.card, { width }, pressed && styles.pressed]}>
             <View style={[styles.posterWrap, { width }]}>
                 {item.poster_path ? (
-                    <Image source={{ uri: `${IMG_SM}${item.poster_path}` }} style={styles.poster} contentFit="cover" transition={300} placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }} />
+                    <Image source={{ uri: `${IMG_SM}${item.poster_path}` }} style={styles.poster} contentFit="cover" transition={300} cachePolicy="memory-disk" placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }} />
                 ) : (
                     <View style={[styles.poster, styles.placeholder]}><Text style={styles.placeholderText}>{item.title || item.name}</Text></View>
                 )}

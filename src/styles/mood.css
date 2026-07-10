@@ -30,7 +30,7 @@
 .mood-step-title { font-size: 22px; font-weight: 900; padding: 0 16px; margin-bottom: 8px; }
 .mood-step-sub { font-size: 13px; color: var(--text-secondary); padding: 0 16px; margin-bottom: 24px; }
 .mood-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px; }
-.mood-card { padding: 24px 16px; border-radius: 18px; background: var(--surface); border: 2px solid var(--border); text-align: center; cursor: pointer; transition: all 0.2s; }
+.mood-card { width: 100%; padding: 24px 16px; border-radius: 18px; background: var(--surface); border: 2px solid var(--border); color: var(--text); font-family: inherit; text-align: center; cursor: pointer; transition: all 0.2s; }
 .mood-card:active { transform: scale(0.95); }
 .mood-card.selected { border-color: var(--accent); background: rgba(229,9,20,0.1); }
 .mood-card-emoji { font-size: 36px; margin-bottom: 8px; }

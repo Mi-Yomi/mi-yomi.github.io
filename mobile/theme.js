@@ -14,7 +14,8 @@ export const theme = {
     cyan: '#00bcd4',
     text: '#ffffff',
     textSecondary: '#b3b3b3',
-    textMuted: '#666666',
+    // Keeps secondary labels readable on #0a0a0a (WCAG AA for normal text).
+    textMuted: '#8a8a8a',
     border: 'rgba(255,255,255,0.08)',
     glass: 'rgba(20,20,20,0.85)',
     radius: { sm: 8, md: 12, lg: 16, xl: 20, full: 9999 },
