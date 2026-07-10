@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { I } from '../../lib/icons.jsx';
 import { anixartFindRelease, anixartComments } from '../../lib/api/anixart.js';
+import { activateOnKeyboard } from '../../lib/a11y.js';
 
 /**
  * Anixart discussion for anime — finds the release by title and shows the top
@@ -27,6 +28,7 @@ export default function AnixartComments({ media }) {
             setStatus(list.length ? 'ready' : 'hidden');
         })();
         return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- re-search only when the title actually changes, not on object identity churn
     }, [media?.id]);
 
     if (status === 'loading') return <div className="ax-comments-status"><span className="player-tab-dot" /> Загрузка обсуждения с Anixart…</div>;
@@ -50,7 +52,10 @@ export default function AnixartComments({ media }) {
                             </div>
                             {c.likes_count > 0 && <div className="ax-comment-likes">{I.thumbsUp} {c.likes_count}</div>}
                         </div>
-                        <div className={`ax-comment-text ${spoiler ? 'spoiler' : ''}`} onClick={() => spoiler && setRevealed(p => ({ ...p, [c.id]: true }))}>
+                        <div className={`ax-comment-text ${spoiler ? 'spoiler' : ''}`} onClick={() => spoiler && setRevealed(p => ({ ...p, [c.id]: true }))}
+                            onKeyDown={spoiler ? (event) => activateOnKeyboard(event, () => setRevealed(p => ({ ...p, [c.id]: true }))) : undefined}
+                            role={spoiler ? 'button' : undefined} tabIndex={spoiler ? 0 : undefined}
+                            aria-label={spoiler ? 'Показать текст со спойлером' : undefined}>
                             {spoiler ? '⚠ Спойлер — нажмите, чтобы показать' : c.message}
                         </div>
                     </div>

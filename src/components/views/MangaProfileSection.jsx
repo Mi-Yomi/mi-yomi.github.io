@@ -1,6 +1,7 @@
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import { MANGA_STATUSES } from '../../lib/mangaStatuses.js';
+import { activateOnKeyboard } from '../../lib/a11y.js';
 
 function fmtTime(sec) {
     if (!sec) return '0м';
@@ -12,7 +13,9 @@ function fmtTime(sec) {
 
 function MiniCard({ item, onOpen }) {
     return (
-        <div className="manga-card" onClick={() => onOpen({ dir: item.dir, title: item.title, cover: item.cover })} role="button">
+        <div className="manga-card" onClick={() => onOpen({ dir: item.dir, title: item.title, cover: item.cover })}
+            onKeyDown={(event) => activateOnKeyboard(event, () => onOpen({ dir: item.dir, title: item.title, cover: item.cover }))}
+            role="button" tabIndex={0} aria-label={`Открыть ${item.title}`}>
             <div className="manga-card-poster">
                 {item.cover
                     ? <img src={item.cover} alt={item.title} loading="lazy" decoding="async" referrerPolicy="origin" />

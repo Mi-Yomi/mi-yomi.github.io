@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
+import { activateOnKeyboard } from '../../lib/a11y.js';
 
 const FriendsActivity = memo(function FriendsActivity() {
     const { friendsActivity, openDetails, IMG } = useApp();
@@ -11,7 +12,9 @@ const FriendsActivity = memo(function FriendsActivity() {
             <div className="activity-title"><span className="activity-live-dot"></span> Друзья смотрят</div>
             <div className="activity-scroll">
                 {friendsActivity.map((a, i) => (
-                    <div key={i} className="activity-card" onClick={() => openDetails({ id: a.item_id }, a.media_type)}>
+                    <div key={i} className="activity-card" onClick={() => openDetails({ id: a.item_id }, a.media_type)}
+                        onKeyDown={(event) => activateOnKeyboard(event, () => openDetails({ id: a.item_id }, a.media_type))}
+                        role="button" tabIndex={0} aria-label={`Открыть ${a.title}`}>
                         <div className="activity-avatar">
                             {a.profiles?.avatar_url ? <img src={a.profiles.avatar_url} alt="" /> : a.profiles?.username?.[0]?.toUpperCase() || '?'}
                         </div>

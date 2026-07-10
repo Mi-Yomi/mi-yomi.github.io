@@ -192,7 +192,7 @@ export default function usePlayer(user, media, showToast, userApproved, isAnimeC
             }, 100);
             tg?.HapticFeedback?.impactOccurred?.('medium');
         }
-    }, [userApproved, currentSeason, currentEpisode, media, playerLoaded, showToast, tg, loadSkipData, addToHistory]);
+    }, [currentSeason, currentEpisode, media, playerLoaded, tg, loadSkipData, addToHistory]);
 
     const closePlayer = useCallback(() => {
         if (media && addToHistory) {

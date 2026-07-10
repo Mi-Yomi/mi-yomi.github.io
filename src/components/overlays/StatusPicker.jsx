@@ -1,9 +1,13 @@
+import { useRef } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import { LIBRARY_STATUSES } from '../../lib/libraryStatuses.js';
+import useDialogFocus from '../../hooks/useDialogFocus.js';
 
 export default function StatusPicker() {
     const { statusPickerItem, setStatusPickerItem, getItemStatus, setItemStatus } = useApp();
+    const dialogRef = useRef(null);
+    useDialogFocus(Boolean(statusPickerItem), dialogRef);
 
     if (!statusPickerItem) return null;
 
@@ -12,8 +16,8 @@ export default function StatusPicker() {
 
     return (
         <div className="collection-add-menu" onClick={() => setStatusPickerItem(null)}>
-            <div onClick={e => e.stopPropagation()}>
-                <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>
+            <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="status-picker-title" tabIndex={-1} onClick={e => e.stopPropagation()}>
+                <div id="status-picker-title" style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>
                     {statusPickerItem.title || statusPickerItem.name}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>

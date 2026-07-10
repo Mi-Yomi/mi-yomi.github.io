@@ -15,11 +15,9 @@ export default function FriendProfileScreen() {
     const { viewingFriend, friendData, loadFriendProfile, setViewingFriend } = useSocial();
 
     useEffect(() => {
-        if (friendId && viewingFriend?.id !== friendId) {
-            loadFriendProfile({ id: friendId });
-        }
+        if (friendId) loadFriendProfile({ id: friendId });
         return () => setViewingFriend(null);
-    }, [friendId, loadFriendProfile]);
+    }, [friendId, loadFriendProfile, setViewingFriend]);
 
     const friend = viewingFriend || { id: friendId };
     const profile = friendData.profile || friend;

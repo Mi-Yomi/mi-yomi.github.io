@@ -22,7 +22,7 @@ export default function AnimeTab() {
     return (
         <div className="tab-content">
             <div className="anime-header">
-                <div className="anime-header-title">АНИМЕ</div>
+                <h1 className="anime-header-title">АНИМЕ</h1>
                 <div className="anime-header-sub">Лучшее аниме из Японии</div>
             </div>
 
@@ -39,6 +39,7 @@ export default function AnimeTab() {
             <div className="anime-genres">
                 {ANIME_GENRES.map(g => (
                     <button key={g.id} className={`anime-genre ${animeGenre === g.id ? 'active' : ''}`}
+                        aria-pressed={animeGenre === g.id}
                         onClick={() => { setAnimeGenre(g.id); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
                         {g.label}
                     </button>

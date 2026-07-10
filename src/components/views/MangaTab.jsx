@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
+import { activateOnKeyboard } from '../../lib/a11y.js';
 
 function MangaCard({ item, onOpen }) {
     return (
-        <div className="manga-card" onClick={() => onOpen(item)} role="button">
+        <div className="manga-card" onClick={() => onOpen(item)} onKeyDown={(event) => activateOnKeyboard(event, () => onOpen(item))}
+            role="button" tabIndex={0} aria-label={`Открыть ${item.title}`}>
             <div className="manga-card-poster">
                 {item.cover
                     ? <img src={item.cover} alt={item.title} loading="lazy" decoding="async" referrerPolicy="origin" />
@@ -43,11 +45,13 @@ export default function MangaTab() {
 
     return (
         <div className="tab-content manga-tab">
+            <h1 className="sr-only">Манга</h1>
             <div className="manga-search-bar">
                 <span className="manga-search-icon">{I.search}</span>
                 <input
                     className="manga-search-input"
                     placeholder="Поиск манги, манхвы, маньхуа..."
+                    aria-label="Поиск манги, манхвы или маньхуа"
                     value={mangaQuery}
                     onChange={(e) => setMangaQuery(e.target.value)}
                 />
@@ -91,6 +95,7 @@ export default function MangaTab() {
                             <button
                                 key={t.id}
                                 className={`manga-feed-tab ${mangaFeedTab === t.id ? 'active' : ''}`}
+                                aria-pressed={mangaFeedTab === t.id}
                                 onClick={() => loadMangaFeed(t.id)}
                             >
                                 {t.label}

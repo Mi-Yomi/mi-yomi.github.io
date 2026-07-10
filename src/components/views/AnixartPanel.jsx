@@ -58,6 +58,7 @@ export default function AnixartPanel({ media, onPlay }) {
             setStatus('ready');
         })();
         return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- re-search only when the title actually changes, not on object identity churn
     }, [media?.id]);
 
     // active release (season) -> voiceovers, auto-select the first

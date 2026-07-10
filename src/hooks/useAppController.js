@@ -1,3 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps -- the orchestrator wires domain
+ * hooks with intentionally narrowed effect deps: domain objects (ui, content,
+ * details, …) are rebuilt every render, so depending on them verbatim would
+ * re-run one-shot effects on each render. Effects list the primitive values
+ * they actually react to. */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { IMG, BACKDROP, TMDB_KEY } from '../lib/config.js';
 import { I } from '../lib/icons.jsx';
@@ -24,7 +29,7 @@ export default function useAppController() {
     const auth = useAuth();
     const ui = useUI();
     const content = useContent(auth.user, ui.showToast);
-    const details = useDetails();
+    const details = useDetails(auth.devBypass);
     const player = usePlayer(auth.user, details.media, ui.showToast, auth.userApproved, details.isAnimeContent, details.animeData, content.addToHistory);
     const search = useSearch(ui.showToast);
     const social = useSocial(auth.user, ui.showToast);
@@ -35,6 +40,13 @@ export default function useAppController() {
 
     const syncWithDB = useCallback(async (userId, email) => {
         auth.setLoading(true);
+        // The development bypass deliberately has no backend session. Load the
+        // public catalog only instead of issuing a burst of guaranteed 401s.
+        if (auth.devBypass) {
+            await content.loadData();
+            auth.setLoading(false);
+            return;
+        }
         try {
             await auth.loadUserProfile(userId, email);
             await Promise.race([
@@ -83,7 +95,7 @@ export default function useAppController() {
         }
         const [type, id] = parts;
         if (id) details.openDetails({ id }, type, { skipPush: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, []);
 
     // Back / forward (browser button, Android hardware back, iOS edge-swipe) — close
@@ -137,25 +149,25 @@ export default function useAppController() {
     useEffect(() => {
         if (content.trending.length <= 1) return;
         const max = Math.min(content.trending.length, 5);
-        const timer = setInterval(() => { if (!document.hidden) ui.setHeroIndex(prev => (prev + 1) % max); }, 7000);
+        const timer = setInterval(() => { if (!document.hidden && !details.detailsOpen) ui.setHeroIndex(prev => (prev + 1) % max); }, 7000);
         return () => clearInterval(timer);
-    }, [content.trending]);
+    }, [content.trending, details.detailsOpen]);
 
     useEffect(() => {
         const tvHero = content.tvTrending.length ? content.tvTrending : content.tvPopular;
         if (tvHero.length <= 1) return;
         const max = Math.min(tvHero.length, 5);
-        const timer = setInterval(() => { if (!document.hidden) ui.setTvHeroIndex(prev => (prev + 1) % max); }, 8000);
+        const timer = setInterval(() => { if (!document.hidden && !details.detailsOpen) ui.setTvHeroIndex(prev => (prev + 1) % max); }, 8000);
         return () => clearInterval(timer);
-    }, [content.tvTrending, content.tvPopular]);
+    }, [content.tvTrending, content.tvPopular, details.detailsOpen]);
 
     useEffect(() => {
         const allAnime = [...content.animeSeries, ...content.animeMovies];
         if (allAnime.length <= 1) return;
         const max = Math.min(allAnime.length, 5);
-        const timer = setInterval(() => { if (!document.hidden) ui.setAnimeHeroIndex(prev => (prev + 1) % max); }, 9000);
+        const timer = setInterval(() => { if (!document.hidden && !details.detailsOpen) ui.setAnimeHeroIndex(prev => (prev + 1) % max); }, 9000);
         return () => clearInterval(timer);
-    }, [content.animeSeries, content.animeMovies]);
+    }, [content.animeSeries, content.animeMovies, details.detailsOpen]);
 
     const animeRef = useRef(null);
     useEffect(() => {

@@ -51,6 +51,7 @@
     width: 28px; height: 28px; padding: 0; transition: color 0.2s;
 }
 .auth-password-toggle:hover { color: var(--text); }
+.auth-switch button { background: none; border: 0; padding: 4px; color: var(--accent); font: inherit; font-weight: 800; cursor: pointer; }
 .auth-password-toggle svg { width: 18px; height: 18px; }
 .auth-error { background: rgba(229, 9, 20, 0.15); border: 1px solid var(--accent); border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: #ff6b6b; }
 .auth-success { background: rgba(0, 200, 83, 0.15); border: 1px solid var(--green); border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: var(--green); }
@@ -83,6 +84,9 @@
     transition: border-color 0.2s;
 }
 .modal-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(229,9,20,0.1); }
+.review-rating-grid { display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); gap: 6px; margin-bottom: 20px; }
+.review-rating-btn { min-width: 44px; height: 44px; border-radius: 10px; border: none; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; transition: transform .15s, filter .15s; }
+.review-rating-btn:active { transform: scale(.94); }
 .modal-textarea::placeholder { color: var(--text-muted); }
 .modal-actions { display: flex; gap: 10px; }
 .modal-btn {

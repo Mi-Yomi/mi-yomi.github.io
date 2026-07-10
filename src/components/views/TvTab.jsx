@@ -21,7 +21,7 @@ export default function TvTab() {
     return (
         <div className="tab-content">
             <div className="tv-header">
-                <div className="tv-header-title">СЕРИАЛЫ</div>
+                <h1 className="tv-header-title">СЕРИАЛЫ</h1>
                 <div className="tv-header-sub">Лучшие сериалы со всего мира</div>
             </div>
 
@@ -38,6 +38,7 @@ export default function TvTab() {
             <div className="tv-genres">
                 {TV_GENRES.map(g => (
                     <button key={g.id} className={`tv-genre ${tvGenre === g.id ? 'active' : ''}`}
+                        aria-pressed={tvGenre === g.id}
                         onClick={() => { setTvGenre(g.id); tg?.HapticFeedback?.impactOccurred?.('light'); }}>
                         {g.label}
                     </button>

@@ -8,24 +8,24 @@ const ProfileHeader = memo(function ProfileHeader() {
         <>
             <div className="profile-header">
                 <div className="profile-cover" style={{ backgroundImage: userProfile?.cover_url ? `url(${userProfile.cover_url})` : '' }}>
-                    <label className="profile-cover-edit">📷 <input type="file" accept="image/*" hidden onChange={e => handleProfileImage(e, 'cover')} /></label>
+                        <label className="profile-cover-edit" aria-label="Изменить обложку профиля">📷 <input type="file" accept="image/*" hidden onChange={e => handleProfileImage(e, 'cover')} /></label>
                 </div>
                 <div className="profile-user">
                     <div className="profile-avatar-wrap">
                         {userProfile?.avatar_url ? <img src={userProfile.avatar_url} className="profile-avatar" alt="Ваш аватар" /> : <div className="profile-avatar-placeholder">{user.email[0].toUpperCase()}</div>}
-                        <label className="profile-avatar-edit">📷 <input type="file" accept="image/*" hidden onChange={e => handleProfileImage(e, 'avatar')} /></label>
+                        <label className="profile-avatar-edit" aria-label="Изменить аватар">📷 <input type="file" accept="image/*" hidden onChange={e => handleProfileImage(e, 'avatar')} /></label>
                     </div>
                     <div className="profile-info">
-                        <div className="profile-name" onClick={() => setNameEditOpen(true)}>{userProfile?.username} {I.edit}</div>
+                        <button className="profile-name" onClick={() => setNameEditOpen(true)} aria-label="Изменить имя профиля">{userProfile?.username} {I.edit}</button>
                         <div className="profile-tag">#{userProfile?.tag}</div>
                     </div>
                 </div>
             </div>
             <div className="profile-stats">
-                <div className="profile-stat" onClick={() => setProfileTab('favorites')}><div className="profile-stat-num">{favCount}</div><div className="profile-stat-label">Избранное</div></div>
-                <div className="profile-stat" onClick={() => setProfileTab('history')}><div className="profile-stat-num">{histCount}</div><div className="profile-stat-label">Просмотрено</div></div>
-                <div className="profile-stat" onClick={() => setProfileTab('reviews')}><div className="profile-stat-num">{revCount}</div><div className="profile-stat-label">Отзывы</div></div>
-                <div className="profile-stat" onClick={() => setProfileTab('friends')}><div className="profile-stat-num">{friends.length}</div><div className="profile-stat-label">Друзья</div></div>
+                <button className="profile-stat" onClick={() => setProfileTab('favorites')}><span className="profile-stat-num">{favCount}</span><span className="profile-stat-label">Избранное</span></button>
+                <button className="profile-stat" onClick={() => setProfileTab('history')}><span className="profile-stat-num">{histCount}</span><span className="profile-stat-label">Просмотрено</span></button>
+                <button className="profile-stat" onClick={() => setProfileTab('reviews')}><span className="profile-stat-num">{revCount}</span><span className="profile-stat-label">Отзывы</span></button>
+                <button className="profile-stat" onClick={() => setProfileTab('friends')}><span className="profile-stat-num">{friends.length}</span><span className="profile-stat-label">Друзья</span></button>
             </div>
         </>
     );

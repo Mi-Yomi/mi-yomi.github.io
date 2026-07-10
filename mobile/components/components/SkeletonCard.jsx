@@ -8,7 +8,7 @@ const SkeletonCard = memo(function SkeletonCard() {
 
     useEffect(() => {
         opacity.value = withRepeat(withTiming(1, { duration: 800 }), -1, true);
-    }, []);
+    }, [opacity]);
 
     const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 

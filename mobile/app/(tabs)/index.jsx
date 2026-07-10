@@ -1,9 +1,12 @@
-import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useData } from '../../providers/DataProvider';
 import { useSocial } from '../../providers/SocialProvider';
+import { useManga } from '../../providers/MangaProvider';
+import MangaContinueCard from '../../components/components/MangaContinueCard';
 import HeroCarousel from '../../components/components/HeroCarousel';
 import Section from '../../components/components/Section';
 import ContinueCard from '../../components/components/ContinueCard';
@@ -16,10 +19,19 @@ import { HOME_GENRES } from '../../lib/utils';
 export default function HomeScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { trending, popular, topRated, favorites, history, watchlist, upcoming, forYou, curatedLists, dataLoading, toggleWatchlist } = useData();
+    const { trending, popular, topRated, history, watchlist, upcoming, forYou, curatedLists, dataLoading, toggleWatchlist, loadCatalog } = useData();
     const { friendsActivity } = useSocial();
+    const { continueReading } = useManga();
     const [homeGenre, setHomeGenre] = useState('all');
     const [randomSpinning, setRandomSpinning] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const scrollRef = useRef(null);
+    useScrollToTop(scrollRef);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try { await loadCatalog(); } finally { setRefreshing(false); }
+    }, [loadCatalog]);
 
     const filteredPopular = homeGenre === 'all' ? popular : (popular || []).filter(m => (m.genre_ids || []).includes(Number(homeGenre)));
     const filteredTopRated = homeGenre === 'all' ? topRated : (topRated || []).filter(m => (m.genre_ids || []).includes(Number(homeGenre)));
@@ -37,7 +49,12 @@ export default function HomeScreen() {
     }, [trending, popular, router]);
 
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView
+            ref={scrollRef}
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
+        >
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <Text style={styles.logo}>🎬 HADES</Text>
                 <Pressable onPress={() => router.push('/search')} style={styles.searchBtn}>
@@ -66,6 +83,17 @@ export default function HomeScreen() {
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
                         {history.slice(0, 10).map(h => (
                             <ContinueCard key={h.item_id} item={{ ...h, id: h.item_id }} />
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
+
+            {continueReading?.length > 0 && (
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>📖 Продолжить чтение</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+                        {continueReading.slice(0, 6).map(p => (
+                            <MangaContinueCard key={p.dir} pointer={p} />
                         ))}
                     </ScrollView>
                 </View>

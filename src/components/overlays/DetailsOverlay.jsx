@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import InlinePlayer from '../views/InlinePlayer.jsx';
 import AnixartComments from '../views/AnixartComments.jsx';
+import useDialogFocus from '../../hooks/useDialogFocus.js';
 
 // One review card: author, rating, text, like/dislike with counts, own
 // edit/delete, and an expandable flat comment thread with per-comment likes.
@@ -188,6 +189,8 @@ export default function DetailsOverlay() {
   // Always start a freshly-opened title at the top (the overlay scrolls internally,
   // so without this it would keep the previous title's scroll position).
   const overlayRef = useRef(null);
+  const backRef = useRef(null);
+  useDialogFocus(detailsOpen, overlayRef, backRef);
   useEffect(() => {
     if (detailsOpen && overlayRef.current) overlayRef.current.scrollTop = 0;
   }, [media?.id, detailsOpen]);
@@ -195,11 +198,12 @@ export default function DetailsOverlay() {
   return (
     // inert: the closed overlay is only translated off-screen, so without it the
     // hidden screen stays reachable for Tab focus and screen readers.
-    <div ref={overlayRef} className={`overlay ${detailsOpen ? 'open' : ''}`} inert={detailsOpen ? undefined : ''}>
+    <div ref={overlayRef} className={`overlay ${detailsOpen ? 'open' : ''}`} role="dialog" aria-modal="true"
+        aria-labelledby={media ? 'details-title' : undefined} tabIndex={-1} inert={detailsOpen ? undefined : ''}>
         {media && (
             <>
                 <div className="details-backdrop" style={{ backgroundImage: `url(${BACKDROP}${media.backdrop_path})` }}>
-                    <button className="details-back" onClick={goBackFromDetails} aria-label="Назад">{I.back}</button>
+                    <button ref={backRef} className="details-back" onClick={goBackFromDetails} aria-label="Назад">{I.back}</button>
                     <button className="details-share" aria-label="Поделиться" onClick={async (e) => {
                         e.stopPropagation();
                         const url = `${window.location.origin}${window.location.pathname}#${media.media_type}/${media.id}`;
@@ -219,7 +223,7 @@ export default function DetailsOverlay() {
                     <div className="dov-head">
                     <div className="details-top-row">
                         <div className="details-top-info">
-                            <h1 className="details-title">{media.title || media.name}</h1>
+                            <h1 className="details-title" id="details-title">{media.title || media.name}</h1>
                             {media.original_title && media.original_title !== (media.title || media.name) && (
                                 <div className="details-original-title">{media.original_title || media.original_name}</div>
                             )}
@@ -344,7 +348,7 @@ export default function DetailsOverlay() {
                             <div className="details-overview-section">
                                 <div className="details-section-label">{I.info} Описание</div>
                                 <p className={`details-overview ${!overviewExpanded && isLong ? 'details-overview-short' : ''}`}>{media.overview}</p>
-                                {isLong && <div className="details-overview-toggle" onClick={() => setOverviewExpanded(!overviewExpanded)}>{overviewExpanded ? 'Свернуть' : 'Читать далее'}</div>}
+                                {isLong && <button className="details-overview-toggle" aria-expanded={overviewExpanded} onClick={() => setOverviewExpanded(!overviewExpanded)}>{overviewExpanded ? 'Свернуть' : 'Читать далее'}</button>}
                             </div>
                         );
                     })()}

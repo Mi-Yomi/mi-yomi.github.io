@@ -2,6 +2,7 @@ import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import Card from '../common/Card.jsx';
 import { MANGA_STATUS_MAP } from '../../lib/mangaStatuses.js';
+import { activateOnKeyboard } from '../../lib/a11y.js';
 
 export default function FriendProfileView() {
   const {
@@ -99,7 +100,9 @@ export default function FriendProfileView() {
                         const rCls = r.rating >= 7 ? 'high' : r.rating >= 5 ? 'mid' : 'low';
                         return (
                             <div key={r.id || r.created_at} className="friend-review-card">
-                                <div className="friend-review-top" onClick={() => openDetails({ id: r.movie_id || r.item_id }, r.media_type || 'movie')}>
+                                <div className="friend-review-top" onClick={() => openDetails({ id: r.movie_id || r.item_id }, r.media_type || 'movie')}
+                                    onKeyDown={(event) => activateOnKeyboard(event, () => openDetails({ id: r.movie_id || r.item_id }, r.media_type || 'movie'))}
+                                    role="button" tabIndex={0} aria-label={`Открыть ${r.title}`}>
                                     {r.poster_path ? <img className="friend-review-poster" src={`${IMG}${r.poster_path}`} alt="" /> : <div className="friend-review-poster-ph">{I.film}</div>}
                                     <div className="friend-review-info">
                                         <div className="friend-review-title">{r.title}</div>
@@ -108,7 +111,7 @@ export default function FriendProfileView() {
                                     </div>
                                 </div>
                                 <div className="friend-review-body">{r.content}</div>
-                                <div className="friend-review-action" onClick={() => openDetails({ id: r.movie_id || r.item_id }, r.media_type || 'movie')}>{I.play} Посмотреть самому</div>
+                                <button className="friend-review-action" onClick={() => openDetails({ id: r.movie_id || r.item_id }, r.media_type || 'movie')}>{I.play} Посмотреть самому</button>
                             </div>
                         );
                     })
@@ -117,7 +120,9 @@ export default function FriendProfileView() {
             {ft === 'manga' && (
                 <div className="manga-grid">
                     {manga.map((m) => (
-                        <div key={m.dir} className="manga-card" role="button" onClick={() => openManga({ dir: m.dir, title: m.title, cover: m.cover })}>
+                        <div key={m.dir} className="manga-card" role="button" tabIndex={0} aria-label={`Открыть ${m.title}`}
+                            onClick={() => openManga({ dir: m.dir, title: m.title, cover: m.cover })}
+                            onKeyDown={(event) => activateOnKeyboard(event, () => openManga({ dir: m.dir, title: m.title, cover: m.cover }))}>
                             <div className="manga-card-poster">
                                 {m.cover
                                     ? <img src={m.cover} alt={m.title} loading="lazy" referrerPolicy="origin" />

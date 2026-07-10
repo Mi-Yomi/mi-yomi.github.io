@@ -18,6 +18,7 @@ export default function ContinueSection({ title, icon, items, onSelect, getProgr
             const bStored = getProgress ? getProgress(b.item_id || b.id) : null;
             return (bStored?.ts || 0) - (aStored?.ts || 0);
         }).slice(0, 5);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` deliberately invalidates the memo (progress lives outside React state)
     }, [items, getProgress, version]);
 
     if (!activeItems.length) return null;

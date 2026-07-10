@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useData } from '../../providers/DataProvider';
@@ -33,8 +34,16 @@ function AnimeGenreChip({ label, active, onPress }) {
 export default function AnimeScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { animeMovies, animeSeries, dataLoading } = useData();
+    const { animeMovies, animeSeries, dataLoading, loadCatalog } = useData();
     const [animeGenre, setAnimeGenre] = useState('all');
+    const [refreshing, setRefreshing] = useState(false);
+    const scrollRef = useRef(null);
+    useScrollToTop(scrollRef);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try { await loadCatalog(); } finally { setRefreshing(false); }
+    }, [loadCatalog]);
 
     const animeHeroItems = useMemo(
         () => [...(animeSeries || []), ...(animeMovies || [])].filter(a => a.backdrop_path).slice(0, 5),
@@ -56,7 +65,12 @@ export default function AnimeScreen() {
     }, [animeMovies, genreId]);
 
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView
+            ref={scrollRef}
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
+        >
             <Animated.View entering={FadeIn.duration(280).delay(50)} style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <Text style={styles.logo}>🎌 Аниме</Text>
                 <Pressable onPress={() => router.push('/search')} style={styles.searchBtn}>

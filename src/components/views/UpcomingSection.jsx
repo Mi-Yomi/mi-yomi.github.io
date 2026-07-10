@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import ScrollRow from '../common/ScrollRow.jsx';
+import { activateOnKeyboard } from '../../lib/a11y.js';
 
 const UpcomingSection = memo(function UpcomingSection() {
     const { upcoming, IMG, watchlist, toggleWatchlist, openDetails } = useApp();
@@ -16,8 +17,10 @@ const UpcomingSection = memo(function UpcomingSection() {
                     const daysUntil = Math.ceil((new Date(m.release_date) - new Date()) / (1000 * 60 * 60 * 24));
                     const inWatchlist = watchlist.some(w => w.item_id === String(m.id));
                     return (
-                        <div key={m.id} className="upcoming-card" onClick={() => openDetails(m, 'movie')}>
-                            {m.poster_path && <img className="upcoming-poster" src={`${IMG}${m.poster_path}`} alt="" loading="lazy" />}
+                        <div key={m.id} className="upcoming-card" onClick={() => openDetails(m, 'movie')}
+                            onKeyDown={(event) => activateOnKeyboard(event, () => openDetails(m, 'movie'))}
+                            role="button" tabIndex={0} aria-label={`Открыть ${m.title}`}>
+                            {m.poster_path && <img className="upcoming-poster" src={`${IMG}${m.poster_path}`} alt="" loading="lazy" decoding="async" />}
                             <div className="upcoming-countdown">{daysUntil <= 0 ? 'Уже вышел' : `${daysUntil} дн.`}</div>
                             <button className={`upcoming-remind ${inWatchlist ? 'active' : ''}`} onClick={e => { e.stopPropagation(); toggleWatchlist(m, 'movie'); }} aria-label={inWatchlist ? 'Убрать из «Буду смотреть»' : 'Напомнить о выходе'} aria-pressed={inWatchlist}>
                                 {inWatchlist ? I.check : I.bell}

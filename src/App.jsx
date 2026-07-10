@@ -1,18 +1,18 @@
 import { lazy, Suspense } from 'react';
 import { useApp } from './context/AppContext.jsx';
 import ErrorBoundary from './components/common/ErrorBoundary.jsx';
-import Auth from './components/common/Auth.jsx';
 import AppHeader from './components/layout/AppHeader.jsx';
 import BottomNav from './components/layout/BottomNav.jsx';
 import GlobalUi from './components/layout/GlobalUi.jsx';
 import PendingScreen from './components/screens/PendingScreen.jsx';
 import HomeTab from './components/views/HomeTab.jsx';
-import TvTab from './components/views/TvTab.jsx';
-import AnimeTab from './components/views/AnimeTab.jsx';
-import MangaTab from './components/views/MangaTab.jsx';
-import ProfileTab from './components/views/ProfileTab.jsx';
-import FriendProfileView from './components/views/FriendProfileView.jsx';
 
+const Auth = lazy(() => import('./components/common/Auth.jsx'));
+const TvTab = lazy(() => import('./components/views/TvTab.jsx'));
+const AnimeTab = lazy(() => import('./components/views/AnimeTab.jsx'));
+const MangaTab = lazy(() => import('./components/views/MangaTab.jsx'));
+const ProfileTab = lazy(() => import('./components/views/ProfileTab.jsx'));
+const FriendProfileView = lazy(() => import('./components/views/FriendProfileView.jsx'));
 const SearchOverlay = lazy(() => import('./components/overlays/SearchOverlay.jsx'));
 const DetailsOverlay = lazy(() => import('./components/overlays/DetailsOverlay.jsx'));
 const ReviewModal = lazy(() => import('./components/overlays/ReviewModal.jsx'));
@@ -29,37 +29,60 @@ function OverlayFallback() {
     return null;
 }
 
+function FullScreenLoader() {
+    return <div className="loader" role="status" aria-label="Загрузка"><div className="loader-spin"></div><div className="loader-brand">HADES</div></div>;
+}
+
+function TabFallback() {
+    return <div className="tab-loading" role="status"><div className="loader-spin"></div><span>Загружаем раздел…</span></div>;
+}
+
 export default function App() {
-    const { loading, user, userProfile, isAdmin, userApproved, tab, viewingFriend, contentRef, handleContentScroll } = useApp();
+    const {
+        loading, user, userProfile, isAdmin, userApproved, tab, viewingFriend,
+        contentRef, handleContentScroll, searchOpen, detailsOpen, reviewOpen,
+        nameEditOpen, moodOpen, notifOpen, adminOpen, statusPickerItem,
+        addToCollectionItem, collectionModalOpen, mangaTitle, mangaReaderOpen,
+    } = useApp();
 
     if (loading && !user) {
-        return <div className="loader"><div className="loader-spin"></div><div className="loader-brand">HADES</div></div>;
+        return <FullScreenLoader />;
     }
 
     if (!user) {
-        return <Auth />;
+        return <Suspense fallback={<FullScreenLoader />}><Auth /></Suspense>;
     }
 
     if (user && !userProfile) {
-        return <div className="loader"><div className="loader-spin"></div><div className="loader-brand">HADES</div></div>;
+        return <FullScreenLoader />;
     }
 
     if (userProfile && !isAdmin && !userApproved) {
         return <PendingScreen />;
     }
 
+    const overlayOpen = Boolean(
+        searchOpen || detailsOpen || reviewOpen || nameEditOpen || moodOpen || notifOpen ||
+        adminOpen || statusPickerItem || addToCollectionItem || collectionModalOpen ||
+        mangaTitle || mangaReaderOpen
+    );
+
     return (
         <ErrorBoundary>
-            <AppHeader />
-            <main className="content" ref={contentRef} onScroll={handleContentScroll}>
-                {tab === 'home' && <HomeTab />}
-                {tab === 'tv' && <TvTab />}
-                {tab === 'anime' && <AnimeTab />}
-                {tab === 'manga' && <MangaTab />}
-                {tab === 'profile' && !viewingFriend && <ProfileTab />}
-                {viewingFriend && <FriendProfileView />}
-            </main>
-            <BottomNav />
+            <div className="app-shell" inert={overlayOpen ? '' : undefined}>
+                <AppHeader />
+                <main className="content" ref={contentRef} onScroll={handleContentScroll}>
+                    <Suspense fallback={<TabFallback />}>
+                        {tab === 'home' && <HomeTab />}
+                        {tab === 'tv' && <TvTab />}
+                        {tab === 'anime' && <AnimeTab />}
+                        {tab === 'manga' && <MangaTab />}
+                        {tab === 'profile' && !viewingFriend && <ProfileTab />}
+                        {viewingFriend && <FriendProfileView />}
+                    </Suspense>
+                </main>
+                <BottomNav />
+            </div>
             <GlobalUi />
             <Suspense fallback={<OverlayFallback />}>
                 <SearchOverlay />

@@ -31,7 +31,15 @@ async function request(path, body = {}) {
         body: JSON.stringify(body),
     });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) return { data: null, error: { message: json.error || `HTTP ${res.status}`, status: res.status }, count: null };
+    if (!res.ok) {
+        // A session can expire while the SPA is still open. Clear it immediately
+        // so the UI returns to login instead of continuing in a broken half-signed-in state.
+        if (res.status === 401 && t) {
+            setToken('');
+            listeners.forEach(fn => fn('SIGNED_OUT', null));
+        }
+        return { data: null, error: { message: json.error || `HTTP ${res.status}`, status: res.status }, count: null };
+    }
     return { data: json.data ?? json, error: null, count: json.count ?? null };
 }
 

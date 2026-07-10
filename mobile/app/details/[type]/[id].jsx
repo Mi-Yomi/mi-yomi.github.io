@@ -152,8 +152,11 @@ export default function DetailsScreen() {
                     <View style={styles.episodeRow}>
                         <Text style={styles.epLabel}>Сезон {season} / Серия {episode}</Text>
                         <View style={styles.epControls}>
+                            <Pressable onPress={() => { setSeason(Math.max(1, season - 1)); setEpisode(1); }} style={styles.epBtn}><Text style={styles.epBtnText}>−</Text></Pressable>
+                            <Text style={styles.epNum}>S{season}</Text>
+                            <Pressable onPress={() => { setSeason(Math.min(media.number_of_seasons, season + 1)); setEpisode(1); }} style={styles.epBtn}><Text style={styles.epBtnText}>+</Text></Pressable>
                             <Pressable onPress={() => setEpisode(Math.max(1, episode - 1))} style={styles.epBtn}><Text style={styles.epBtnText}>−</Text></Pressable>
-                            <Text style={styles.epNum}>S{season}E{episode}</Text>
+                            <Text style={styles.epNum}>E{episode}</Text>
                             <Pressable onPress={() => setEpisode(episode + 1)} style={styles.epBtn}><Text style={styles.epBtnText}>+</Text></Pressable>
                         </View>
                     </View>

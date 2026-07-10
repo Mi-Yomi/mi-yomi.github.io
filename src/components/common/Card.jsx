@@ -3,6 +3,7 @@ import { I } from '../../lib/icons.jsx';
 import { IMG_SM, IMG } from '../../lib/config.js';
 import { isAnime } from '../../lib/api/tmdb.js';
 import { GENRE_NAMES } from '../../lib/utils.js';
+import { activateOnKeyboard } from '../../lib/a11y.js';
 
 const Card = memo(function Card({ item, onSelect, onFav, isFav, type = 'movie', onBookmark, isBookmarked, gridMode = false, index = 0 }) {
     const [imgLoaded, setImgLoaded] = useState(false);
@@ -40,6 +41,10 @@ const Card = memo(function Card({ item, onSelect, onFav, isFav, type = 'movie', 
             className={`card ${visible ? 'card-visible' : ''}`}
             style={{ '--card-index': index }}
             onClick={() => onSelect(item, isTV ? 'tv' : 'movie')}
+            onKeyDown={(event) => activateOnKeyboard(event, () => onSelect(item, isTV ? 'tv' : 'movie'))}
+            role="button"
+            tabIndex={0}
+            aria-label={`Открыть ${item.title || item.name}`}
         >
             <div className="card-poster-wrap">
                 {item.poster_path ? (

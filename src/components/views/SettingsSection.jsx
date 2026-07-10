@@ -4,12 +4,13 @@ import { I } from '../../lib/icons.jsx';
 // One settings row: tinted icon chip + title/desc + right slot (chevron, switch,
 // custom node). Rows live inside a .set-card group separated by hairlines.
 function Row({ icon, tint = 'var(--text-secondary)', title, desc, onClick, right, danger }) {
+    const Tag = onClick ? 'button' : 'div';
     return (
-        <div
+        <Tag
+            type={onClick ? 'button' : undefined}
             className={`set-row ${onClick ? 'tap' : ''} ${danger ? 'danger' : ''}`}
             style={{ '--tint': tint }}
             onClick={onClick}
-            role={onClick ? 'button' : undefined}
         >
             <span className="set-row-ic">{icon}</span>
             <div className="set-row-text">
@@ -17,7 +18,7 @@ function Row({ icon, tint = 'var(--text-secondary)', title, desc, onClick, right
                 {desc && <div className="set-row-desc">{desc}</div>}
             </div>
             {right !== undefined ? right : (onClick ? <span className="set-row-chev">{I.back}</span> : null)}
-        </div>
+        </Tag>
     );
 }
 
