@@ -101,9 +101,12 @@ export default function InlinePlayer() {
     // Ad-heavy balancers (yohoho) get sandboxed so they can't redirect the whole app
     // or spawn popups, while still being allowed to run their player.
     const frameSandbox = activeSrc?.ads ? 'allow-scripts allow-same-origin allow-forms allow-presentation' : undefined;
-    // HDRezka redirects to cinemar.cc, which 404s (with X-Frame-Options → the iframe
-    // hangs) unless it gets a Referer. Default players stay no-referrer for privacy.
-    const frameReferrer = activeSrc?.id === 'hdrezka' ? 'unsafe-url' : 'no-referrer';
+    // Both HDRezka and Collaps choose a playable embedded host from document.referrer.
+    // Collaps only needs our origin; HDRezka needs the full referrer for its redirect.
+    // All other providers remain no-referrer for privacy.
+    const frameReferrer = activeSrc?.id === 'hdrezka'
+        ? 'unsafe-url'
+        : activeSrc?.needsReferrer ? 'origin' : 'no-referrer';
     const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
 
     const retry = () => {

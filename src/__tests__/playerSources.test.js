@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FALLBACK_SOURCES, isRuSource } from '../lib/playerSources.js';
+import { FALLBACK_SOURCES, buildPlayerSources, isRuSource } from '../lib/playerSources.js';
 
 describe('FALLBACK_SOURCES', () => {
     it('has at least 5 sources', () => {
@@ -38,5 +38,20 @@ describe('isRuSource', () => {
         expect(isRuSource('VidLink')).toBe(false);
         expect(isRuSource('Smashy')).toBe(false);
         expect(isRuSource('')).toBe(false);
+    });
+});
+
+describe('Collaps embed requirements', () => {
+    it('marks Collaps embeds as requiring the embedding site origin as Referer', () => {
+        const sources = buildPlayerSources({
+            media: { id: 123, media_type: 'tv' },
+            collapsData: { iframe_url: 'https://api.example.test/embed/tv/123' },
+            allohaData: null,
+            isAnimeContent: false,
+        });
+
+        expect(sources.find((source) => source.id === 'collaps')).toMatchObject({
+            needsReferrer: true,
+        });
     });
 });

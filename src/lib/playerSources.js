@@ -37,7 +37,9 @@ export function buildPlayerSources({ media, collapsData, allohaData, isAnimeCont
     const sources = [];
 
     if (collapsData?.iframe_url) {
-        sources.push({ id: 'collaps', name: 'Collaps', lang: 'ru', url: collapsData.iframe_url, builtinEpisodes: true });
+        // Collaps uses document.referrer to select its working embed host. Sending only
+        // our origin is sufficient and avoids leaking a title-specific page URL.
+        sources.push({ id: 'collaps', name: 'Collaps', lang: 'ru', url: collapsData.iframe_url, builtinEpisodes: true, needsReferrer: true });
     }
     if (allohaData?.iframe) {
         sources.push({ id: 'alloha', name: 'Alloha', lang: 'ru', url: allohaData.iframe, builtinEpisodes: true });
