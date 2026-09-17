@@ -1,0 +1,4 @@
+# Runtime dependencies of server/local-api.py (everything else is stdlib).
+bcrypt==5.0.0         # verifies legacy Supabase bcrypt password hashes
+google-auth==2.58.0   # verifies Firebase ID tokens (/api/auth/firebase) ...
+requests==2.32.5      # ... through google.auth.transport.requests

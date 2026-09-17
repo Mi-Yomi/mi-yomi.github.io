@@ -1,4 +1,4 @@
-export const HADES_API_URL = import.meta.env.VITE_HADES_API_URL || 'https://hades.178-62-250-207.sslip.io/api';
+export const HADES_API_URL = import.meta.env.VITE_HADES_API_URL || 'https://hades.20-235-109-146.sslip.io/api';
 export const FIREBASE_CONFIG = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,

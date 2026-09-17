@@ -31,7 +31,7 @@ describe('local auth Firebase adapter', () => {
     });
 
     vi.doMock('../config.js', () => ({
-      HADES_API_URL: 'https://hades.178-62-250-207.sslip.io/api',
+      HADES_API_URL: 'https://hades.20-235-109-146.sslip.io/api',
       FIREBASE_ENABLED: true,
       FIREBASE_CONFIG: { apiKey: 'key', authDomain: 'auth', projectId: 'project', appId: 'app' },
     }));
@@ -42,7 +42,7 @@ describe('local auth Firebase adapter', () => {
     expect(initializeAppMock).toHaveBeenCalledOnce();
     expect(signInWithPopupMock).toHaveBeenCalledWith({ auth: 'firebase-auth' }, { provider: 'google' });
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://hades.178-62-250-207.sslip.io/api/auth/firebase',
+      'https://hades.20-235-109-146.sslip.io/api/auth/firebase',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ idToken: 'firebase-id-token' }),
@@ -54,7 +54,7 @@ describe('local auth Firebase adapter', () => {
 
   it('returns a readable error when Firebase is not configured', async () => {
     vi.doMock('../config.js', () => ({
-      HADES_API_URL: 'https://hades.178-62-250-207.sslip.io/api',
+      HADES_API_URL: 'https://hades.20-235-109-146.sslip.io/api',
       FIREBASE_ENABLED: false,
       FIREBASE_CONFIG: {},
     }));

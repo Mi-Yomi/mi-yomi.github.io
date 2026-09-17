@@ -1,0 +1,6 @@
+# HADES API reverse proxy. Caddy obtains and renews the Let's Encrypt
+# certificate automatically; ports 80 and 443 must be open in the Azure NSG.
+hades.20-235-109-146.sslip.io {
+	encode gzip
+	reverse_proxy 127.0.0.1:3101
+}

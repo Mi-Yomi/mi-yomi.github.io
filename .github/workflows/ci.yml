@@ -22,7 +22,7 @@ jobs:
       - run: npm run build
         env:
           VITE_TMDB_KEY: ci-dummy
-          VITE_HADES_API_URL: https://hades.178-62-250-207.sslip.io/api
+          VITE_HADES_API_URL: https://hades.20-235-109-146.sslip.io/api
 
   server:
     runs-on: ubuntu-latest

@@ -1,0 +1,10 @@
+[Unit]
+Description=HADES SQLite backup
+
+[Service]
+Type=oneshot
+User=hades
+Group=hades
+UMask=0027
+EnvironmentFile=-/etc/hades/hades.env
+ExecStart=/usr/local/bin/hades-backup

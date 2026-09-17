@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Consistent SQLite backup through the online backup API (never a raw copy of
+# a live database). Keeps the newest $HADES_BACKUP_KEEP daily archives.
+set -euo pipefail
+DB="${HADES_DB_PATH:-/var/lib/hades/hades.sqlite}"
+DIR="${HADES_BACKUP_DIR:-/var/backups/hades}"
+KEEP="${HADES_BACKUP_KEEP:-7}"
+
+[ -f "$DB" ] || { echo "hades-backup: no database at $DB, nothing to do"; exit 0; }
+mkdir -p "$DIR"
+stamp="$(date -u +%Y%m%d-%H%M%S)"
+tmp="$DIR/.hades-$stamp.sqlite.part"
+out="$DIR/hades-$stamp.sqlite"
+
+sqlite3 "$DB" ".backup '$tmp'"
+sqlite3 "$tmp" 'pragma integrity_check;' | grep -qx ok
+mv "$tmp" "$out"
+gzip -f "$out"
+ls -1t "$DIR"/hades-*.sqlite.gz | tail -n +$((KEEP + 1)) | xargs -r rm -f
+echo "hades-backup: wrote $out.gz"
