@@ -1,5 +1,8 @@
-export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-export const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_KEY;
+/**
+ * Self-hosted HADES API (auth, profiles, social data, HDRezka resolver).
+ * Same backend the web app uses; see DEPLOY.md in the repository root.
+ */
+export const HADES_API_URL = process.env.EXPO_PUBLIC_HADES_API_URL || 'https://hades.20-235-109-146.sslip.io/api';
 export const TMDB_KEY = process.env.EXPO_PUBLIC_TMDB_KEY;
 export const COLLAPS_TOKEN = process.env.EXPO_PUBLIC_COLLAPS_TOKEN;
 export const COLLAPS_API = process.env.EXPO_PUBLIC_COLLAPS_API;

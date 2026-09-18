@@ -19,7 +19,7 @@ export default function LoginScreen() {
             if (mode === 'signup') {
                 const { error: err } = await supabase.auth.signUp({ email, password });
                 if (err) throw err;
-                setMsg('✅ Аккаунт создан! Подтвердите почту, затем войдите.');
+                setMsg('✅ Аккаунт создан! Войдите — доступ откроется после одобрения администратором.');
                 setMode('login');
             } else {
                 const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
@@ -33,6 +33,15 @@ export default function LoginScreen() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleGoogle = async () => {
+        setLoading(true);
+        setError(null);
+        setMsg(null);
+        const { error: err } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+        if (err) setError(err.message);
+        setLoading(false);
     };
 
     return (
@@ -58,7 +67,7 @@ export default function LoginScreen() {
                     <View style={styles.dividerLine} />
                 </View>
 
-                <Pressable onPress={() => supabase.auth.signInWithOAuth({ provider: 'google' })} style={styles.googleBtn}>
+                <Pressable onPress={handleGoogle} disabled={loading} style={[styles.googleBtn, loading && styles.btnDisabled]}>
                     <Text style={styles.googleBtnText}>Google</Text>
                 </Pressable>
 

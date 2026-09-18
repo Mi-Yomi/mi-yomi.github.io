@@ -89,6 +89,7 @@ ssh azureuser@20.235.109.146 'systemctl status hades caddy hades-backup.timer; s
 | `FIREBASE_PROJECT_ID` | проект Firebase, чьи ID-токены принимает `/api/auth/firebase` (= `VITE_FIREBASE_PROJECT_ID`) | пусто |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | серверный Google OAuth (`/api/auth/google/*`); фронтенд его не использует | пусто |
 | `HADES_OAUTH_STATE_SECRET` | подпись OAuth state (`openssl rand -base64 32`) | случайный при старте |
+| `HADES_OAUTH_REDIRECT_PREFIXES` | куда Google-callback может вернуть браузер, через запятую | сайт + localhost + `myapp://` (схема мобильного приложения) |
 | `HDREZKA_MIRRORS` | зеркала HDRezka через запятую | `kz.rezka.biz, rezka.biz, hdrezka.tv` |
 
 ## Бэкапы и перенос базы
@@ -106,5 +107,16 @@ sudo install -o hades -g hades -m 640 hades-migration.sqlite /var/lib/hades/hade
 sudo -u hades sqlite3 /var/lib/hades/hades.sqlite 'pragma integrity_check;'   # → ok
 sudo systemctl start hades
 ```
+
+## Клиенты
+
+К этому API ходят оба клиента:
+
+* сайт на GitHub Pages — `VITE_HADES_API_URL` (см. `.env.example`);
+* мобильное приложение в `mobile/` — `EXPO_PUBLIC_HADES_API_URL` (см. `mobile/.env.example`).
+
+Supabase больше не используется ни одним из них. Клиент в `mobile/lib/supabase.js`
+повторяет форму вызовов Supabase, но работает с HADES API; подробности — в
+`mobile/README.md`.
 
 Локальная проверка кода: `python3 server/test_local_api.py`.

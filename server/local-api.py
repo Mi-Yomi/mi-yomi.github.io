@@ -28,6 +28,12 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '').strip()
 HADES_PUBLIC_URL = os.environ.get('HADES_PUBLIC_URL', 'https://hades.20-235-109-146.sslip.io').rstrip('/')
 FIREBASE_PROJECT_ID = os.environ.get('FIREBASE_PROJECT_ID', '').strip()
 OAUTH_STATE_SECRET = os.environ.get('HADES_OAUTH_STATE_SECRET') or GOOGLE_CLIENT_SECRET or secrets.token_urlsafe(32)
+# Where /api/auth/google/callback is allowed to send the browser back to: the web
+# app (GitHub Pages or a dev server) and the mobile app's own URL scheme.
+OAUTH_REDIRECT_PREFIXES = tuple(p.strip() for p in os.environ.get(
+    'HADES_OAUTH_REDIRECT_PREFIXES',
+    'https://mi-yomi.github.io,http://localhost:,http://127.0.0.1:,myapp://',
+).split(',') if p.strip())
 PBKDF2_ROUNDS = 180_000
 # Must match the frontend VITE_WHITELIST: 'off' = auto-approve, anything else = admin approval
 WHITELIST_ENABLED = os.environ.get('HADES_WHITELIST', 'on') != 'off'
@@ -135,7 +141,7 @@ def verify_oauth_state(state, max_age=600):
         if int(time.time()) - int(payload.get('ts', 0)) > max_age:
             raise ValueError('oauth state expired')
         redirect_to = payload.get('redirect_to') or 'https://mi-yomi.github.io/'
-        if not (redirect_to.startswith('https://mi-yomi.github.io') or redirect_to.startswith('http://localhost:') or redirect_to.startswith('http://127.0.0.1:')):
+        if not redirect_to.startswith(OAUTH_REDIRECT_PREFIXES):
             raise ValueError('redirect target is not allowed')
         return payload
     except ValueError:

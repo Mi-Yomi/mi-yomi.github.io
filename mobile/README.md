@@ -1,50 +1,40 @@
-# Welcome to your Expo app 👋
+# HADES Cinema — мобильное приложение
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo-приложение (expo-router). Бэкенд общий с сайтом: самостоятельный HADES API
+(`server/local-api.py`), а не Supabase. Каталог и постеры приходят из TMDB,
+видео открывается во внешних плеерах — через наш сервер поток не проксируется.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-    npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Запуск
 
 ```bash
-npm run reset-project
+npm install
+cp .env.example .env    # заполни ключи
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Переменные окружения — в `.env.example`. Главная:
+`EXPO_PUBLIC_HADES_API_URL` (по умолчанию боевой адрес из `lib/config.js`).
 
-## Learn more
+## Как устроен доступ к данным
 
-To learn more about developing your project with Expo, look at the following resources:
+`lib/supabase.js` — тонкий клиент HADES API, повторяющий форму вызовов Supabase
+(`supabase.from(...).select().eq()`, `supabase.auth.*`), поэтому экраны не знают
+о смене бэкенда. Отличия от настоящего Supabase:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+| Возможность | Как сейчас |
+|---|---|
+| сессия | токен HADES в `AsyncStorage`, ключ `hades_local_api_token` |
+| вход по паролю | `/api/auth/signin`, работает сразу |
+| вход через Google | `/api/auth/google/start` в системном браузере, возврат в `myapp://auth`; нужен `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` на сервере |
+| realtime | заглушка, уведомления обновляются при загрузке экрана |
+| хранилище файлов | нет, аватары лежат в профиле как `data:`-URI |
 
-## Join the community
+Таблицы, которые отдаёт сервер, перечислены в `TABLE_RULES` в
+`server/local-api.py`. Права проверяет сервер: чужие строки изменить нельзя,
+статус одобрения и `is_admin` клиент задать не может.
 
-Join our community of developers creating universal apps.
+## Сборка
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+EAS-профили — в `eas.json`. Схема диплинков (`myapp`) задана в `app.json` и
+должна совпадать с `HADES_OAUTH_REDIRECT_PREFIXES` на сервере, иначе возврат
+после входа через Google будет отклонён.

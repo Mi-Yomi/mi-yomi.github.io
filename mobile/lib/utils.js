@@ -1,17 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SUPABASE_URL } from './config';
 
-export const getAvatarUrl = (url) => {
+/**
+ * Avatars and covers are stored inline in the profile row as data: URIs (or as
+ * an absolute URL). Bare object-storage paths are a leftover of the old Supabase
+ * backend and no longer resolve, so they are treated as "no image".
+ */
+const directImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
-    return `${SUPABASE_URL}/storage/v1/object/public/avatars/${url.replace(/^avatars\//, '')}`;
+    return null;
 };
 
-export const getCoverUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
-    return `${SUPABASE_URL}/storage/v1/object/public/covers/${url.replace(/^covers\//, '')}`;
-};
+export const getAvatarUrl = directImageUrl;
+export const getCoverUrl = directImageUrl;
 
 export const pluralize = (n, one, few, many) => {
     const abs = Math.abs(n) % 100;
