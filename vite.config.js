@@ -48,7 +48,7 @@ export default defineConfig(({ mode }) => {
                 // Without this denylist, HADES' root-scope PWA service worker serves
                 // /index.html for project navigations, making them open HADES.
                 navigateFallbackDenylist: [/^\/pixel-mmorpg(?:\/|$)/, /^\/campus-queue(?:\/|$)/],
-                importScripts: ['/queue-route-recovery.js'],
+                importScripts: ['/queue-route-recovery.js?v=2'],
                 globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
                 runtimeCaching: [
                     {
