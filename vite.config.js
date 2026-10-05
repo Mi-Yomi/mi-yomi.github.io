@@ -47,7 +47,7 @@ export default defineConfig(({ mode }) => {
                 // Do not hijack independent GitHub Pages project sites under this user domain.
                 // Without this denylist, HADES' root-scope PWA service worker serves
                 // /index.html for project navigations, making them open HADES.
-                navigateFallbackDenylist: [/^\/pixel-mmorpg(?:\/|$)/, /^\/campus-queue(?:\/|$)/],
+                navigateFallbackDenylist: [/^\/pixel-mmorpg(?:\/|$)/, /^\/campus-queue(?:\/|$)/, /^\/calculator-ozenok(?:\/|\?|$)/],
                 globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
                 runtimeCaching: [
                     {
