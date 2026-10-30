@@ -2,7 +2,12 @@ import ReactDOM from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { AppProvider } from './context/AppContext.jsx';
 import App from './App.jsx';
+import { reloadForChunkError } from './lib/chunkRecovery.js';
 import './styles/index.css';
+
+window.addEventListener('vite:preloadError', (event) => {
+    if (reloadForChunkError(event.payload)) event.preventDefault();
+});
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <AppProvider>
