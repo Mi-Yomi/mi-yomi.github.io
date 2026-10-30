@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
 import { buildPlayerSources } from '../../lib/playerSources.js';
@@ -25,6 +25,8 @@ export default function InlinePlayer() {
 
     const selectedRef = useRef(null);
     const hdrezkaReqRef = useRef(0);
+    const hdrezkaAbortRef = useRef(null);
+    const [resolveError, setResolveError] = useState('');
 
     const urlFor = useCallback((src, s, e) => {
         if (!src) return null;
@@ -38,27 +40,40 @@ export default function InlinePlayer() {
 
     const selectSource = useCallback((src) => {
         if (!src || !media) return;
+        const myReq = ++hdrezkaReqRef.current;
+        hdrezkaAbortRef.current?.abort();
+        setResolveError('');
         if (src.special === 'anixart') {
             // Anixart has its own voiceover/episode panel that drives the iframe
             setPlayerSource('Anixart');
             setPlayerUrl('');
             setPlayerLoaded(false);
+            setPlayerError(false);
             try { localStorage.setItem('hades_preferred_source', 'Anixart'); } catch { /* ignore */ }
             return;
         }
         if (src.special === 'hdrezka') {
             // Resolve the balancer URL via fetch, then point the iframe straight at it
             // (a 302 from the function drops the Referer cinemar.cc needs).
-            const myReq = ++hdrezkaReqRef.current;
+            const controller = new AbortController();
+            hdrezkaAbortRef.current = controller;
+            const timer = setTimeout(() => controller.abort(), 60000);
             setPlayerSource('HDRezka'); setPlayerUrl(''); setPlayerLoaded(false); setPlayerError(false);
-            fetch(src.resolveUrl)
-                .then((r) => r.json())
-                .then((j) => {
+            fetch(src.resolveUrl, { signal: controller.signal })
+                .then(async (r) => {
+                    const j = await r.json();
                     if (myReq !== hdrezkaReqRef.current) return;
-                    if (j?.ok && j.embed) playSource(j.embed, 'HDRezka');
-                    else setPlayerError(true);
+                    if (r.ok && j?.ok && j.embed) playSource(j.embed, 'HDRezka');
+                    else throw new Error(j?.error || 'HDRezka не нашёл плеер для этого названия.');
                 })
-                .catch(() => { if (myReq === hdrezkaReqRef.current) setPlayerError(true); });
+                .catch((error) => {
+                    if (myReq !== hdrezkaReqRef.current) return;
+                    setResolveError(error.name === 'AbortError'
+                        ? 'HDRezka не ответил вовремя. Попробуйте позже или выберите другой источник.'
+                        : error.message);
+                    setPlayerError(true);
+                })
+                .finally(() => clearTimeout(timer));
             return;
         }
         playSource(urlFor(src, currentSeason, currentEpisode), src.name, currentSeason, currentEpisode);
@@ -68,9 +83,16 @@ export default function InlinePlayer() {
     useEffect(() => {
         selectedRef.current = null;
         hdrezkaReqRef.current++; // invalidate any in-flight HDRezka resolve
+        hdrezkaAbortRef.current?.abort();
+        setResolveError('');
+        setPlayerError(false);
         setPlayerUrl('');
         setPlayerLoaded(false);
-    }, [media?.id, setPlayerUrl, setPlayerLoaded]);
+        return () => {
+            hdrezkaReqRef.current++;
+            hdrezkaAbortRef.current?.abort();
+        };
+    }, [media?.id, setPlayerUrl, setPlayerLoaded, setPlayerError]);
 
     // Auto-load a default player once the Russian sources have settled.
     useEffect(() => {
@@ -110,6 +132,10 @@ export default function InlinePlayer() {
     const maxEp = seasonsData.find(s => s.season_number === currentSeason)?.episode_count || 24;
 
     const retry = () => {
+        if (activeSrc?.special === 'hdrezka' && !playerUrl) {
+            selectSource(activeSrc);
+            return;
+        }
         setPlayerError(false);
         setPlayerLoaded(false);
         setPlayerUrl(playerUrl + (playerUrl.includes('?') ? '&' : '?') + '_r=' + Date.now());
@@ -145,20 +171,20 @@ export default function InlinePlayer() {
             )}
 
             <div className="player-frame inline">
+                {playerError && (
+                    <div className="player-error-overlay" role="alert">
+                        <div className="player-error-icon">{I.alertTriangle}</div>
+                        <div className="player-error-text">Источник не отвечает</div>
+                        <div className="player-error-hint">{resolveError || 'Выберите другой плеер выше или повторите'}</div>
+                        <button className="player-error-btn" onClick={retry}>Повторить</button>
+                    </div>
+                )}
                 {playerUrl ? (
                     <>
                         {!playerLoaded && !playerError && (
                             <div className="player-loading-overlay">
                                 <div className="player-loading-spinner"></div>
                                 <div className="player-loading-text">Загрузка плеера…</div>
-                            </div>
-                        )}
-                        {playerError && (
-                            <div className="player-error-overlay">
-                                <div className="player-error-icon">{I.alertTriangle}</div>
-                                <div className="player-error-text">Источник не отвечает</div>
-                                <div className="player-error-hint">Выберите другой плеер выше или повторите</div>
-                                <button className="player-error-btn" onClick={retry}>Повторить</button>
                             </div>
                         )}
                         <iframe
@@ -180,7 +206,7 @@ export default function InlinePlayer() {
                             </div>
                         )}
                     </>
-                ) : (
+                ) : !playerError && (
                     <div className="player-empty">
                         <div className="player-empty-icon">{I.play}</div>
                         <div className="player-empty-text">{playerSource === 'Anixart' ? 'Загрузка Anixart…' : playerSource === 'HDRezka' ? 'Поиск на HDRezka…' : sourceLoading ? 'Загрузка источников…' : 'Выберите плеер выше'}</div>

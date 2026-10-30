@@ -2,7 +2,7 @@ name: HDRezka network diagnostic
 on:
   push:
     branches: [fix/hdrezka-recovery-20261030]
-    paths: [.github/workflows/rezka-diagnostic.yml]
+    paths: [.github/workflows/rezka-diagnostic.yml, server/local-api.py]
 permissions:
   contents: read
 jobs:
@@ -10,61 +10,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
-      - name: Check candidate mirrors and embed extraction
+      - uses: actions/checkout@v4
+      - name: Verify actual movie and series resolution
         shell: python
         run: |
-          import concurrent.futures, json, re, os
+          import importlib.util, json
           from urllib.request import Request, urlopen
-          from urllib.parse import quote, urlparse, urljoin
-          os.makedirs('rezka-evidence', exist_ok=True)
-          mirrors = [
-            'https://kz.rezka.biz', 'https://rezka.biz', 'https://hdrezka.tv',
-            'https://hd-rezka.one', 'https://hdrezka.solutions', 'https://rezka.ac',
-            'https://rezka-ua.tv', 'https://hdrezka.kim', 'https://hdrezka.me',
-            'https://hdrezka.club', 'https://rezka.pub', 'https://hdrezka-home.tv',
-            'https://rezka-kz.me', 'https://kz.hdrezka.fm', 'https://hdrezka.zone',
-            'https://hdrezka.plus', 'https://hdrezka.mx', 'https://hdrezka.in',
-          ]
-          def read(url):
-            req = Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36', 'Accept-Language': 'ru,en;q=0.8'})
-            with urlopen(req, timeout=8) as r:
-              return r.read(2_000_000).decode('utf-8', 'ignore'), r.url
-          def probe(base):
-            info = {'mirror': base}
-            try:
-              root, final = read(base + '/')
-              info.update(final=final, title=re.findall(r'<title>(.*?)</title>', root, re.S)[:1])
-              host = urlparse(base).hostname
-              with open('rezka-evidence/' + host + '-home.html', 'w') as f:
-                f.write(root)
-              info['native'] = 'b-content__inline_item' in root
-              if 'Вход на HDrezka' in root:
-                info['error'] = 'login_required'
-                return info
-              search, search_url = read(base + '/index.php?do=search&subaction=search&' + ('story' if base == 'https://hd-rezka.one' else 'q') + '=' + quote('Интерстеллар'))
-              links = list(dict.fromkeys(re.findall(r'(?:data-link|href)=["\x27](https?://[^"\x27]+/\d+-[^"\x27]+\.html)', search)))
-              with open('rezka-evidence/' + host + '-search.html', 'w') as f:
-                f.write(search)
-              info['search_count'] = len(links)
-              if not links:
-                info['error'] = 'no_search_results'
-                return info
-              page, page_url = read(links[0])
-              embeds = re.findall(r'<iframe[^>]+src=["\x27]([^"\x27]+)', page, re.I)
-              info.update(picked=page_url, embed_hosts=[urlparse(urljoin(page_url, u)).netloc for u in embeds])
-              host = urlparse(base).hostname
-              for suffix, data in [('home', root), ('search', search), ('film', page)]:
-                with open('rezka-evidence/' + host + '-' + suffix + '.html', 'w') as f:
-                  f.write(data)
-            except Exception as e:
-              info['error'] = str(e)
-            return info
-          with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-            for info in pool.map(probe, mirrors):
-              print(json.dumps(info, ensure_ascii=False), flush=True)
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: rezka-public-page-evidence
-          path: rezka-evidence/
-          retention-days: 1
+          from urllib.parse import urlparse
+          spec = importlib.util.spec_from_file_location('api', 'server/local-api.py')
+          api = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(api)
+          for title, year, kind in [('Интерстеллар', '2014', 'movie'), ('Во все тяжкие', '2008', 'tv')]:
+            embed, picked = api.rezka_resolve(title, year, kind)
+            assert embed, (title, picked)
+            assert picked['title'] == title, picked
+            assert picked['year'] == year, picked
+            assert picked['isSeries'] == (kind == 'tv'), picked
+            assert '/embed/trailer/' not in embed, embed
+            req = Request(embed, headers={'User-Agent': api.REZKA_UA, 'Referer': 'https://mi-yomi.github.io/'})
+            with urlopen(req, timeout=15) as response:
+              body = response.read(1_000_000).decode('utf-8', 'ignore')
+              assert response.status == 200
+              print(json.dumps({'title': title, 'picked': picked, 'embed_host': urlparse(embed).hostname,
+                                'embed_path': urlparse(embed).path, 'player_http': response.status,
+                                'player_bytes': len(body)}, ensure_ascii=False))
+          assert api.rezka_search('hades-network-diagnostic-title-that-does-not-exist-20261030') == []
+          print('PASS: missing titles do not select unrelated recommendations')

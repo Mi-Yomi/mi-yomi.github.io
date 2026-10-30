@@ -90,7 +90,14 @@ ssh azureuser@20.235.109.146 'systemctl status hades caddy hades-backup.timer; s
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | серверный Google OAuth (`/api/auth/google/*`); фронтенд его не использует | пусто |
 | `HADES_OAUTH_STATE_SECRET` | подпись OAuth state (`openssl rand -base64 32`) | случайный при старте |
 | `HADES_OAUTH_REDIRECT_PREFIXES` | куда Google-callback может вернуть браузер, через запятую | сайт + localhost + `myapp://` (схема мобильного приложения) |
-| `HDREZKA_MIRRORS` | зеркала HDRezka через запятую | `kz.rezka.biz, rezka.biz, hdrezka.tv` |
+| `HDREZKA_MIRRORS` | совместимые DLE-зеркала через запятую | `https://hd-rezka.one` |
+
+При обновлении со старой версии замените прежний `HDREZKA_MIRRORS` в
+`/etc/hades/hades.env` на `https://hd-rezka.one` либо удалите эту переменную,
+чтобы использовать новый адрес по умолчанию. Старые `kz.rezka.biz`, `rezka.biz`
+и `hdrezka.tv` на 30.10.2026 не прошли проверку. После изменения перезапустите
+`hades`. Доступность главной страницы ещё не означает совместимость: resolver
+должен найти нужное название и извлечь основной iframe, а не трейлер.
 
 ## Бэкапы и перенос базы
 
