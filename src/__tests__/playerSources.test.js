@@ -1,5 +1,34 @@
 import { describe, it, expect } from 'vitest';
-import { FALLBACK_SOURCES, buildPlayerSources, isRuSource } from '../lib/playerSources.js';
+import { allohaPlayerUrl, FALLBACK_SOURCES, buildPlayerSources, isRuSource } from '../lib/playerSources.js';
+
+describe('Alloha iframe migration', () => {
+    it('keeps the publisher token and selected episode while using the current content ID', () => {
+        const url = new URL(allohaPlayerUrl('https://miyagi-as.stravers.live/?token_movie=old-id&token=publisher-key&season=1&episode=2', 5158783));
+        expect(url.origin).toBe('https://miyagi-as.stloadi.live');
+        expect(url.searchParams.get('token')).toBe('publisher-key');
+        expect(url.searchParams.get('kp')).toBe('5158783');
+        expect(url.searchParams.has('token_movie')).toBe(false);
+        expect(url.searchParams.get('episode')).toBe('2');
+    });
+
+    it('migrates dotted legacy hosts and obsolete ports', () => {
+        expect(new URL(allohaPlayerUrl('https://tories.as.newplayjj.com:444/?kp=5158783', 5158783)).origin).toBe('https://tories-as.stloadi.live');
+    });
+
+    it('leaves other providers untouched and preserves unknown legacy content IDs', () => {
+        const other = 'https://stravers.live.attacker.example/?token_movie=value';
+        expect(allohaPlayerUrl(other, 5158783)).toBe(other);
+        expect(new URL(allohaPlayerUrl('https://miyagi-as.stravers.live/?token_movie=value')).searchParams.get('token_movie')).toBe('value');
+    });
+
+    it('uses the migrated URL in the regular source picker', () => {
+        const sources = buildPlayerSources({ media: { id: 213375, media_type: 'tv' }, allohaData: {
+            id_kp: 5158783, iframe: 'https://miyagi-as.stravers.live/?token_movie=old&token=key',
+        } });
+        expect(sources.find(s => s.id === 'alloha').url).toBe('https://miyagi-as.stloadi.live/?token=key&kp=5158783');
+        expect(sources.find(s => s.id === 'alloha')).toMatchObject({ needsReferrer: true, ads: true });
+    });
+});
 
 describe('FALLBACK_SOURCES', () => {
     it('has at least 5 sources', () => {
