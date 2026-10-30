@@ -111,6 +111,33 @@ class RezkaTests(unittest.TestCase):
             embed, _ = api.rezka_resolve('Film', '2014', 'movie')
         self.assertEqual(embed, 'https://api.nextembed.ws/embed/movie/180?a=1&b=2')
 
+    def test_unlabeled_episodes_are_detected_individually(self):
+        html = '''<script>const playlist = {seasons: [
+          {"season":1,"episodes":[
+            {"episode":"1","audio":{"names":["HDRezka Studio","LostFilm","Eng.Original"]}},
+            {"episode":"2","audio":{"names":["rus0","eng1"]}},
+            {"episode":"3","audio":{"names":["TVShows"]}}
+          ]}
+        ], other: [1, 2]};</script>'''
+        with patch.object(api, 'fetch_text', return_value=html) as fetch:
+            missing = api.rezka_unlabeled_episodes('https://api.nextembed.ws/embed/movie/92634')
+        self.assertEqual(missing, [{'season': 1, 'episode': 2}])
+        fetch.assert_called_once_with('https://api.nextembed.ws/embed/movie/92634', referer='https://mi-yomi.github.io/')
+
+    def test_voiceover_inspection_does_not_fetch_untrusted_hosts_or_paths(self):
+        with patch.object(api, 'fetch_text') as fetch:
+            for url in ['http://api.nextembed.ws/embed/movie/1', 'https://attacker.example/embed/movie/1',
+                        'https://api.nextembed.ws:443/embed/movie/1', 'https://api.nextembed.ws/other']:
+                self.assertEqual(api.rezka_unlabeled_episodes(url), [])
+        fetch.assert_not_called()
+
+    def test_voiceover_inspection_failure_does_not_block_playback(self):
+        with patch.object(api, 'fetch_text', side_effect=URLError('timeout')):
+            self.assertEqual(api.rezka_unlabeled_episodes('https://api.nextembed.ws/embed/movie/1'), [])
+        for html in ['no playlist', 'seasons: [bad json]', 'seasons: [{"season":1,"episodes":[null]}]']:
+            with patch.object(api, 'fetch_text', return_value=html):
+                self.assertEqual(api.rezka_unlabeled_episodes('https://api.nextembed.ws/embed/movie/1'), [])
+
 
 class FilterTests(unittest.TestCase):
     def test_eq_neq_ilike_in(self):

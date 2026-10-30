@@ -586,8 +586,11 @@ REZKA_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 _active_rezka_mirror = ''
 
 
-def fetch_text(url):
-    req = Request(url, headers={'User-Agent': REZKA_UA, 'Accept-Language': 'ru,en;q=0.8'})
+def fetch_text(url, referer=None):
+    headers = {'User-Agent': REZKA_UA, 'Accept-Language': 'ru,en;q=0.8'}
+    if referer:
+        headers['Referer'] = referer
+    req = Request(url, headers=headers)
     with urlopen(req, timeout=12) as r:
         return r.read().decode('utf-8', 'ignore')
 
@@ -648,6 +651,25 @@ def rezka_resolve(title, year='', typ=''):
     if not m:
         return None, pick
     return urljoin(_active_rezka_mirror + '/', unescape(m.group(1))), pick
+
+
+def rezka_unlabeled_episodes(embed):
+    url = urlparse(embed or '')
+    if url.scheme != 'https' or url.netloc != 'api.nextembed.ws' or not re.fullmatch(r'/embed/movie/\d+', url.path):
+        return []
+    try:
+        html = fetch_text(embed, referer='https://mi-yomi.github.io/')
+        start = re.search(r'\bseasons\s*:\s*(\[)', html)
+        if not start:
+            return []
+        seasons, _ = json.JSONDecoder().raw_decode(html[start.start(1):])
+        return [{'season': int(season['season']), 'episode': int(episode['episode'])}
+                for season in seasons for episode in season.get('episodes', [])
+                if any(isinstance(name, str) and re.fullmatch(r'(?:rus?|eng?)\d+', name, re.I)
+                       for name in episode.get('audio', {}).get('names', []))]
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        # Metadata inspection must not stop an otherwise playable source.
+        return []
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -737,7 +759,8 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 embed, picked = rezka_resolve(title, q.get('year', ''), q.get('type', ''))
                 if action == 'resolve':
-                    self._send(200, {'ok': bool(embed), 'embed': embed, 'picked': picked})
+                    missing = rezka_unlabeled_episodes(embed) if embed and picked and picked.get('isSeries') else []
+                    self._send(200, {'ok': bool(embed), 'embed': embed, 'picked': picked, 'unlabeledEpisodes': missing})
                     return
                 if embed:
                     self.send_response(302)
