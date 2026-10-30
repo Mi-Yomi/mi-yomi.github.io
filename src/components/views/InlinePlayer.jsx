@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
 import { I } from '../../lib/icons.jsx';
-import { buildPlayerSources } from '../../lib/playerSources.js';
+import { allohaPlayerUrl, buildPlayerSources } from '../../lib/playerSources.js';
 import AnixartPanel from './AnixartPanel.jsx';
 
 /**
@@ -38,7 +38,7 @@ export default function InlinePlayer() {
             typeof voice?.translation === 'string' && voice.translation.trim() && !/^(?:rus?|eng?)\d+$/i.test(voice.translation))) return false;
         setCurrentSeason(season);
         setCurrentEpisode(episode);
-        playSource(alternative.iframe, 'Alloha', season, episode);
+        playSource(allohaPlayerUrl(alternative.iframe, allohaData.id_kp), 'Alloha', season, episode);
         showToast('Выбран Alloha: для этой серии у HDRezka нет названий озвучек');
         return true;
     }, [allohaData, playSource, setCurrentSeason, setCurrentEpisode, showToast]);
