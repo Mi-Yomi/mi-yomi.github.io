@@ -15,7 +15,7 @@ export default function InlinePlayer() {
         playerUrl, setPlayerUrl, playerSource, setPlayerSource, playerLoaded, setPlayerLoaded,
         playerError, setPlayerError, playSource, playerTimerRef,
         currentSeason, setCurrentSeason, currentEpisode, setCurrentEpisode,
-        seasonsData, updatePlayerEpisode, activeSkip, performSkip, isRuSource, tg,
+        seasonsData, updatePlayerEpisode, activeSkip, performSkip, isRuSource, tg, showToast,
     } = useApp();
 
     const sources = useMemo(
@@ -26,7 +26,22 @@ export default function InlinePlayer() {
     const selectedRef = useRef(null);
     const hdrezkaReqRef = useRef(0);
     const hdrezkaAbortRef = useRef(null);
+    const playerFrameRef = useRef(null);
     const [resolveError, setResolveError] = useState('');
+    const [unlabeledEpisodes, setUnlabeledEpisodes] = useState([]);
+
+    const playNamedVoiceover = useCallback((season, episode, missing) => {
+        if (!missing.some(item => item?.season === season && item?.episode === episode)) return false;
+        const alternative = allohaData?.seasons?.[season]?.episodes?.[episode];
+        const voices = Object.values(alternative?.translation || {});
+        if (!alternative?.iframe || !voices.length || !voices.every(voice =>
+            typeof voice?.translation === 'string' && voice.translation.trim() && !/^(?:rus?|eng?)\d+$/i.test(voice.translation))) return false;
+        setCurrentSeason(season);
+        setCurrentEpisode(episode);
+        playSource(alternative.iframe, 'Alloha', season, episode);
+        showToast('Выбран Alloha: для этой серии у HDRezka нет названий озвучек');
+        return true;
+    }, [allohaData, playSource, setCurrentSeason, setCurrentEpisode, showToast]);
 
     const urlFor = useCallback((src, s, e) => {
         if (!src) return null;
@@ -64,8 +79,17 @@ export default function InlinePlayer() {
                 .then(async (r) => {
                     const j = await r.json();
                     if (myReq !== hdrezkaReqRef.current) return;
-                    if (r.ok && j?.ok && j.embed) playSource(j.embed, 'HDRezka');
-                    else throw new Error(j?.error || 'HDRezka не нашёл плеер для этого названия.');
+                    if (!r.ok || !j?.ok || !j.embed) throw new Error(j?.error || 'HDRezka не нашёл плеер для этого названия.');
+                    const missing = Array.isArray(j.unlabeledEpisodes) ? j.unlabeledEpisodes : [];
+                    setUnlabeledEpisodes(missing);
+                    if (!playNamedVoiceover(currentSeason, currentEpisode, missing)) {
+                        const url = new URL(j.embed);
+                        if (missing.length) {
+                            url.searchParams.set('season', currentSeason);
+                            url.searchParams.set('episode', currentEpisode);
+                        }
+                        playSource(url.href, 'HDRezka');
+                    }
                 })
                 .catch((error) => {
                     if (myReq !== hdrezkaReqRef.current) return;
@@ -78,7 +102,24 @@ export default function InlinePlayer() {
             return;
         }
         playSource(urlFor(src, currentSeason, currentEpisode), src.name, currentSeason, currentEpisode);
-    }, [media, currentSeason, currentEpisode, playSource, urlFor, setPlayerSource, setPlayerUrl, setPlayerLoaded, setPlayerError, playerTimerRef]);
+    }, [media, currentSeason, currentEpisode, playSource, urlFor, setPlayerSource, setPlayerUrl, setPlayerLoaded, setPlayerError, playerTimerRef, playNamedVoiceover]);
+
+    useEffect(() => {
+        if (playerSource !== 'HDRezka' || !playerUrl || !unlabeledEpisodes.length) return;
+        const onEpisode = (event) => {
+            if (!playerFrameRef.current || event.source !== playerFrameRef.current.contentWindow || event.origin !== new URL(playerUrl).origin) return;
+            let data = event.data;
+            if (typeof data === 'string') {
+                try { data = JSON.parse(data); } catch { return; }
+            }
+            if (data?.event !== 'changeEpisode') return;
+            const season = Number(data.season), episode = Number(data.episode);
+            if (!Number.isInteger(season) || season < 1 || !Number.isInteger(episode) || episode < 1) return;
+            playNamedVoiceover(season, episode, unlabeledEpisodes);
+        };
+        window.addEventListener('message', onEpisode);
+        return () => window.removeEventListener('message', onEpisode);
+    }, [playerSource, playerUrl, unlabeledEpisodes, playNamedVoiceover]);
 
     // Reset selection when the title changes so we re-pick for the new media.
     useEffect(() => {
@@ -86,6 +127,7 @@ export default function InlinePlayer() {
         hdrezkaReqRef.current++; // invalidate any in-flight HDRezka resolve
         hdrezkaAbortRef.current?.abort();
         setResolveError('');
+        setUnlabeledEpisodes([]);
         setPlayerError(false);
         setPlayerUrl('');
         setPlayerLoaded(false);
@@ -189,6 +231,7 @@ export default function InlinePlayer() {
                             </div>
                         )}
                         <iframe
+                            ref={playerFrameRef}
                             key={playerUrl}
                             src={playerUrl}
                             title={media.title || media.name}
