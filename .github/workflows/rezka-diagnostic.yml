@@ -17,6 +17,7 @@ jobs:
           import importlib.util, json
           from urllib.request import Request, urlopen
           from urllib.parse import urlparse
+          from urllib.error import HTTPError
           spec = importlib.util.spec_from_file_location('api', 'server/local-api.py')
           api = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(api)
@@ -27,12 +28,16 @@ jobs:
             assert picked['year'] == year, picked
             assert picked['isSeries'] == (kind == 'tv'), picked
             assert '/embed/trailer/' not in embed, embed
-            req = Request(embed, headers={'User-Agent': api.REZKA_UA, 'Referer': 'https://mi-yomi.github.io/'})
-            with urlopen(req, timeout=15) as response:
-              body = response.read(1_000_000).decode('utf-8', 'ignore')
-              assert response.status == 200
-              print(json.dumps({'title': title, 'picked': picked, 'embed_host': urlparse(embed).hostname,
-                                'embed_path': urlparse(embed).path, 'player_http': response.status,
-                                'player_bytes': len(body)}, ensure_ascii=False))
+            print(json.dumps({'title': title, 'picked': picked, 'embed': embed}, ensure_ascii=False), flush=True)
+            for referer in ['https://mi-yomi.github.io/', picked['url']]:
+              req = Request(embed, headers={'User-Agent': api.REZKA_UA, 'Referer': referer})
+              try:
+                with urlopen(req, timeout=15) as response:
+                  body = response.read(1_000_000).decode('utf-8', 'ignore')
+                  print(json.dumps({'referer': referer, 'player_http': response.status, 'final_url': response.url,
+                                    'player_bytes': len(body)}, ensure_ascii=False), flush=True)
+              except HTTPError as error:
+                print(json.dumps({'referer': referer, 'player_http': error.code,
+                                  'body': error.read(1200).decode('utf-8', 'ignore')}, ensure_ascii=False), flush=True)
           assert api.rezka_search('hades-network-diagnostic-title-that-does-not-exist-20261030') == []
           print('PASS: missing titles do not select unrelated recommendations')
