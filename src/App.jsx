@@ -30,7 +30,7 @@ function OverlayFallback() {
 }
 
 export default function App() {
-    const { loading, user, userProfile, isAdmin, userApproved, tab, viewingFriend, contentRef, handleContentScroll } = useApp();
+    const { loading, user, userProfile, isAdmin, userApproved, tab, viewingFriend, contentRef, handleContentScroll, mangaTitle, mangaReaderOpen } = useApp();
 
     if (loading && !user) {
         return <div className="loader"><div className="loader-spin"></div><div className="loader-brand">HADES</div></div>;
@@ -71,8 +71,8 @@ export default function App() {
                 <CollectionAddMenu />
                 <AdminPanel />
                 <StatusPicker />
-                <MangaDetailsOverlay />
-                <MangaReader />
+                {mangaTitle && <MangaDetailsOverlay />}
+                {mangaReaderOpen && <MangaReader />}
             </Suspense>
         </ErrorBoundary>
     );
