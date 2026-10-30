@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { isChunkLoadError, reloadForChunkError } from '../../lib/chunkRecovery.js';
+import { isChunkLoadError, reloadApp, reloadForChunkError } from '../../lib/chunkRecovery.js';
 
 export default class ErrorBoundary extends Component {
     constructor(props) {
@@ -29,7 +29,7 @@ export default class ErrorBoundary extends Component {
                             : this.state.error?.message || 'Произошла непредвиденная ошибка'}
                     </p>
                     <button className="error-boundary-btn" onClick={() => outdated
-                        ? window.location.reload()
+                        ? reloadApp()
                         : this.setState({ hasError: false, error: null })}>
                         {outdated ? 'Обновить страницу' : 'Попробовать снова'}
                     </button>

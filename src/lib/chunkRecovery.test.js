@@ -7,7 +7,7 @@ let reload;
 beforeEach(() => {
     sessionStorage.clear();
     reload = vi.fn();
-    vi.stubGlobal('window', { location: { reload } });
+    vi.stubGlobal('window', { location: { href: 'https://mi-yomi.github.io/?theme=dark#tv/213375', replace: reload } });
     vi.stubGlobal('navigator', { onLine: true });
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -28,6 +28,11 @@ describe('stale module recovery', () => {
         const nextPage = await import('./chunkRecovery.js');
         expect(nextPage.reloadForChunkError(missingChunk)).toBe(false);
         expect(reload).toHaveBeenCalledTimes(1);
+        const destination = new URL(reload.mock.calls[0][0]);
+        expect(destination.origin).toBe('https://mi-yomi.github.io');
+        expect(destination.hash).toBe('#tv/213375');
+        expect(destination.searchParams.get('theme')).toBe('dark');
+        expect(destination.searchParams.get('_hades_update')).toMatch(/^\d+$/);
     });
 
     it('leaves unrelated errors and offline failures to the error UI', () => {
