@@ -9,6 +9,8 @@ import sys
 import tempfile
 import unittest
 import uuid
+from unittest.mock import call, patch
+from urllib.error import HTTPError, URLError
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 os.environ['HADES_DB_PATH'] = os.path.join(tempfile.mkdtemp(prefix='hades-test-'), 'test.sqlite')
@@ -29,6 +31,85 @@ def make_user(c, email, admin=False, status='approved'):
         'tag': '1234', 'is_admin': admin, 'status': status,
     })
     return {'id': uid, 'email': email}
+
+
+class RezkaTests(unittest.TestCase):
+    def setUp(self):
+        self.mirrors = patch.object(api, 'REZKA_MIRRORS', ['https://first.example', 'https://second.example'])
+        self.active = patch.object(api, '_active_rezka_mirror', 'https://first.example')
+        self.mirrors.start()
+        self.active.start()
+        self.addCleanup(self.mirrors.stop)
+        self.addCleanup(self.active.stop)
+
+    def test_failed_cached_mirror_retries_search_on_next_mirror(self):
+        html = '<div class="postItem" data-link="https://second.example/films/123-film.html"><span class="entity">фильм</span> (2014)</div>'
+        with patch.object(api, 'fetch_text', side_effect=[HTTPError('https://first.example', 502, 'Bad Gateway', {}, None), html]) as fetch:
+            items = api.rezka_search('Film')
+        self.assertEqual(items[0]['year'], '2014')
+        self.assertEqual(api._active_rezka_mirror, 'https://second.example')
+        self.assertEqual(fetch.call_args_list, [
+            call('https://first.example/index.php?do=search&subaction=search&titleonly=3&story=Film'),
+            call('https://second.example/index.php?do=search&subaction=search&titleonly=3&story=Film'),
+        ])
+
+    def test_all_failed_mirrors_return_readable_error_and_clear_cache(self):
+        with patch.object(api, 'fetch_text', side_effect=URLError('unreachable')) as fetch:
+            with self.assertRaisesRegex(RuntimeError, 'Зеркала HDRezka не отвечают'):
+                api.rezka_search('Film')
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(api._active_rezka_mirror, '')
+
+    def test_film_page_failure_also_uses_next_mirror(self):
+        item = {'url': 'https://first.example/films/123-film.html', 'year': '2014', 'isSeries': False}
+        with patch.object(api, 'rezka_search', return_value=[item]), patch.object(api, 'fetch_text', side_effect=[
+            URLError('unreachable'), '<iframe src="https://player.example/embed/123?a=1&amp;b=2"></iframe>',
+        ]) as fetch:
+            embed, picked = api.rezka_resolve('Film', '2014', 'movie')
+        self.assertEqual(embed, 'https://player.example/embed/123?a=1&b=2')
+        self.assertEqual(picked, item)
+        self.assertEqual(fetch.call_args_list, [call('https://first.example/films/123-film.html'), call('https://second.example/films/123-film.html')])
+
+    def test_new_cards_exclude_sidebar_and_description_matches(self):
+        html = '''<a href="https://first.example/filmy/999-unrelated.html">Sidebar</a>
+        <a class="poster grid-item" href="/filmy/5170-other.html">
+          <h3 class="poster__title ws-nowrap">Другой фильм</h3>
+          <div class="poster__meta flex-grow-1">2014</div>Интерстеллар
+        </a>
+        <a class="poster grid-item" href="/filmy/5169-interstellar.html">
+          <h3 class="poster__title ws-nowrap">Интерстеллар</h3>
+          <div class="poster__meta flex-grow-1">2014</div>
+        </a>'''
+        with patch.object(api, 'fetch_text', return_value=html):
+            items = api.rezka_search('Интерстеллар')
+        self.assertEqual(items, [{'url': 'https://first.example/filmy/5169-interstellar.html',
+                                 'title': 'Интерстеллар', 'year': '2014', 'isSeries': False}])
+
+    def test_sidebar_links_alone_are_not_search_results(self):
+        with patch.object(api, 'fetch_text', return_value='<a href="https://first.example/123-wrong.html">Sidebar</a>'):
+            self.assertEqual(api.rezka_search('Missing'), [])
+
+    def test_series_card_is_identified_and_similar_titles_are_excluded(self):
+        html = '''<a class="poster grid-item" href="/serialy/17935-mini-episodes.html">
+          <h3 class="poster__title ws-nowrap">Во все тяжкие: Мини-эпизоды</h3>
+          <div class="poster__meta flex-grow-1">2009</div>
+        </a><a class="poster grid-item" href="/serialy/17934-vo-vse-tjazhkie.html">
+          <h3 class="poster__title ws-nowrap">Во все тяжкие</h3>
+          <div class="poster__meta flex-grow-1">2008</div>
+        </a>'''
+        with patch.object(api, 'fetch_text', return_value=html):
+            items = api.rezka_search('Во все тяжкие')
+        self.assertEqual(len(items), 1)
+        self.assertTrue(items[0]['isSeries'])
+        self.assertEqual(items[0]['year'], '2008')
+
+    def test_main_lazy_player_is_used_instead_of_trailer(self):
+        item = {'url': 'https://first.example/films/123-film.html', 'year': '2014', 'isSeries': False}
+        html = '''<iframe src="https://player.example/embed/trailer/123"></iframe>
+        <iframe id="film_main" data-src="//api.nextembed.ws/embed/movie/180?a=1&amp;b=2"></iframe>'''
+        with patch.object(api, 'rezka_search', return_value=[item]), patch.object(api, 'fetch_text', return_value=html):
+            embed, _ = api.rezka_resolve('Film', '2014', 'movie')
+        self.assertEqual(embed, 'https://api.nextembed.ws/embed/movie/180?a=1&b=2')
 
 
 class FilterTests(unittest.TestCase):

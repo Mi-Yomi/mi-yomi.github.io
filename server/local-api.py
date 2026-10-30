@@ -11,13 +11,14 @@ import threading
 import time
 import traceback
 import uuid
+from html import unescape
 
 try:
     import bcrypt
 except Exception:
     bcrypt = None
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, quote, urlencode, urlparse
+from urllib.parse import parse_qs, quote, urlencode, urljoin, urlparse
 from urllib.request import Request, urlopen
 
 DB_PATH = os.environ.get('HADES_DB_PATH', '/root/apps/hades-api/hades.sqlite')
@@ -580,7 +581,7 @@ def handle_query(c, user, body):
     return 400, {'error': 'Invalid action'}
 
 
-REZKA_MIRRORS = [s.strip() for s in os.environ.get('HDREZKA_MIRRORS', 'https://kz.rezka.biz,https://rezka.biz,https://hdrezka.tv').split(',') if s.strip()]
+REZKA_MIRRORS = [s.strip() for s in os.environ.get('HDREZKA_MIRRORS', 'https://hd-rezka.one').split(',') if s.strip()]
 REZKA_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36'
 _active_rezka_mirror = ''
 
@@ -591,24 +592,35 @@ def fetch_text(url):
         return r.read().decode('utf-8', 'ignore')
 
 
-def rezka_mirror():
+def rezka_fetch(path):
     global _active_rezka_mirror
-    if _active_rezka_mirror:
-        return _active_rezka_mirror
-    for m in REZKA_MIRRORS:
+    mirrors = list(dict.fromkeys([_active_rezka_mirror, *REZKA_MIRRORS]))
+    for m in filter(None, mirrors):
         try:
-            h = fetch_text(m + '/')
-            if re.search(r'b-content__inline|postItem|HDREZKA|hdrezka|rezka', h, re.I):
-                _active_rezka_mirror = m
-                return m
-        except Exception:
-            pass
-    raise RuntimeError('Ни одно зеркало HDRezka недоступно с этого сервера.')
+            html = fetch_text(m.rstrip('/') + path)
+            _active_rezka_mirror = m
+            return html
+        except OSError:
+            continue
+    _active_rezka_mirror = ''
+    raise RuntimeError('Зеркала HDRezka не отвечают. Попробуйте позже или выберите другой источник.')
 
 
 def rezka_search(query):
-    html = fetch_text(f'{rezka_mirror()}/search/?do=search&subaction=search&q={quote(query)}')
+    html = rezka_fetch(f'/index.php?do=search&subaction=search&titleonly=3&story={quote(query)}')
     items = []
+    # Only result cards: the page also links to unrelated sidebar recommendations.
+    for match in re.finditer(r'<a\b(?=[^>]*class=["\'][^"\']*\bposter\s)[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', html, re.I | re.S):
+        url, chunk = match.groups()
+        title = re.search(r'<h3[^>]*class=["\'][^"\']*poster__title[^"\']*["\'][^>]*>(.*?)</h3>', chunk, re.I | re.S)
+        year = re.search(r'poster__meta[^>]*>\s*((?:19|20)\d{2})', chunk)
+        if title:
+            items.append({'url': urljoin(_active_rezka_mirror + '/', unescape(url)),
+                          'title': unescape(re.sub(r'<[^>]+>', '', title.group(1))).strip(),
+                          'year': year.group(1) if year else '', 'isSeries': '/serialy/' in url})
+    if items:
+        normalize = lambda value: re.sub(r'\W+', '', value.casefold().replace('ё', 'е'))
+        return [item for item in items if normalize(item['title']) == normalize(query)]
     for chunk in html.split('class="postItem"')[1:]:
         m = re.search(r'data-link="([^"]+)"', chunk) or re.search(r'href="(https?://[^"]+/\d+-[^"]+\.html)"', chunk)
         if not m:
@@ -616,11 +628,6 @@ def rezka_search(query):
         entity = (re.search(r'class="entity">\s*([^<]+)', chunk) or ['', ''])[1]
         year = (re.search(r'[>\s(]((?:19|20)\d{2})[<\s)]', chunk) or ['', ''])[1]
         items.append({'url': m.group(1), 'isSeries': bool(re.search(r'сериал|серии', entity, re.I)), 'year': year})
-    if not items:
-        seen = set()
-        for m in re.finditer(r'href="(https?://[^"]+/\d+-[^"]+\.html)"', html):
-            if m.group(1) not in seen:
-                seen.add(m.group(1)); items.append({'url': m.group(1), 'isSeries': False, 'year': ''})
     return items
 
 
@@ -634,11 +641,13 @@ def rezka_resolve(title, year='', typ=''):
         pick = next((i for i in items if i.get('year') == str(year) and ((not typ) or i.get('isSeries') == want_series)), None)
         pick = pick or next((i for i in items if i.get('year') == str(year)), None)
     pick = pick or (next((i for i in items if i.get('isSeries') == want_series), None) if typ else None) or items[0]
-    html = fetch_text(pick['url'])
-    m = re.search(r'<iframe[^>]+src="(https?://[^"]*(?:cinemar|/embed/|cdnvideo|voidboost|hdvb|collaps|player)[^"]*)"', html, re.I) or re.search(r'<iframe[^>]+src="(https?://[^"]+)"', html, re.I)
+    page = urlparse(pick['url'])
+    html = rezka_fetch(page.path + (f'?{page.query}' if page.query else ''))
+    m = (re.search(r'<iframe\b(?=[^>]*\bid=["\']film_main["\'])[^>]*(?:data-src|src)=["\']((?:https?:)?//[^"\']+)', html, re.I)
+         or re.search(r'<iframe[^>]+src="((?:https?:)?//[^"]*(?:cinemar|/embed/|cdnvideo|voidboost|hdvb|collaps|player)[^"]*)"', html, re.I))
     if not m:
         return None, pick
-    return m.group(1).replace('&amp;', '&'), pick
+    return urljoin(_active_rezka_mirror + '/', unescape(m.group(1))), pick
 
 
 class Handler(BaseHTTPRequestHandler):
