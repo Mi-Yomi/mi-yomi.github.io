@@ -49,8 +49,8 @@ class RezkaTests(unittest.TestCase):
         self.assertEqual(items[0]['year'], '2014')
         self.assertEqual(api._active_rezka_mirror, 'https://second.example')
         self.assertEqual(fetch.call_args_list, [
-            call('https://first.example/index.php?do=search&subaction=search&story=Film'),
-            call('https://second.example/index.php?do=search&subaction=search&story=Film'),
+            call('https://first.example/index.php?do=search&subaction=search&titleonly=3&story=Film'),
+            call('https://second.example/index.php?do=search&subaction=search&titleonly=3&story=Film'),
         ])
 
     def test_all_failed_mirrors_return_readable_error_and_clear_cache(self):
@@ -88,6 +88,20 @@ class RezkaTests(unittest.TestCase):
     def test_sidebar_links_alone_are_not_search_results(self):
         with patch.object(api, 'fetch_text', return_value='<a href="https://first.example/123-wrong.html">Sidebar</a>'):
             self.assertEqual(api.rezka_search('Missing'), [])
+
+    def test_series_card_is_identified_and_similar_titles_are_excluded(self):
+        html = '''<a class="poster grid-item" href="/serialy/17935-mini-episodes.html">
+          <h3 class="poster__title ws-nowrap">Во все тяжкие: Мини-эпизоды</h3>
+          <div class="poster__meta flex-grow-1">2009</div>
+        </a><a class="poster grid-item" href="/serialy/17934-vo-vse-tjazhkie.html">
+          <h3 class="poster__title ws-nowrap">Во все тяжкие</h3>
+          <div class="poster__meta flex-grow-1">2008</div>
+        </a>'''
+        with patch.object(api, 'fetch_text', return_value=html):
+            items = api.rezka_search('Во все тяжкие')
+        self.assertEqual(len(items), 1)
+        self.assertTrue(items[0]['isSeries'])
+        self.assertEqual(items[0]['year'], '2008')
 
     def test_main_lazy_player_is_used_instead_of_trailer(self):
         item = {'url': 'https://first.example/films/123-film.html', 'year': '2014', 'isSeries': False}

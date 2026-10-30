@@ -42,6 +42,7 @@ export default function InlinePlayer() {
         if (!src || !media) return;
         const myReq = ++hdrezkaReqRef.current;
         hdrezkaAbortRef.current?.abort();
+        if (playerTimerRef.current) clearTimeout(playerTimerRef.current);
         setResolveError('');
         if (src.special === 'anixart') {
             // Anixart has its own voiceover/episode panel that drives the iframe
@@ -77,7 +78,7 @@ export default function InlinePlayer() {
             return;
         }
         playSource(urlFor(src, currentSeason, currentEpisode), src.name, currentSeason, currentEpisode);
-    }, [media, currentSeason, currentEpisode, playSource, urlFor, setPlayerSource, setPlayerUrl, setPlayerLoaded, setPlayerError]);
+    }, [media, currentSeason, currentEpisode, playSource, urlFor, setPlayerSource, setPlayerUrl, setPlayerLoaded, setPlayerError, playerTimerRef]);
 
     // Reset selection when the title changes so we re-pick for the new media.
     useEffect(() => {

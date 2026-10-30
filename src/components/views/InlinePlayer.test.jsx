@@ -62,8 +62,11 @@ describe('HDRezka resolver failures', () => {
             signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
         }));
         render(<PlayerHarness />);
+        app.current.playerTimerRef.current = setTimeout(() => app.current.setPlayerError(true), 15000);
         selectRezka();
-        await act(() => vi.advanceTimersByTimeAsync(60000));
+        await act(() => vi.advanceTimersByTimeAsync(15000));
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        await act(() => vi.advanceTimersByTimeAsync(45000));
         expect(screen.getByRole('alert')).toHaveTextContent('не ответил вовремя');
         expect(screen.queryByText('Поиск на HDRezka…')).not.toBeInTheDocument();
     });

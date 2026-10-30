@@ -607,7 +607,7 @@ def rezka_fetch(path):
 
 
 def rezka_search(query):
-    html = rezka_fetch(f'/index.php?do=search&subaction=search&story={quote(query)}')
+    html = rezka_fetch(f'/index.php?do=search&subaction=search&titleonly=3&story={quote(query)}')
     items = []
     # Only result cards: the page also links to unrelated sidebar recommendations.
     for match in re.finditer(r'<a\b(?=[^>]*class=["\'][^"\']*\bposter\s)[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', html, re.I | re.S):
