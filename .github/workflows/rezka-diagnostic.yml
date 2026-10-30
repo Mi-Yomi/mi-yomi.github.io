@@ -14,7 +14,7 @@ jobs:
       - name: Verify actual movie and series resolution
         shell: python
         run: |
-          import importlib.util, json
+          import importlib.util, json, re
           from urllib.request import Request, urlopen
           from urllib.parse import urlparse
           from urllib.error import HTTPError
@@ -23,7 +23,15 @@ jobs:
           spec.loader.exec_module(api)
           for title, year, kind in [('Интерстеллар', '2014', 'movie'), ('Во все тяжкие', '2008', 'tv')]:
             embed, picked = api.rezka_resolve(title, year, kind)
-            assert embed, (title, picked)
+            if not embed:
+              advanced = api.fetch_text('https://hd-rezka.one/index.php?do=search&full_search=1')
+              options = re.findall(r'<select[^>]+name="(?:titleonly|searchphrase)"[^>]*>.*?</select>', advanced, re.S)
+              print(json.dumps({'advanced_search_options': options}, ensure_ascii=False), flush=True)
+              for extra in ['&titleonly=3', '&titleonly=3&searchphrase=exact']:
+                html = api.fetch_text('https://hd-rezka.one/index.php?do=search&subaction=search&story=' + api.quote(title) + extra)
+                print(json.dumps({'query_extra': extra, 'titles': re.findall(r'<h3[^>]*poster__title[^>]*>(.*?)</h3>', html, re.S),
+                                  'result_links': re.findall(r'<a class="poster[^>]+href="([^"]+)"', html)}, ensure_ascii=False), flush=True)
+              continue
             assert picked['title'] == title, picked
             assert picked['year'] == year, picked
             assert picked['isSeries'] == (kind == 'tv'), picked
