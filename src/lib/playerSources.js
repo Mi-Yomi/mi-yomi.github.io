@@ -1,5 +1,22 @@
 import { HDREZKA_FN } from './config.js';
 
+// Alloha's published migration: https://allohatv.github.io/replace.min.js
+const ALLOHA_DOMAINS = ['alloeclub.com', 'allohalive.com', 'allohastream.com', 'thealloha.club', 'newplayjj.com', 'playjjnow.online', 'allarknow.online', 'pljjalgo.online', 'stloadi.live', 'stravers.live'];
+export function allohaPlayerUrl(value, kinopoiskId) {
+    let url;
+    try { url = new URL(value); } catch { return value; }
+    const domain = ALLOHA_DOMAINS.find(host => url.hostname === host || url.hostname.endsWith('.' + host));
+    if (!domain) return value;
+    url.hostname = url.hostname.replace('.as.', '-as.').slice(0, -domain.length) + 'stloadi.live';
+    url.protocol = 'https:';
+    url.port = '';
+    if (/^\d+$/.test(String(kinopoiskId))) {
+        url.searchParams.delete('token_movie');
+        url.searchParams.set('kp', kinopoiskId);
+    }
+    return url.href;
+}
+
 // English / international iframe balancers (work by TMDB id, need a season/episode in the URL)
 export const FALLBACK_SOURCES = [
     { id: 'vidlink', name: 'VidLink', icon: 'link', getUrl: (id, type, s, e) => type === 'tv' ? `https://vidlink.pro/tv/${id}/${s}/${e}` : `https://vidlink.pro/movie/${id}` },
@@ -42,7 +59,7 @@ export function buildPlayerSources({ media, collapsData, allohaData, isAnimeCont
         sources.push({ id: 'collaps', name: 'Collaps', lang: 'ru', url: collapsData.iframe_url, builtinEpisodes: true, needsReferrer: true });
     }
     if (allohaData?.iframe) {
-        sources.push({ id: 'alloha', name: 'Alloha', lang: 'ru', url: allohaData.iframe, builtinEpisodes: true });
+        sources.push({ id: 'alloha', name: 'Alloha', lang: 'ru', url: allohaPlayerUrl(allohaData.iframe, allohaData.id_kp), builtinEpisodes: true, needsReferrer: true, ads: true });
     }
     // HDRezka — only if its Edge Function is configured. Special: resolved via fetch
     // (the function returns the cinemar.cc embed URL), then the iframe points straight
