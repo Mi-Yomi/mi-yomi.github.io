@@ -34,12 +34,17 @@ jobs:
             try:
               root, final = read(base + '/')
               info.update(final=final, title=re.findall(r'<title>(.*?)</title>', root, re.S)[:1])
+              host = urlparse(base).hostname
+              with open('rezka-evidence/' + host + '-home.html', 'w') as f:
+                f.write(root)
               info['native'] = 'b-content__inline_item' in root
               if 'Вход на HDrezka' in root:
                 info['error'] = 'login_required'
                 return info
-              search, search_url = read(base + '/search/?do=search&subaction=search&q=' + quote('Интерстеллар'))
+              search, search_url = read(base + '/index.php?do=search&subaction=search&' + ('story' if base == 'https://hd-rezka.one' else 'q') + '=' + quote('Интерстеллар'))
               links = list(dict.fromkeys(re.findall(r'(?:data-link|href)=["\x27](https?://[^"\x27]+/\d+-[^"\x27]+\.html)', search)))
+              with open('rezka-evidence/' + host + '-search.html', 'w') as f:
+                f.write(search)
               info['search_count'] = len(links)
               if not links:
                 info['error'] = 'no_search_results'
