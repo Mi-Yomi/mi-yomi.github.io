@@ -1,0 +1,65 @@
+name: HDRezka network diagnostic
+on:
+  push:
+    branches: [fix/hdrezka-recovery-20261030]
+    paths: [.github/workflows/rezka-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Check candidate mirrors and embed extraction
+        shell: python
+        run: |
+          import concurrent.futures, json, re, os
+          from urllib.request import Request, urlopen
+          from urllib.parse import quote, urlparse, urljoin
+          os.makedirs('rezka-evidence', exist_ok=True)
+          mirrors = [
+            'https://kz.rezka.biz', 'https://rezka.biz', 'https://hdrezka.tv',
+            'https://hd-rezka.one', 'https://hdrezka.solutions', 'https://rezka.ac',
+            'https://rezka-ua.tv', 'https://hdrezka.kim', 'https://hdrezka.me',
+            'https://hdrezka.club', 'https://rezka.pub', 'https://hdrezka-home.tv',
+            'https://rezka-kz.me', 'https://kz.hdrezka.fm', 'https://hdrezka.zone',
+            'https://hdrezka.plus', 'https://hdrezka.mx', 'https://hdrezka.in',
+          ]
+          def read(url):
+            req = Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36', 'Accept-Language': 'ru,en;q=0.8'})
+            with urlopen(req, timeout=8) as r:
+              return r.read(2_000_000).decode('utf-8', 'ignore'), r.url
+          def probe(base):
+            info = {'mirror': base}
+            try:
+              root, final = read(base + '/')
+              info.update(final=final, title=re.findall(r'<title>(.*?)</title>', root, re.S)[:1])
+              info['native'] = 'b-content__inline_item' in root
+              if 'Вход на HDrezka' in root:
+                info['error'] = 'login_required'
+                return info
+              search, search_url = read(base + '/search/?do=search&subaction=search&q=' + quote('Интерстеллар'))
+              links = list(dict.fromkeys(re.findall(r'(?:data-link|href)=["\x27](https?://[^"\x27]+/\d+-[^"\x27]+\.html)', search)))
+              info['search_count'] = len(links)
+              if not links:
+                info['error'] = 'no_search_results'
+                return info
+              page, page_url = read(links[0])
+              embeds = re.findall(r'<iframe[^>]+src=["\x27]([^"\x27]+)', page, re.I)
+              info.update(picked=page_url, embed_hosts=[urlparse(urljoin(page_url, u)).netloc for u in embeds])
+              host = urlparse(base).hostname
+              for suffix, data in [('home', root), ('search', search), ('film', page)]:
+                with open('rezka-evidence/' + host + '-' + suffix + '.html', 'w') as f:
+                  f.write(data)
+            except Exception as e:
+              info['error'] = str(e)
+            return info
+          with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            for info in pool.map(probe, mirrors):
+              print(json.dumps(info, ensure_ascii=False), flush=True)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rezka-public-page-evidence
+          path: rezka-evidence/
+          retention-days: 1
