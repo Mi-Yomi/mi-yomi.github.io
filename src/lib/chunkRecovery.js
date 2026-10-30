@@ -1,5 +1,12 @@
 const RELOAD_KEY = 'hades:chunk-reload';
 
+export function reloadApp() {
+    const url = new URL(window.location.href);
+    // GitHub Pages can keep the previous HTML fresh in the HTTP cache for minutes.
+    url.searchParams.set('_hades_update', String(Date.now()));
+    window.location.replace(url.href);
+}
+
 export function isChunkLoadError(error) {
     return /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|Loading chunk .+ failed|Unable to preload CSS/i.test(error?.message || '');
 }
@@ -13,6 +20,6 @@ export function reloadForChunkError(error) {
     } catch {
         return false;
     }
-    window.location.reload();
+    reloadApp();
     return true;
 }
